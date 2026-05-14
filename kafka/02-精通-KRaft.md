@@ -272,15 +272,15 @@ KRaft 基于 Raft 但有调整：
 
 ### 5.1 迁移路径概览
 
-只能从 **Kafka 3.4+** 起步迁。直接从 2.x 迁不行，要先升级到 3.x。
+ZK→KRaft 迁移工具自 **Kafka 3.6** 起官方就绪（3.4 已引入 bridge 概念但当时未正式可用），**3.9 是推荐的 final bridge release**（迁移工具最完善）。直接从 2.x 迁不行，要先升级到 3.x。
 
 ```
-2.x ZK  →  3.4-3.9 ZK + bridge  →  KRaft only  →  4.0
+2.x ZK  →  3.6-3.9 ZK + bridge（推荐落到 3.9）  →  KRaft only  →  4.0
 ```
 
 ### 5.2 Bridge 模式
 
-3.4 引入。让一个集群同时有：
+3.4 引入概念、3.6 生产可用。让一个集群同时有：
 
 - ZK 仍存在，旧 broker 仍能读
 - 新加的 KRaft controllers 也在同步元数据

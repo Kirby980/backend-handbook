@@ -111,7 +111,7 @@ struct sdshdr8 {
 
 ### 2.3 共享 integer 对象
 
-Redis 启动时预创建了 0–9999 的共享 String integer 对象，所有 SET 一个小整数时直接复用，**refcount++ 而非新分配**。可用 `CONFIG GET maxmemory-policy` 看到 `OBJ_SHARED_INTEGERS = 10000`。
+Redis 启动时预创建了 0–9999 的共享 String integer 对象，所有 SET 一个小整数时直接复用，**refcount++ 而非新分配**。源码中由常量 `OBJ_SHARED_INTEGERS = 10000` 决定（编译期固定，无法通过 CONFIG 修改）。
 
 注意：开启 `maxmemory` 且 eviction 模式为 LRU/LFU 时，共享对象**不再共享**——因为 LFU/LRU 元数据是 per-object 的，共享会导致计数错乱。这是个容易踩的优化误区。
 
@@ -281,7 +281,7 @@ Level 1:  HEAD -> [m=2] -> [m=4] -> [m=8] ---> NIL
 Level 0:  HEAD -> [m=2] -> [m=4] -> [m=6] -> [m=8] -> NIL
 
 每个节点的层数随机生成：50% 概率升一层。
-预期高度 O(log N)，最大 ZSKIPLIST_MAXLEVEL = 32（Redis 7+）。
+预期高度 O(log N)，最大 ZSKIPLIST_MAXLEVEL = 32（源码常量，长期未变）。
 ```
 
 ```c

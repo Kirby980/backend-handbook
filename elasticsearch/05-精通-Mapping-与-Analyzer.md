@@ -434,8 +434,8 @@ POST _analyze
 ### 5.2 IK Analyzer（最常用）
 
 ```bash
-# 安装
-bin/elasticsearch-plugin install https://release.infinilabs.com/analysis-ik/stable/elasticsearch-analysis-ik-9.0.0.zip
+# 安装（与你的 ES 版本号匹配，9.x 当前推荐 9.1.x）
+bin/elasticsearch-plugin install https://get.infini.cloud/elasticsearch/analysis-ik/9.1.4
 ```
 
 提供两个 analyzer：

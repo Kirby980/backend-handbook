@@ -106,7 +106,7 @@ UPDATE t LIMIT 10;           -- LIMIT 没 ORDER BY → 主从行序不同
 INSERT INTO t SELECT ... FROM big_table;  -- 多个并发可能死锁不一致
 ```
 
-5.7 后 MySQL 检测到不安全语句会在 binlog 里改用 ROW，但仍有边缘 case。
+若 `binlog_format=MIXED`，MySQL 检测到上述不安全语句会自动改用 ROW 记录该条；纯 `STATEMENT` 模式下只发 warning，仍按文本写入，复现风险得由调用方承担。
 
 ### 2.2 ROW —— 记录行的变化（默认）
 
