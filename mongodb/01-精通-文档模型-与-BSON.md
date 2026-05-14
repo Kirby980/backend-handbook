@@ -768,5 +768,4 @@ graph TD
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mongodb/01-精通-文档模型-与-BSON.md`
 > 🔁 反馈：`mongosh` 试着插入混类型文档，观察 sort 顺序

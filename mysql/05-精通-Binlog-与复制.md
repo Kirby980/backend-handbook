@@ -659,5 +659,4 @@ binlog 与复制：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mysql/07-精通-Binlog-与复制.md`
 > 🔁 反馈：本地起 master+replica 双节点，故意制造一次复制错误，亲手修复一次

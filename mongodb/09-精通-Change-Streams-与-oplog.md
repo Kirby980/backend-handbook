@@ -850,5 +850,4 @@ Change Streams 心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mongodb/09-精通-Change-Streams-与-oplog.md`
 > 🔁 反馈：写个简单 watch 脚本，开两个终端：一个改数据，一个看事件流

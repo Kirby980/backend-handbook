@@ -639,4 +639,3 @@ func truncate(s string, maxRunes int) string {
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G02-精通-Go-数据类型-Rune-与字符串内幕.md`

@@ -788,4 +788,3 @@ return <-result
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G15-精通-Go-并发模式.md`

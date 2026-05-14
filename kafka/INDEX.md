@@ -109,5 +109,4 @@
 
 ---
 
-> 📁 本目录位于 `/data/workspace/dp4/kafka/INDEX.md`
 > 🔁 反馈：本地 3 broker KRaft 集群最直观；docker compose 起一组试

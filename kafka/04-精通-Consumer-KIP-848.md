@@ -752,5 +752,4 @@ Consumer 心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/04-精通-Consumer-KIP-848.md`
 > 🔁 反馈：起 3 个 consumer，杀掉一个看 rebalance 行为（用 4.0 KIP-848 跟 3.x 对比）

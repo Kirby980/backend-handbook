@@ -107,5 +107,4 @@
 
 ---
 
-> 📁 本目录位于 `/data/workspace/dp4/redis/INDEX.md`
 > 🔁 反馈：每篇都建议起一个本地 Redis 跑一遍命令再下结论

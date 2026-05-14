@@ -670,4 +670,3 @@ SSE 流被代理缓冲 → 实时性丢。`proxy_buffering off`。
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/backend/B25-精通-Web-服务器与反向代理.md`

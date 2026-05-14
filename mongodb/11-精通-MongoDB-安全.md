@@ -698,5 +698,4 @@ graph TD
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mongodb/11-精通-MongoDB-安全.md`
 > 🔁 反馈：用 nmap 扫自家 MongoDB 端口，看暴露面有多大

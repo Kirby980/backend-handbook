@@ -625,4 +625,3 @@ func (l *Limiter) Wait() { <-l.ticker.C }
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G12-精通-Go-Channels-与-select.md`

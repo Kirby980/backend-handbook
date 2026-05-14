@@ -620,5 +620,4 @@ graph TD
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/06-精通-存储与-Segment.md`
 > 🔁 反馈：用 `kafka-dump-log.sh` 看真实 segment 文件内容比看文档直观 10×

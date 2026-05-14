@@ -507,4 +507,3 @@ func Sum(xs []int) int {
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G26-精通-Go-CGO.md`

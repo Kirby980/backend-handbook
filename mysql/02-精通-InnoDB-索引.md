@@ -798,5 +798,4 @@ InnoDB 索引的核心：**B+ 树 + 聚簇 + 16KB 页**。本章关键点：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mysql/04-精通-InnoDB-索引.md`
 > 🔁 反馈：每个 EXPLAIN 字段都自己跑一遍才有体感

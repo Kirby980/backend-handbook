@@ -522,5 +522,4 @@ flowchart TD
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/05-精通-复制-ISR.md`
 > 🔁 反馈：起 3 broker 集群，杀掉一个 follower，观察 ISR 变化（kafka-topics --describe）

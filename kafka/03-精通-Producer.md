@@ -646,5 +646,4 @@ Producer 心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/03-精通-Producer.md`
 > 🔁 反馈：跑 `kafka-producer-perf-test.sh` 改 linger.ms / batch.size 看吞吐曲线

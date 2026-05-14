@@ -714,5 +714,4 @@ Connect 心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/10-精通-Connect-Schema-Registry.md`
 > 🔁 反馈：起 Debezium + MySQL，改一行数据看 Kafka topic 出什么消息

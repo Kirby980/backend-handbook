@@ -642,4 +642,3 @@ func process(files []string) ([]*os.File, error) {
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G06-精通-Go-函数-闭包与-defer-机制.md`

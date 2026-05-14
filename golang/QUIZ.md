@@ -1481,5 +1481,4 @@ http.ListenAndServe(":8080", p.Handler(mux))
 
 ---
 
-> 📁 本测验位于 `/data/workspace/dp4/golang/QUIZ.md`
 > 🔁 配套：[INDEX.md](./INDEX.md) 总目录 / [ROADMAP.md](./ROADMAP.md) 路线图

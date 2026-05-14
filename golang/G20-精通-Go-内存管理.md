@@ -507,4 +507,3 @@ GOGC=50             # 早 GC 控制峰值
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G20-精通-Go-内存管理.md`

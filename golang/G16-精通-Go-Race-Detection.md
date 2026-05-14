@@ -442,4 +442,3 @@ func TestF_NoRace(t *testing.T) {
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G16-精通-Go-Race-Detection.md`

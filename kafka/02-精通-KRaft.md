@@ -566,5 +566,4 @@ KRaft 核心心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/02-精通-KRaft.md`
 > 🔁 反馈：docker compose 起 3 个 controller + 3 broker，杀掉一个 controller 观察 quorum 变化

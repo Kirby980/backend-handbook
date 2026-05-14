@@ -634,5 +634,4 @@ InnoDB 锁体系：MDL + 行锁 + gap + 意向锁 + 自增锁。关键点：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mysql/06-精通-MySQL-锁.md`
 > 🔁 反馈：拿两个 mysql client 同时跑 SELECT FOR UPDATE，亲自看到 next-key 锁住 gap

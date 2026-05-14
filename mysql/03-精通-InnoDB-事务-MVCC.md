@@ -646,5 +646,4 @@ InnoDB 事务 = undo + redo + MVCC + 锁。本章关键点：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mysql/05-精通-InnoDB-事务-MVCC.md`
 > 🔁 反馈：开两个 mysql client 并发跑 SELECT/UPDATE，亲自感受 RR 与 RC 的差别

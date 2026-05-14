@@ -764,5 +764,4 @@ WT 心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mongodb/03-精通-WiredTiger.md`
 > 🔁 反馈：mongostat 跑起来看 dirty / used 实时数字，配合 db.serverStatus().wiredTiger

@@ -604,5 +604,4 @@ graph LR
 
 ---
 
-> 📁 本路线图位于 `/data/workspace/dp4/backend/ROADMAP.md`
 > 🔁 配套：[INDEX.md](./INDEX.md) 总目录 / [QUIZ.md](./QUIZ.md) 测验

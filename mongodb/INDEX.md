@@ -114,5 +114,4 @@
 
 ---
 
-> 📁 本目录位于 `/data/workspace/dp4/mongodb/INDEX.md`
 > 🔁 反馈：`docker run mongo:8.0` 单实例先跑通，再起 3 节点副本集

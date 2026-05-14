@@ -696,4 +696,3 @@ function maxDepth(doc, currentDepth = 0) {
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/backend/B06-精通-GraphQL.md`

@@ -2200,5 +2200,4 @@ db.system.profile.find().sort({ts:-1}).limit(10)
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mongodb/QUIZ.md`
 > 🔁 反馈：把不会的题写到笔记里，3 个月后再答一遍

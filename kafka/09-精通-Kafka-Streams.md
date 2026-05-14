@@ -667,5 +667,4 @@ Streams 心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/09-精通-Kafka-Streams.md`
 > 🔁 反馈：用 Streams quickstart 跑一个 word count，看 state store 文件 / changelog topic

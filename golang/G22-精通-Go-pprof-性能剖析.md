@@ -550,4 +550,3 @@ go tool pprof -inuse_objects http://localhost:6060/debug/pprof/heap
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G22-精通-Go-pprof-性能剖析.md`

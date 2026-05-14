@@ -1124,5 +1124,4 @@
 
 ---
 
-> 📁 本测验位于 `/data/workspace/dp4/backend/QUIZ.md`
 > 🔁 配套：[INDEX.md](./INDEX.md) 总目录 / [ROADMAP.md](./ROADMAP.md) 路线图

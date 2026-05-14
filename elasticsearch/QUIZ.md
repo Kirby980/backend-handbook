@@ -2276,5 +2276,4 @@ GET _cat/recovery?v
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/elasticsearch/QUIZ.md`
 > 🔁 反馈：把不会的题写到笔记里，下个月再答一遍——记得住的才是真知识

@@ -562,4 +562,3 @@ func Cast[T any](v any) (T, bool) {
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G08-精通-Go-接口-itab-与类型断言.md`

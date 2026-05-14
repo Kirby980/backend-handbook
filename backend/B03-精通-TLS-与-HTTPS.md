@@ -518,4 +518,3 @@ openssl s_client -connect example.com:443 -servername example.com < /dev/null 2>
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/backend/B03-精通-TLS-与-HTTPS.md`

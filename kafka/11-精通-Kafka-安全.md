@@ -602,5 +602,4 @@ graph TD
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/kafka/11-精通-Kafka-安全.md`
 > 🔁 反馈：起一个 SASL_SSL 集群，用 kafkactl 配置不同身份测 ACL

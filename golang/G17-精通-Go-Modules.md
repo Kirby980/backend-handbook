@@ -539,4 +539,3 @@ go test -race ./...
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G17-精通-Go-Modules.md`

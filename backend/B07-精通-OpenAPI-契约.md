@@ -684,4 +684,3 @@ oasdiff breaking old.yaml new.yaml
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/backend/B07-精通-OpenAPI-契约.md`

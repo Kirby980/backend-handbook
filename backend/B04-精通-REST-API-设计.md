@@ -526,4 +526,3 @@ Server 记 key 24 小时；重复 key → 返回上次结果。Stripe 文档是�
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/backend/B04-精通-REST-API-设计.md`

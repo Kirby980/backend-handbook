@@ -963,5 +963,4 @@ Schema 心法：
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mongodb/10-精通-Schema-设计.md`
 > 🔁 反馈：把现有业务表 schema 用 MongoDB 重新设计，对比查询次数

@@ -707,5 +707,4 @@ ANALYZE：实际跑 + 估算 vs 实际行数对比
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mysql/08-精通查询优化与-EXPLAIN.md`
 > 🔁 反馈：每条疑似慢 SQL 都跑一次 EXPLAIN ANALYZE，对比估算与实际

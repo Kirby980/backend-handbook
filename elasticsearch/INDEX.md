@@ -109,5 +109,4 @@
 
 ---
 
-> 📁 本目录位于 `/data/workspace/dp4/elasticsearch/INDEX.md`
 > 🔁 反馈：本地 `docker run elasticsearch:9` 跑一节点，配合 Kibana 试每个 DSL

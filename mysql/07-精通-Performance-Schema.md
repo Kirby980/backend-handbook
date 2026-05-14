@@ -726,5 +726,4 @@ Performance Schema + sys schema + slow log 是 MySQL 的诊断三件套。关键
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/mysql/09-精通-Performance-Schema.md`
 > 🔁 反馈：把这章里的 SQL 全部跑一遍，挑出 3 条最有用的写到团队 wiki

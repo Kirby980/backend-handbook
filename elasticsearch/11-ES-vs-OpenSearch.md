@@ -654,5 +654,4 @@ graph TD
 
 ---
 
-> 📁 本文位于 `/data/workspace/dp4/elasticsearch/11-ES-vs-OpenSearch.md`
 > 🔁 反馈：搭一台 ES 9 + 一台 OS 3，用同一份数据跑同一组 query，看差异在哪

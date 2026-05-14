@@ -105,5 +105,4 @@
 
 ---
 
-> 📁 本目录位于 `/data/workspace/dp4/mysql/INDEX.md`
 > 🔁 反馈：本地装一个 MySQL 8.4，每节都跑一遍命令再下结论

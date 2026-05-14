@@ -473,4 +473,3 @@ Cassandra 维护成本远超 PostgreSQL。
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/backend/B14-精通-NoSQL-选型.md`

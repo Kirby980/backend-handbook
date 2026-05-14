@@ -245,5 +245,4 @@ Backend 读"该做什么"；Go 读"在 Go 里怎么做"。
 
 ---
 
-> 📁 本目录位于 `/data/workspace/dp4/backend/INDEX.md`
 > 🔁 反馈：发现错误或建议改进

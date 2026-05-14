@@ -644,4 +644,3 @@ Go 端按 user_id 分组。
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G29-精通-Go-数据库访问.md`

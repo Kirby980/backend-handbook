@@ -577,4 +577,3 @@ func (h *otelHandler) Handle(ctx context.Context, r slog.Record) error {
 
 ---
 
-> 📁 本课程位于 `/data/workspace/dp4/golang/G30-精通-Go-结构化日志.md`

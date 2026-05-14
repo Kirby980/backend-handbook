@@ -1596,5 +1596,4 @@ OS 层：dmesg / iostat / netstat / mpstat
 
 ---
 
-> 📁 本题库位于 `/data/workspace/dp4/redis/QUIZ.md`
 > 🔁 反馈：每周抽 10 道做盲答，答不出来回去复习对应章节
