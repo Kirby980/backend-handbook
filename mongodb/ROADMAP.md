@@ -79,15 +79,15 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Doc[Document<br>{user_id, name, age, addr}]
-    Doc --> ID[(_id 索引<br>主键 B-tree)]
-    Doc --> Sec1[(单字段索引<br>{name: 1})]
-    Doc --> Sec2[(复合索引<br>{user_id: 1, age: -1})]
-    Doc --> Geo[(2dsphere 索引<br>地理)]
-    Doc --> TTL[(TTL 索引<br>{createdAt: 1, expireAfter: 3600})]
-    Doc --> Text[(text 索引<br>全文)]
-    Doc --> WC[(wildcard 索引<br>{"$**": 1})]
-    Doc --> Vec[(向量索引<br>vectorSearch 8.0+)]
+    Doc["Document<br>#123;user_id, name, age, addr#125;"]
+    Doc --> ID[("_id 索引<br>主键 B-tree")]
+    Doc --> Sec1[("单字段索引<br>#123;name: 1#125;")]
+    Doc --> Sec2[("复合索引<br>#123;user_id: 1, age: -1#125;")]
+    Doc --> Geo[("2dsphere 索引<br>地理")]
+    Doc --> TTL[("TTL 索引<br>#123;createdAt: 1, expireAfter: 3600#125;")]
+    Doc --> Text[("text 索引<br>全文")]
+    Doc --> WC[("wildcard 索引<br>#123;'$**': 1#125;")]
+    Doc --> Vec[("向量索引<br>vectorSearch 8.0+")]
 
     style ID fill:#fff3e0
     style Sec2 fill:#c8e6c9
@@ -222,14 +222,14 @@ flowchart TD
 ```mermaid
 flowchart TD
     W[Write Concern]
-    W --> W1[w:1<br>只确认 primary]
-    W --> WM[w:"majority"<br>多数节点写入]
+    W --> W1["w:1<br>只确认 primary"]
+    W --> WM["w:majority<br>多数节点写入"]
 
     R[Read Concern]
-    R --> RL[local<br>看本节点 latest]
-    R --> RM[majority<br>看多数已 commit 的]
-    R --> RS[snapshot<br>事务用快照]
-    R --> RLin[linearizable<br>强一致+确认是 Primary]
+    R --> RL["local<br>看本节点 latest"]
+    R --> RM["majority<br>看多数已 commit 的"]
+    R --> RS["snapshot<br>事务用快照"]
+    R --> RLin["linearizable<br>强一致+确认是 Primary"]
 
     Sess[Causal Consistency]
     Sess -.client session.-> RM
@@ -237,7 +237,7 @@ flowchart TD
     EOS{真正强一致?}
     WM --> EOS
     RM --> EOS
-    EOS -->|是| WMM[w:majority + r:majority]
+    EOS -->|是| WMM["w:majority + r:majority"]
 
     style WMM fill:#c8e6c9
 ```
@@ -293,7 +293,7 @@ flowchart TD
     Idx -->|否| BuildIdx[创建索引<br>ESR 规则]
     Idx -->|是| Cov{覆盖索引?}
     Cov -->|否| AddProj[加合适 projection<br>+ 复合索引含返回字段]
-    Cov -->|是| WS{Working Set < RAM?}
+    Cov -->|是| WS{"Working Set < RAM?"}
     WS -->|否| AddRAM[加 RAM 或分片]
     WS -->|是| Profile{看 profiler}
     Profile -->|locks 多| Lock[查热点 collection]

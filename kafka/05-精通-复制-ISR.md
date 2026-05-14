@@ -484,10 +484,10 @@ flowchart TD
     FW --> HW[HW = min ISR LEO]
     HW --> AckP3[ack + 对 consumer 可见]
 
-    Lag{follower<br>lag > 30s?}
+    Lag{"follower<br>lag > 30s?"}
     Lag -->|是| Shrink[ISR shrink<br>移出 ISR]
     Lag -->|否| Stay[保持 ISR]
-    Shrink --> CheckMin{ISR < min.insync?}
+    Shrink --> CheckMin{"ISR < min.insync?"}
     CheckMin -->|是| Block[阻止新写 NotEnoughReplicas]
     CheckMin -->|否| Continue
 

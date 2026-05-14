@@ -57,7 +57,7 @@ graph TD
 flowchart TD
     Type{数据类型?}
 
-    Type -->|String| Str{长度 <= 44?}
+    Type -->|String| Str{"长度 <= 44?"}
     Str -->|是| EmbStr[embstr 紧凑分配]
     Str -->|否| RawStr[raw SDS]
     Type -->|String 纯整数| IntStr[int 编码]

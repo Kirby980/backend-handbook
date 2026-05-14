@@ -834,7 +834,7 @@ flowchart TD
     T -->|滑动窗口 / 累计| W3[SUM/AVG OVER<br>+ ROWS BETWEEN]
     T -->|树 / 层级| C1[WITH RECURSIVE]
     T -->|多次复用同结果| C2[WITH 普通 CTE]
-    T -->|JSON 字段| J1[->>  生成列+索引]
+    T -->|JSON 字段| J1["->>  生成列+索引"]
     T -->|JSON 数组| J2[JSON_TABLE<br>MEMBER OF<br>多值索引]
     T -->|每行展开子查询| L[LATERAL]
 
