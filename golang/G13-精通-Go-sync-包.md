@@ -630,7 +630,7 @@ func (g *Group) Wait() error {
 |---|---|
 | Mutex | 自旋 + 饥饿模式；不可重入 |
 | RWMutex | 多读单写；写者优先；短临界区不如 Mutex |
-| WaitGroup | Add 必须在 goroutine 外；1.20+ Go() |
+| WaitGroup | Add 必须在 goroutine 外；1.25+ Go() |
 | Once | double-checked locking；panic 也算 done |
 | Pool | per-P 缓存；GC 清空；Reset 后再 Put |
 | Map | 读多写少 + key 稳定；不然用 RWMutex |
