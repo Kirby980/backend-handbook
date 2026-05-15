@@ -543,17 +543,17 @@ m2 := map[Path]int{}
 
 ## 参考答案
 
-**练习 1**：原顺序约 56 字节（a 后 padding 7, c 后 padding 4, e 后 padding 7）。更优：
+**练习 1**：原顺序 72 字节（a 后 padding 7，c 后 padding 4，e 后 padding 7，末尾因 alignment=8 已对齐）。更优：
 ```go
 type S struct {
-    b string   // 16
     d []byte   // 24
+    b string   // 16
     f int64    // 8
     c int32    // 4
-    a, e bool  // 2 + 6 padding
-}   // 56 → 仍可能 56，因为 string + slice 已经很大
+    a, e bool  // 1 + 1 + 2 padding 对齐到 8
+}   // 56
 ```
-实际 fieldalignment 会给出 56 → 48 的优化。运行 `go run` + `unsafe.Sizeof` 自行验证。
+即 fieldalignment 会给出 72 → 56 的优化。运行 `go run` + `unsafe.Sizeof` 自行验证。
 
 **练习 2**：
 ```go
