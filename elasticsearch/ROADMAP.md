@@ -1,6 +1,6 @@
 # Elasticsearch 路线图 · Mermaid 可视化
 
-> 配合 [INDEX.md](./01-INDEX.md) 与 [QUIZ.md](./14-QUIZ.md) 使用
+> 配合 [INDEX.md](./INDEX.md) 与 [QUIZ.md](./QUIZ.md) 使用
 >
 > **📅 内容基准：Elasticsearch 9.x + OpenSearch 3.x**（2026-05 时主流）
 
@@ -175,11 +175,11 @@ timeline
     2010 : Elasticsearch 1.0
     2016 : 5.0 Lucene 6 (BKD)
     2019 : 7.0 默认单 type / Cluster Coordination
-    2021 January : 7.10 改 SSPL/ELv2 → 引发 OpenSearch fork
+    2021 January : 7.11 改 SSPL/ELv2 → 引发 OpenSearch fork
     2021 April : OpenSearch fork by AWS (Apache 2.0)
     2022 : ES 8.0 安全默认 / dense_vector kNN GA
-    2024 : ES 8.x 持续完善 vector
-    2025 : ES 9.0 ESQL GA / Lucene 10 / 重新引入 AGPLv3 选项
+    2024 : ES 8.16 重新引入 AGPLv3 选项 / ES 8.x 持续完善 vector
+    2025 : ES 9.0 ESQL GA / Lucene 10
     2025 May : Redis 8 重新开源 (前车之鉴)
     2026 : ES 9.x 与 OpenSearch 3.x 并存
 ```

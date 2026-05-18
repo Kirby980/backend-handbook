@@ -1,6 +1,6 @@
 # 精通 MySQL 整体架构：从连接到磁盘的一句 SQL
 
-> 关联章节：[M02 InnoDB 索引](./04-精通-InnoDB-索引.md)、[M03 事务与 MVCC](./05-精通-InnoDB-事务-MVCC.md)、[M06 优化器](./08-精通查询优化与-EXPLAIN.md)
+> 关联章节：[M02 InnoDB 索引](./02-精通-InnoDB-索引.md)、[M03 事务与 MVCC](./03-精通-InnoDB-事务-MVCC.md)、[M06 优化器](./06-精通查询优化与-EXPLAIN.md)
 
 ---
 
@@ -170,7 +170,7 @@ max_execution_time = 0      # SELECT 执行最大时长（毫秒），0 = 无限
 
 ### 3.3 查询缓存的退场
 
-MySQL 5.7 之前有 Query Cache：把 `SELECT ... = "key"` 做 hash 缓存结果。MySQL 8.0 **彻底移除**了它，原因：
+MySQL 8.0 之前有 Query Cache：把 `SELECT ... = "key"` 做 hash 缓存结果（5.7.20 起废弃）。MySQL 8.0 **彻底移除**了它，原因：
 
 - 缓存命中率在并发更新场景下极低（任何写都让该表所有缓存失效）
 - 缓存维护本身是高竞争点，写多读少环境反而拖慢

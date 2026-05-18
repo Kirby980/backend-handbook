@@ -6,14 +6,14 @@
 
 ## 引言：MongoDB 的存储底盘
 
-2014 年 MongoDB 3.0 起把默认存储引擎从 MMAPv1 换成 **WiredTiger**（WT）。这是 MongoDB 历史上最重要的架构改变之一：
+MongoDB 3.0（2015 年 3 月）首次把 **WiredTiger**（WT）作为可选引擎引入；**3.2（2015 年 12 月）起 WT 成为默认存储引擎**，逐步替代 MMAPv1。这是 MongoDB 历史上最重要的架构改变之一：
 
-- MMAPv1：基于 mmap 文件，文档级锁，写性能差
+- MMAPv1：基于 mmap 文件，3.0 之前是数据库级锁、3.0 改进为集合级锁，写性能差
 - WiredTiger：B-tree / LSM 双引擎，**文档级 MVCC**，压缩，并发好
 
-到 2026 年 WiredTiger 已经是默认且唯一推荐的引擎。MMAPv1 在 4.2 移除，In-Memory 引擎只在企业版有。
+到 2026 年 WiredTiger 已经是默认且唯一可用的引擎。MMAPv1 在 4.0 弃用、4.2 正式移除，In-Memory 引擎只在企业版有。
 
-但 WiredTiger 不是 MongoDB 独有——是 Oracle / MongoDB 收购的独立开源引擎（[wiredtiger.com](http://source.wiredtiger.com/)），也被 Apache 2.0 项目使用。
+但 WiredTiger 不是 MongoDB 独有——是 MongoDB 收购的独立开源引擎（[wiredtiger.com](http://source.wiredtiger.com/)），也被其他项目使用。
 
 读完本章你应能：
 

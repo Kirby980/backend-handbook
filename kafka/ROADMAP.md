@@ -206,8 +206,9 @@ timeline
     2022 : 3.3 KRaft production ready (KIP-833)
     2023 : 3.6 Tiered Storage GA
     2024 : 3.7-3.9 KRaft 与 ZK bridge 模式完善
-    2025 : 4.0 ZK 完全移除 / KIP-848 GA
-    2026 : 主流生产基线 Kafka 4.0 KRaft / 替代品 Redpanda Pulsar 成熟
+    2025 : 4.0 (3 月) ZK 完全移除 / KIP-848 GA
+         : 4.1 (年末) 持续优化与新特性
+    2026 : 主流生产基线 Kafka 4.x KRaft / 替代品 Redpanda Pulsar 成熟
 ```
 
 ---

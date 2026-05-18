@@ -1,6 +1,6 @@
 # 精通 Performance Schema 与慢日志：digest、instruments、sys schema
 
-> 关联章节：[M03 事务](./05-精通-InnoDB-事务-MVCC.md)、[M06 优化器](./08-精通查询优化与-EXPLAIN.md)、[M08 调优](./10-精通-Buffer-Pool-调优.md)
+> 关联章节：[M03 事务](./03-精通-InnoDB-事务-MVCC.md)、[M06 优化器](./06-精通查询优化与-EXPLAIN.md)、[M08 调优](./08-精通-Buffer-Pool-调优.md)
 
 ---
 

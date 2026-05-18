@@ -823,7 +823,7 @@ kafka-reassign-partitions.sh ... --verify
 - `.index`：offset → 物理位置稀疏索引
 - `.timeindex`：timestamp → offset 索引
 
-ES 多还有 `.snapshot`（leader epoch / producer state）。
+Kafka 还可能有 `.snapshot`（producer state）和 `leader-epoch-checkpoint`（leader epoch）。
 
 </details>
 

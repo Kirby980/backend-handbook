@@ -269,7 +269,7 @@ db.events.createIndex({"props.$**": 1})
 不适合：
 
 - 字段固定时浪费空间（用普通索引）
-- 不能与复合索引中其他字段组合
+- 7.0 前不能与复合索引中其他字段组合（7.0+ 支持 compound wildcard index，但仍只能含一个 wildcard 字段）
 - 查询语法对单字段（不支持 `$or` 跨不固定字段）
 
 </details>
@@ -927,9 +927,9 @@ sh.shardCollection("events", {region: 1, userId: "hashed"})
 <details><summary>答案</summary>
 
 ```js
-sh.addShardTag("sh-us", "US")
-sh.addShardTag("sh-eu", "EU")
-sh.addTagRange("mydb.users",
+sh.addShardToZone("sh-us", "US")
+sh.addShardToZone("sh-eu", "EU")
+sh.updateZoneKeyRange("mydb.users",
   {region:"US", _id:MinKey},
   {region:"US", _id:MaxKey},
   "US")
@@ -1757,7 +1757,7 @@ Queryable Encryption：
 - 同明文 → 不同密文（防 frequency analysis）
 - 但**仍支持等值 / 范围查询**（内部 secure index）
 
-代价：性能慢 2-5×、存储 1.5×、6.0+ 才有。
+代价：性能慢 2-5×、存储 1.5×、6.0 Preview / 7.0 GA。
 
 </details>
 
@@ -1816,8 +1816,8 @@ Queryable Encryption：
 GDPR 要求欧洲用户数据**驻留在欧洲**：
 
 ```js
-sh.addShardTag("sh-eu-1", "EU")
-sh.addTagRange("mydb.users",
+sh.addShardToZone("sh-eu-1", "EU")
+sh.updateZoneKeyRange("mydb.users",
   {region:"EU", _id:MinKey},
   {region:"EU", _id:MaxKey},
   "EU")
@@ -1964,8 +1964,8 @@ db.adminCommand({setFeatureCompatibilityVersion: "8.0"})
 
 <details><summary>答案</summary>
 
-- **底层不同**：DocumentDB 基于 PostgreSQL 改造，不是真 MongoDB
-- **API 兼容性**：约 80%，部分聚合 stage / Change Streams 不支持或行为不同
+- **底层不同**：DocumentDB 是 AWS 自研引擎运行在 Aurora 分布式存储上，不是真 MongoDB 代码（社区推测计算层基于 PostgreSQL，但未官方确认）
+- **API 兼容性**：约 80%（兼容到 5.0 子集），部分聚合 stage / Change Streams 不支持或行为不同
 - **运维**：AWS 托管，与 RDS 类似
 - **价格**：中等
 

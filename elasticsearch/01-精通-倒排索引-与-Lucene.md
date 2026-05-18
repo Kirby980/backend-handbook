@@ -1,6 +1,6 @@
 # 精通倒排索引与 Lucene：Elasticsearch 一切性能的物理根因
 
-> 关联章节：[E02 Segment 与合并](./04-精通-Segment-与合并.md)、[E06 Query DSL](./08-精通-Query-DSL.md)、[E07 BM25](./09-精通-BM25-与-Reranking.md)、[E08 向量检索](./10-精通-向量检索.md)
+> 关联章节：[E02 Segment 与合并](./02-精通-Segment-与合并.md)、[E06 Query DSL](./06-精通-Query-DSL.md)、[E07 BM25](./07-精通-BM25-与-Reranking.md)、[E08 向量检索](./08-精通-向量检索.md)
 
 ---
 

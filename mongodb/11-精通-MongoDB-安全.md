@@ -400,7 +400,7 @@ const fle = new MongoClient(uri, {
 
 ---
 
-## 第七章：Queryable Encryption（6.0+）
+## 第七章：Queryable Encryption（6.0 Preview / 7.0 GA）
 
 ### 7.1 解决什么问题
 

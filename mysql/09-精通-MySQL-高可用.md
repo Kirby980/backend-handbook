@@ -247,8 +247,8 @@ group_replication_bootstrap_group = OFF  # 只在第一个节点首次启动设�
 group_replication_start_on_boot = OFF    # 通常关闭，由 mysqlsh 控制
 
 # === 必须 ===
-transaction_write_set_extraction = XXHASH64  # 8.0.20- 必需，8.0.21+ 默认
-slave_preserve_commit_order = ON             # 保持提交顺序
+transaction_write_set_extraction = XXHASH64  # 8.0.20- 必需，8.0.21+ 默认（8.3+ 已移除该参数）
+replica_preserve_commit_order = ON           # 保持提交顺序
 ```
 
 ### 3.4 部署 MySQL Router

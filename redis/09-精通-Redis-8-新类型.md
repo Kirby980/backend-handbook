@@ -1,6 +1,6 @@
 # 精通 Redis 8 新数据类型：JSON、TimeSeries、Bloom、Vector Set
 
-> 关联章节：[03 数据结构](./03-精通-Redis-数据结构内部.md)、[13 Redis vs Valkey](./13-Redis-vs-Valkey.md)
+> 关联章节：[01 数据结构](./01-精通-Redis-数据结构内部.md)、[11 Redis vs Valkey](./11-精通-Redis-vs-Valkey.md)
 
 ---
 
@@ -20,7 +20,7 @@ Redis 7.x 时代，**JSON / TimeSeries / Bloom / Cuckoo / Top-K / Count-Min Sket
 - **T-Digest**：分位数估算（流式 P50/P99）
 - **Vector Set**：向量相似度检索（beta）
 
-> ⚠️ 这些功能 **Redis 8 + 内置**；**Valkey 8.x** 还在按子模块各自演化。如果你用 Valkey，需要单独装对应 module（valkey-search / valkey-json / valkey-bloom 等）。详 [13 Redis vs Valkey](./13-Redis-vs-Valkey.md)。
+> ⚠️ 这些功能 **Redis 8 + 内置**；**Valkey 8.x** 还在按子模块各自演化。如果你用 Valkey，需要单独装对应 module（valkey-search / valkey-json / valkey-bloom 等）。详 [11 Redis vs Valkey](./11-精通-Redis-vs-Valkey.md)。
 
 ---
 
@@ -294,27 +294,32 @@ TDIGEST.RANK latency 100.0                    # 100.0 是第几位
 ### 8.1 向量相似度检索
 
 ```
-# 创建一个 Vector Set
-VADD myset element1 1.5 0.3 -0.2 ...      # element + 向量值（dim 内联）
-VADD myset element2 0.7 1.1 0.5 ...
+# 创建一个 Vector Set：VADD key (FP32 | VALUES num) vector element
+# 第一次 VADD 即建立 Vector Set；维度由首次插入的向量决定
+VADD myset VALUES 4 1.5 0.3 -0.2 0.8 element1
+VADD myset VALUES 4 0.7 1.1 0.5 -0.3 element2
 
-VSIM myset 0.9 0.4 -0.1 COUNT 10           # 找 top 10 相似元素
+# 搜索：VSIM key (ELE | FP32 | VALUES num) (vector | element) [COUNT n] [WITHSCORES]
+VSIM myset VALUES 4 0.9 0.4 -0.1 0.5 COUNT 10           # 用查询向量
+VSIM myset ELE element1 COUNT 10 WITHSCORES              # 以已有元素为查询
 VCARD myset
 ```
 
-支持 cosine、L2 等相似度。底层 HNSW 图（同 Elasticsearch dense_vector / Postgres pgvector 的算法）。
+默认使用 cosine 相似度 + Q8（int8）量化。可在首次 VADD 时用 `NOQUANT`（FP32 全精度）或 `BIN`（二值）切换。底层 HNSW 图（同 Elasticsearch dense_vector / Postgres pgvector 的算法）。
 
 ### 8.2 与 RAG 场景
 
 ```
 # 1. 把每个文档段的 embedding 存入 Vector Set
 for doc in corpus:
-    embedding = openai_embed(doc.text)
-    r.execute_command("VADD", "docs", doc.id, *embedding)
+    embedding = openai_embed(doc.text)        # 假设 dim=1536
+    r.execute_command("VADD", "docs", "VALUES", len(embedding), *embedding, doc.id)
 
 # 2. 用户查询
 query_emb = openai_embed(user_query)
-results = r.execute_command("VSIM", "docs", *query_emb, "COUNT", 5)
+results = r.execute_command(
+    "VSIM", "docs", "VALUES", len(query_emb), *query_emb, "COUNT", 5
+)
 
 # 3. 把 top 5 文档段交给 LLM 做 RAG
 ```

@@ -1,6 +1,6 @@
 # 精通 Topic / Partition / Offset：Kafka 的 commit log 抽象
 
-> 关联章节：[K02 KRaft 元数据](./K02-精通-KRaft.md)、[K03 Producer](./K03-精通-Producer.md)、[K04 Consumer + KIP-848](./K04-精通-Consumer-KIP-848.md)、[K06 存储](./K06-精通-存储与-Segment.md)
+> 关联章节：[K02 KRaft 元数据](./02-精通-KRaft.md)、[K03 Producer](./03-精通-Producer.md)、[K04 Consumer + KIP-848](./04-精通-Consumer-KIP-848.md)、[K06 存储](./06-精通-存储与-Segment.md)
 
 ---
 

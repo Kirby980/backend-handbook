@@ -1,6 +1,6 @@
 # 精通 MySQL 锁机制：行锁、间隙锁、next-key、意向锁、死锁
 
-> 关联章节：[M02 索引](./04-精通-InnoDB-索引.md)、[M03 事务与 MVCC](./05-精通-InnoDB-事务-MVCC.md)
+> 关联章节：[M02 索引](./02-精通-InnoDB-索引.md)、[M03 事务与 MVCC](./03-精通-InnoDB-事务-MVCC.md)
 
 ---
 

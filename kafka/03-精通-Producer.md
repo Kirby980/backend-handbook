@@ -282,7 +282,7 @@ idempotent producer 解决：**broker 端去重**。
 enable.idempotence=true
 ```
 
-ES 3.0+ 默认开启（如果 acks 和 retries 满足条件）。
+Kafka 3.0+ 默认开启（如果 acks 和 retries 满足条件）。
 
 ### 5.3 实现原理
 

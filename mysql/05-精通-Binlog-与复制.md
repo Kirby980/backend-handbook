@@ -1,6 +1,6 @@
 # 精通 Binlog 与复制：行格式、GTID、半同步、并行复制
 
-> 关联章节：[M03 事务](./05-精通-InnoDB-事务-MVCC.md)、[M09 高可用](./11-精通-MySQL-高可用.md)
+> 关联章节：[M03 事务](./03-精通-InnoDB-事务-MVCC.md)、[M09 高可用](./09-精通-MySQL-高可用.md)
 
 ---
 
@@ -264,7 +264,7 @@ GTID 解决这些问题。
 ```ini
 gtid_mode = ON
 enforce_gtid_consistency = ON
-log_slave_updates = ON      # 从库执行的也写 binlog（多级复制需要）
+log_replica_updates = ON    # 从库执行的也写 binlog（多级复制需要）
 ```
 
 切换是滚动的（OFF → OFF_PERMISSIVE → ON_PERMISSIVE → ON），生产升级要走完。
@@ -377,7 +377,7 @@ SELECT TIMESTAMPDIFF(MICROSECOND, ts, NOW(6))/1e6 AS lag_seconds FROM heartbeat;
 - 从库本地有违反唯一约束的数据
 - 从库参数（如 `sql_mode`）跟主库不同
 - 网络断开 IO Thread 重连后位置错乱
-- replica 自己当 master 给下游用，下游写入污染了 replica（log_slave_updates）
+- replica 自己当 master 给下游用，下游写入污染了 replica（log_replica_updates）
 
 ### 7.2 排查流程
 

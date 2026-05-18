@@ -366,9 +366,9 @@ gtid_mode = ON
 enforce_gtid_consistency = ON
 
 # === 复制 ===
-slave_parallel_workers = 8
-slave_parallel_type = LOGICAL_CLOCK
-slave_preserve_commit_order = ON
+replica_parallel_workers = 8
+replica_parallel_type = LOGICAL_CLOCK
+replica_preserve_commit_order = ON
 
 # === 安全 ===
 sql_mode = STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,ONLY_FULL_GROUP_BY

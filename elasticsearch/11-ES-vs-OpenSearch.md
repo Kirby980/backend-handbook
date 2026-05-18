@@ -34,7 +34,7 @@
 2021 Apr   AWS 宣布 OpenSearch（1.0 在 6 月发布）
 2022       OpenSearch 2.0 / Elasticsearch 8.0 安全默认 GA / dense_vector GA
 2023       两边都加 vector / kNN
-2024 Aug   Elastic 加回 AGPLv3 第三选项（"open source"标签恢复）
+2024 Aug   Elastic 加回 AGPLv3 第三选项，从 8.16 起生效（"open source"标签恢复）
 2024 Sep   AWS 把 OpenSearch 项目移交给 Linux Foundation
 2025       Elasticsearch 9.0（Lucene 10、ESQL GA）/ OpenSearch 3.0
 2026       两边都在演化，再合并已基本不可能
@@ -53,7 +53,7 @@ Elastic 改协议的目标：**阻止云厂商（特别是 AWS）把 ES 包装�
 
 ### 1.3 2024 年的 AGPLv3 转身
 
-2024-08-29 Elastic 宣布在 9.x 加入 AGPLv3 作为**第三个**可选协议（SSPL / ELv2 / AGPLv3 三选一）。
+2024-08-29 Elastic 宣布在 8.16+ 加入 AGPLv3 作为**第三个**可选协议（SSPL / ELv2 / AGPLv3 三选一）。
 
 这是个有趣的反向操作：
 

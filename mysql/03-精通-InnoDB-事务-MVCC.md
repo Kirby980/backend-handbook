@@ -1,6 +1,6 @@
 # 精通 InnoDB 事务与 MVCC：undo、redo、ReadView、隔离级别底层
 
-> 关联章节：[M02 索引](./04-精通-InnoDB-索引.md)、[M04 锁](./06-精通-MySQL-锁.md)、[M05 复制](./07-精通-Binlog-与复制.md)
+> 关联章节：[M02 索引](./02-精通-InnoDB-索引.md)、[M04 锁](./04-精通-MySQL-锁.md)、[M05 复制](./05-精通-Binlog-与复制.md)
 
 ---
 

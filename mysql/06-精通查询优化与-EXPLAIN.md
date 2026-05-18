@@ -1,6 +1,6 @@
 # 精通查询优化器与 EXPLAIN：cost model、直方图、hash join、字段全解
 
-> 关联章节：[M02 索引](./04-精通-InnoDB-索引.md)、[M03 事务](./05-精通-InnoDB-事务-MVCC.md)、[M07 PS](./09-精通-Performance-Schema.md)
+> 关联章节：[M02 索引](./02-精通-InnoDB-索引.md)、[M03 事务](./03-精通-InnoDB-事务-MVCC.md)、[M07 PS](./07-精通-Performance-Schema.md)
 
 ---
 

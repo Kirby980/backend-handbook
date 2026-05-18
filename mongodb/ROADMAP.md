@@ -250,7 +250,7 @@ flowchart TD
 flowchart TD
     Choose{需求}
     Choose -->|主流文档库 + 大生态| Mongo[MongoDB 8.0]
-    Choose -->|要 SQL 兼容 + AWS| DocDB[AWS DocumentDB<br>API 兼容但底层不同]
+    Choose -->|要 SQL 兼容 + AWS| DocDB[AWS DocumentDB<br>API 兼容但底层是 AWS 自研]
     Choose -->|完全 OSS + 兼容 wire 协议| Ferret[FerretDB<br>建在 PostgreSQL 之上]
     Choose -->|多模型 KV/Doc/Graph 一体| Couch[Couchbase]
     Choose -->|无 SSPL 限制 + 自托管| Ferret2[FerretDB]
@@ -269,14 +269,14 @@ flowchart TD
 timeline
     title MongoDB 关键里程碑
     2009 : 1.0 首次发布
-    2014 : 3.0 WiredTiger 引擎引入
-    2016 : 3.2 WiredTiger 默认
+    2015 : 3.0 引入 WiredTiger 引擎（可选）
+    2015 December : 3.2 WiredTiger 成为默认存储引擎
     2018 : 4.0 多文档事务 副本集
     2019 January : SSPL 协议（不是 OSI 开源）
     2020 : 4.4 hedged reads / 复合 hashed key
     2021 : 5.0 Time Series Collections / live resharding
-    2022 : 6.0 Queryable Encryption
-    2023 : 7.0 平台升级
+    2022 : 6.0 Queryable Encryption (Preview)
+    2023 : 7.0 LTS / Queryable Encryption GA / Time Series 优化
     2024 October : 8.0 LTS / vectorSearch GA / 查询性能提升
     2025 : 9.x 持续演进
     2026 : 主流生产基线 MongoDB 8.0 LTS

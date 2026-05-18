@@ -1111,12 +1111,16 @@ TDIGEST.QUANTILE latency 0.99
 
 <details><summary>答案</summary>
 
-存浮点向量 + ANN（近似最近邻）查询。Redis 8 直接支持，做向量数据库 / RAG 的轻量替代。
+存浮点向量 + ANN（近似最近邻）查询。Redis 8 直接支持，做向量数据库 / RAG 的轻量替代。底层 HNSW 图，默认 int8 量化（Q8）。
 
 ```
-VSET.CREATE myindex 768 COSINE
-VSET.ADD myindex doc1 [0.1 0.2 ...]
-VSET.SEARCH myindex [0.1 0.2 ...] 10
+# 添加：VADD key [REDUCE dim] (FP32 | VALUES num) vector element
+VADD myindex VALUES 4 0.1 0.2 0.3 0.4 doc1
+VADD myindex VALUES 4 0.5 0.6 0.7 0.8 doc2
+
+# 搜索：VSIM key (ELE | FP32 | VALUES num) (vector | element)
+VSIM myindex VALUES 4 0.1 0.2 0.3 0.4 COUNT 10 WITHSCORES
+VSIM myindex ELE doc1 COUNT 10
 ```
 
 不如 Milvus / Qdrant 专业，但已经够小规模 / 已有 Redis 的场景用。
