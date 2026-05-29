@@ -231,7 +231,7 @@ Backend 读"该做什么"；Go 读"在 Go 里怎么做"。
 
 | 章节 | 2026 必知 |
 |---|---|
-| **B01 互联网** | HTTP/3 ~28% 流量（已超 HTTP/1.1）；IPv6 ~46% 全球；QUIC v2 / Multipath / WebTransport 落地 |
+| **B01 互联网** | HTTP/3 约 21% 请求流量（Cloudflare Radar，仍略低于 HTTP/1.x ~28%）；IPv6 ~46% 全球；QUIC v2 / Multipath / WebTransport 落地 |
 | **B03 TLS** | **X25519MLKEM768 后量子混合** Chrome/Firefox/Cloudflare 默认；ECH 在 CF + Firefox/Chrome 主流；Apple iOS 26+ 跟进 |
 | **B07 OpenAPI** | OpenAPI 3.1 已对齐 JSON Schema 2020-12；AsyncAPI 3.0 用于事件驱动 |
 | **B12 复制 / CAP** | **PostgreSQL 18** (2025-09)：异步 I/O / UUIDv7 / virtual generated columns / OAuth；分布式 SQL：CockroachDB / YugabyteDB / TiDB / Spanner |

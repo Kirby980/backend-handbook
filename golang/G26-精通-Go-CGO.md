@@ -421,7 +421,7 @@ C.save_pointer(unsafe.Pointer(go_obj))
 C 库改了 SIGSEGV handler → Go runtime 失常。
 
 ### ❌ 陷阱 7：嵌套 Go 指针
-struct 含 Go 指针字段，整体传给 C → cgo runtime 检测到会 panic（默认 `GOEXPERIMENT=cgocheck`）。
+struct 含 Go 指针字段，整体传给 C → cgo runtime 检测到会 panic（默认 `GODEBUG=cgocheck=1` 会在运行时检测并 panic；更彻底的检查需构建时 `GOEXPERIMENT=cgocheck2`）。
 
 ---
 

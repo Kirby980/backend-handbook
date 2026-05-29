@@ -62,7 +62,7 @@ CREATE TABLE docs (
 
 - 维度固定（建表时声明）
 - 元素是 4 字节 float
-- 384 维 = 1536 字节存储 ≈ 6 个 16KB 页一页放约 10 个向量
+- 384 维 = 1536 字节存储，16KB 页约放 10 个向量
 - 当前**仅支持二进制存储 + 距离函数**，没有内建 ANN（近似最近邻）索引
 
 ### 1.3 插入与查询
@@ -78,7 +78,7 @@ SELECT VECTOR_TO_STRING(embedding) FROM docs LIMIT 1;
 SELECT VECTOR_DIM(embedding) FROM docs LIMIT 1;
 ```
 
-距离函数：
+距离函数（**重要：仅 HeatWave / MySQL AI 可用，社区版与商业版均不含**）：
 
 | 函数 | 含义 |
 |---|---|
@@ -86,7 +86,11 @@ SELECT VECTOR_DIM(embedding) FROM docs LIMIT 1;
 | `DISTANCE(v1, v2, 'COSINE')` | 余弦距离（1 - cos相似度） |
 | `DISTANCE(v1, v2, 'DOT')` | 负点积 |
 
-查询最近 K 条（暴力扫表）：
+> ⚠️ 截至 2026-05，`DISTANCE()` / `VECTOR_DISTANCE()` 只在 **MySQL HeatWave on OCI / MySQL AI** 提供。
+> 社区版（`mysql:9.x`）调用会报 `FUNCTION ... DISTANCE does not exist`，商业版（Commercial）同样不含该函数。
+> 社区版只能用 `VECTOR` 列**存储**向量，距离计算需在应用层自行实现。
+
+查询最近 K 条（暴力扫表，**需 HeatWave / MySQL AI**）：
 
 ```sql
 SET @q = STRING_TO_VECTOR('[0.15, 0.25, ...]');
@@ -98,9 +102,9 @@ LIMIT 10;
 
 ### 1.4 真实性能
 
-无索引的暴力扫描，10 万条 384 维向量：
+无索引的暴力扫描（**注意：`DISTANCE()` 仅 HeatWave / MySQL AI 可用，以下数字针对这些环境；社区版无法用 SQL 做向量检索**），10 万条 384 维向量：
 
-- MySQL 9.0：单次 query ≈ 200-500ms
+- HeatWave / MySQL AI 暴力扫描：单次 query ≈ 200-500ms
 - 专业向量库（HNSW 索引）：≈ 1-5ms
 
 差距来自**没有 ANN 索引**。
@@ -116,6 +120,8 @@ LIMIT 10;
 但 2026-05 时，开源版本暂未提供。
 
 ### 1.5 实战：RAG 落地（小规模）
+
+> ⚠️ 下面查询用到 `DISTANCE()`，**仅在 HeatWave / MySQL AI 可用**。社区版只能存储 `embedding`，检索时需把候选向量取回应用层、自行计算余弦距离。
 
 ```sql
 -- 文档库
@@ -187,7 +193,7 @@ JS 函数运行在内嵌的 **GraalVM**（Oracle 的多语言运行时）中，�
 
 ### 2.4 限制
 
-- 不能直接访问数据库内部数据（无法在 JS 中再发 SQL）
+- 9.0 初版不支持在 JS 中执行 SQL；9.2（2025-01）起已提供从 JS 访问 UDF / 存储过程 / 变量及 SQL 事务 API（`START TRANSACTION` / `COMMIT` / `ROLLBACK`、`CREATE LIBRARY` 等），9.3 增加 DECIMAL 支持，故"无法在 JS 中再发 SQL"按 9.2/9.3 现状已不再成立
 - 内存上限受 my.cnf 控制
 - 调试体验有限
 
@@ -280,11 +286,11 @@ ORDER BY sum_error_handled + sum_error_raised DESC LIMIT 10;
 
 ### 5.1 新权限
 
-9.0+ 引入或增强：
+近年（8.0~8.4）引入或增强的动态权限：
 
-- `FLUSH_PRIVILEGES` 独立权限（原来需要 RELOAD）
-- `SET_ANY_DEFINER` 显式控制谁能用 DEFINER 子句
-- `SHOW_ROUTINE` 拆分自原 SELECT 权限
+- `FLUSH_PRIVILEGES` 独立权限（**8.4 引入**，从 RELOAD 中拆分）
+- `SET_ANY_DEFINER` 显式控制谁能用 DEFINER 子句（**8.2 引入**，替代被弃用的 `SET_USER_ID`，后者 8.4 移除；同期还有 `ALLOW_NONEXISTENT_DEFINER`）
+- `SHOW_ROUTINE` 拆分自原 SELECT 权限（**8.0.20 引入**）
 - `XA_RECOVER_ADMIN` 专管分布式事务恢复
 - `INNODB_REDO_LOG_ARCHIVE` 控制 redo log 归档（HA 场景）
 
@@ -370,7 +376,7 @@ SELECT /*+ SET_VAR(sort_buffer_size=16M) */ * FROM t ORDER BY x;
 
 ### 7.1 异步复制改进
 
-- **网络压缩**：`replica_compressed_protocol` 默认 zstd 而非 zlib
+- **网络压缩**：`binlog_transaction_compression` 压缩算法为 zstd；注意 `replica_compressed_protocol` 启用时强制使用 zlib 并覆盖 `SOURCE_COMPRESSION_ALGORITHMS`，要在连接层用 zstd 需关闭它并改用 `SOURCE_COMPRESSION_ALGORITHMS`
 - **更小的 WriteSet**：`binlog_transaction_compression` 默认 zstd
 - **延迟更可控**：每个 stage 都有 PS 统计
 
@@ -569,7 +575,7 @@ mysql -u root -p -e "SELECT VERSION();"
 
 ### 12.2 MariaDB
 
-5.5 之后与 MySQL 分叉，**互不兼容**：
+2009 年从 MySQL 5.1 分叉；版本号跟随到 5.5，之后（10.0 起）停止合并上游、走向**互不兼容**：
 
 - 列式存储 ColumnStore
 - 不同的 GTID 实现

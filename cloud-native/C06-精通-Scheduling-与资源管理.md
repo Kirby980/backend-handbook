@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块三 资源与存储
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：80 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.33 / KEDA 2.x / VPA 1.x / Karpenter 1.x）
+> 内容基准：2026 年 5 月（Kubernetes 1.35 / 1.34 仍在支持 / KEDA 2.x / VPA 1.x / Karpenter 1.x）
 
 ---
 
@@ -96,7 +96,7 @@ spec:
 |---|---|---|
 | `requests.cpu: 500m` | `cpu.weight` | CPU 权重——节点繁忙时按权重分配 |
 | `limits.cpu: 2000m` | `cpu.max` | CPU 上限——超过 throttle |
-| `requests.memory: 512Mi` | `memory.min`（保留）| 内存软保留——内核回收时优先保护 |
+| `requests.memory: 512Mi` | `memory.min`（保留）| 内存软保留——内核回收时优先保护（**仅在启用 MemoryQoS feature gate 时**，alpha 且默认关闭；默认配置下 requests.memory 仅用于调度，不写入 cgroup）|
 | `limits.memory: 1Gi` | `memory.max` | 内存上限——超过 OOM |
 
 cgroup v1（老节点）映射略不同：
@@ -108,7 +108,7 @@ cgroup v1（老节点）映射略不同：
 | `requests.memory` | 无对应（仅调度） |
 | `limits.memory` | `memory.limit_in_bytes` |
 
-**关键差异**：cgroup v1 的 requests.memory **完全不影响运行时**——只有调度时看。v2 通过 `memory.min` 给了软保留语义。
+**关键差异**：cgroup v1 的 requests.memory **完全不影响运行时**——只有调度时看。v2 在启用 MemoryQoS feature gate（alpha，默认关闭）后才会通过 `memory.min` 给出软保留语义；默认配置下 v2 同样仅用于调度，requests.memory 不写入 cgroup。
 
 ### 1.3 单位与换算
 
@@ -257,7 +257,7 @@ resources:
 
 Guaranteed QoS 还有一个隐藏好处：**cpu manager 静态分配独占核心**（详见 4.6）。
 
-### 2.5 Pod-level resources（K8s 1.32 beta，1.33 趋稳）
+### 2.5 Pod-level resources（K8s 1.32 alpha，1.34 beta）
 
 历史上 resources 只能在 container 层设。1.32 引入 **Pod-level resources**（feature gate `PodLevelResources`）：
 
@@ -278,7 +278,7 @@ spec:
 - 多容器 sidecar（如 Istio Ambient waypoint）共享资源池，避免每个 sidecar 单独估算
 - 同 pod 下"忙容器"可以借"闲容器"的额度
 
-2026-05 状态：**beta，部分托管 K8s（GKE）已默认开启**；自建集群建议 1.33 之后再启用。
+2026-05 状态：1.32 alpha（默认关闭），**1.34 graduated to beta（默认开启）**；部分托管 K8s（GKE）已默认开启；自建集群建议 1.34 之后再启用。
 
 ---
 
@@ -1129,7 +1129,7 @@ HPA 的 metric 维度有限：
 - **custom metric** 要自己搭 Prometheus + Adapter，工程量大
 - **从 0 扩容**——HPA 不能从 0 起步（minReplicas ≥ 1，因为 metric 拿不到）
 
-KEDA（CNCF Graduated 2024）= **Kubernetes Event-Driven Autoscaling**：
+KEDA（CNCF Graduated 2023）= **Kubernetes Event-Driven Autoscaling**：
 
 ```
 KEDA 监听外部事件源 → 转成 metric → 喂给 HPA（KEDA 内部生成 HPA）
@@ -1366,7 +1366,7 @@ Events:
 
 ### 11.3 Karpenter（2026 主流）
 
-AWS 2021 开源，2024 捐给 CNCF，2025-2026 成为主流。Azure、GCP 都有官方支持。
+AWS 2021 开源，2023 捐给 CNCF（Autoscaling SIG），2024 发布 v1.0，2025-2026 成为主流。Azure、GCP 都有官方支持。
 
 **关键差异**：
 
@@ -1936,7 +1936,7 @@ disruption:
 
 ### 13. cgroup v1 vs v2 行为不同
 
-某些云厂商默认还是 cgroup v1（如 GKE 在 1.32 前默认 v1）：
+某些云厂商默认还是 cgroup v1（如 GKE 在 1.26 前默认 v1）：
 
 - memory.min 不生效
 - in-place pod resize 部分不支持
@@ -1975,9 +1975,9 @@ Allocatable: cpu: 15500m, memory: 60Gi
 |---|---|
 | Scheduler Framework | GA（1.19）|
 | TopologySpread defaultConstraints | GA |
-| Pod-level resources | beta（1.32）|
+| Pod-level resources | alpha（1.32）→ beta（1.34）|
 | In-place Pod Vertical Scaling | beta（1.33），默认开启的发行版增多 |
-| DRA（Dynamic Resource Allocation，GPU/FPGA 新接口）| GA（1.32）替代 Device Plugin 长期方向 |
+| DRA（Dynamic Resource Allocation，GPU/FPGA 新接口）| GA（1.34）替代 Device Plugin 长期方向 |
 | MatchLabelKeys in PodTopologySpread | GA（1.30）|
 | MinDomains in PodTopologySpread | GA（1.30）|
 | NodeInclusionPolicy in PodTopologySpread | GA（1.31）|
@@ -2006,7 +2006,7 @@ Allocatable: cpu: 15500m, memory: 60Gi
 - **Karpenter 多云**：Azure / GCP 官方 provider 稳定，多云团队也开始用
 - **KEDA HTTP scaler**：新增 HTTP 入口流量 scaler，不再依赖 Prometheus 算 qps
 - **Kueue 1.0**：K8s 官方批处理队列管理，配合 Volcano 用
-- **Pod-level resources beta**：sidecar pattern（如 Istio Ambient、OpenTelemetry agent）更省资源
+- **Pod-level resources beta（1.34）**：sidecar pattern（如 Istio Ambient、OpenTelemetry agent）更省资源
 
 ### 15.4 与 Spark / Flink / Ray 集成
 

@@ -350,6 +350,8 @@ replica_preserve_commit_order = ON   -- 保持提交顺序与 master 一致
 binlog_transaction_dependency_tracking = WRITESET  -- 8.0 主库这边
 ```
 
+> ⚠️ 注意：`binlog_transaction_dependency_tracking` 在 8.0.35 已被弃用，8.2.0 起默认值即为 WRITESET，并在 8.4.0 被移除（功能内置为默认，无替代变量）。因此 8.4 / 9.x 上**不要再显式设置**该变量，否则会报错；上面这行仅适用于 8.0.x。
+
 效果：从库吞吐基本能跟上主库。
 
 ### 6.4 心跳表（无延迟的从库）

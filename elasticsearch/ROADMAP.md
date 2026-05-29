@@ -76,7 +76,7 @@ flowchart TD
     Doc[新文档] --> InMem[In-memory buffer<br>+ translog]
     InMem -->|refresh 默认 1s| SegInMem[新 segment in-memory<br>可见但未持久化]
     SegInMem -->|refresh| FsCache[OS Page Cache 的 segment 文件]
-    FsCache -->|flush 默认 30min/512MB translog| Disk[(磁盘 segment + fsync translog)]
+    FsCache -->|flush 默认 translog 10GB（上限磁盘 1%）| Disk[(磁盘 segment + fsync translog)]
 
     SegInMem --> Merge[Tiered Merge Policy<br>定期合并小段]
     Merge --> BigSeg[Bigger segment]
@@ -172,14 +172,16 @@ flowchart TD
 ```mermaid
 timeline
     title Elasticsearch 关键里程碑
-    2010 : Elasticsearch 1.0
+    2010 : Elasticsearch 首个版本(0.x)
     2016 : 5.0 Lucene 6 (BKD)
     2019 : 7.0 默认单 type / Cluster Coordination
     2021 January : 7.11 改 SSPL/ELv2 → 引发 OpenSearch fork
     2021 April : OpenSearch fork by AWS (Apache 2.0)
-    2022 : ES 8.0 安全默认 / dense_vector kNN GA
+    2022 : ES 8.0 安全默认 / kNN(ANN) 技术预览
+    2022 August : ES 8.4 kNN(ANN) search GA
     2024 : ES 8.16 重新引入 AGPLv3 选项 / ES 8.x 持续完善 vector
-    2025 : ES 9.0 ESQL GA / Lucene 10
+    2024 June : ES 8.14 ES|QL GA
+    2025 : ES 9.0 Lucene 10 / ES|QL Lookup Join 预览
     2025 May : Redis 8 重新开源 (前车之鉴)
     2026 : ES 9.x 与 OpenSearch 3.x 并存
 ```

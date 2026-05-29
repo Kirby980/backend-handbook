@@ -41,7 +41,8 @@ OpenAPI（前身 Swagger）是 REST API 的 IDL。一份 YAML/JSON 同时是：A
 
 - **Swagger 1.0** (2011)：Wordnik 公司开发
 - **Swagger 2.0** (2014)：广泛流行
-- **OpenAPI 3.0** (2017)：捐给 Linux Foundation
+- **OpenAPI Initiative** (2015/2016)：Swagger 规范捐给 Linux Foundation 旗下 OpenAPI Initiative，并于 2016 年更名为 OpenAPI 规范
+- **OpenAPI 3.0** (2017)：3.0.0 正式发布
 - **OpenAPI 3.1** (2021)：完整对齐 JSON Schema 2020-12
 
 新项目用 **3.1**；很多生态仍是 3.0。两者大体兼容。

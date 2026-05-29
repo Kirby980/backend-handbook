@@ -1784,7 +1784,7 @@ Prompt + 评测期望要一致演进，最好放同一个 PR。
 | XML 友好度 | 极高 | 中等 | 中等 |
 | Markdown 友好度 | 高 | 极高 | 高 |
 | CoT 内置 | extended thinking | reasoning models | thinking mode |
-| 长 context | Sonnet 1M | 400k | Pro 2M / Flash 1M |
+| 长 context | Sonnet 1M | 400k | 2.5 Pro 1M / Flash 1M（2M 在 Gemini 3.1 Pro） |
 | 文档输入 | document block / file_id | file_id | inline / file_id |
 | Caching 显式控制 | 4 个 breakpoint | 自动（透明） | implicit + explicit |
 

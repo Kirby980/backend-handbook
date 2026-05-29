@@ -231,7 +231,7 @@ db.runCommand({usersInfo: "appuser", showPrivileges: true})
 
 ## 第四章：TLS
 
-### 4.1 三种模式
+### 4.1 四种模式
 
 | 模式 | 行为 |
 |---|---|
@@ -400,7 +400,7 @@ const fle = new MongoClient(uri, {
 
 ---
 
-## 第七章：Queryable Encryption（6.0 Preview / 7.0 GA）
+## 第七章：Queryable Encryption（6.0 Preview / 7.0 GA；等值查询 7.0 GA，范围查询自 8.0 起 GA）
 
 ### 7.1 解决什么问题
 
@@ -432,6 +432,8 @@ await db.createEncryptedCollection("patients", {
 ```
 
 写入 / 查询自动加解密。
+
+> 注：等值（equality）查询 7.0 GA；范围（range，如上例 salary min/max）查询自 8.0 起 GA，示例需 8.0+ 服务端与驱动。
 
 ### 7.3 性能与代价
 

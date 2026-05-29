@@ -58,7 +58,7 @@ defer mu.Unlock()
 
 ### 1.2 内部状态机
 
-简化版（`runtime/sync_mutex.go`）：
+简化版（`src/sync/mutex.go`，核心实现自 Go 1.24 起迁移至 `internal/sync/mutex.go`）：
 
 ```go
 type Mutex struct {

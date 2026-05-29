@@ -249,12 +249,13 @@ replica-lazy-flush yes           # 从节点全量同步时清空异步
 INFO threads
 ```
 
-Redis 6+ 默认有 4 个后台线程：
+Redis 默认有 3 个 bio 后台线程：
 
 - bio_close_file：异步关文件描述符（AOF rewrite 后老文件）
 - bio_aof_fsync：AOF fsync 不阻塞主线程
 - bio_lazy_free：lazyfree 释放
-- I/O 多线程（如开启 `io-threads`）
+
+此外还有一套可选的 I/O 多线程（`io-threads`），仅并行网络读写、默认关闭（`io-threads 1`），与上述 bio 线程是两套独立机制。
 
 详见 R08。
 

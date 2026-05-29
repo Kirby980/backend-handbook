@@ -371,7 +371,7 @@ ctx 超时/取消 → 请求被中断。
 
 ### 6.5 gorilla/mux
 
-历史悠久；已 sunset（维护者放弃）。新项目别用。
+历史悠久；曾短暂归档（2022 末），现已由新维护者团队恢复维护。但增强版标准库 `ServeMux` 已能覆盖多数路由需求。
 
 ---
 
@@ -583,8 +583,8 @@ for _, url := range urls {
 
 **练习 3**：
 ```go
-func RateLimit(rate int) Middleware {
-    lim := rate.NewLimiter(rate.Limit(rate), rate*2)
+func RateLimit(rps int) Middleware {
+    lim := rate.NewLimiter(rate.Limit(rps), rps*2)
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             if !lim.Allow() {

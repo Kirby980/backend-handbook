@@ -78,7 +78,7 @@ OK
 2) embstr（短字符串）
    redisObject 头部 + sds 头部 + 字符串数据 + '\0'
    全部一次 malloc，**保证 redisObject 和 sds 在同一个 cache line**。
-   边界：sds 数据 ≤ 44 字节（Redis 4.x 之后从 39 改到 44）。
+   边界：sds 数据 ≤ 44 字节（Redis 3.2 之后从 39 改到 44，3.2 引入紧凑 SDS 头使 64 字节 jemalloc class 内能多放 5 字节）。
 
 3) raw（长字符串）
    两次 malloc：redisObject 一次，sds 另一次。ptr 指过去。
@@ -121,7 +121,7 @@ Redis 启动时预创建了 0–9999 的共享 String integer 对象，所有 SE
 
 ### 3.1 历史背景：ziplist 为什么被抛弃
 
-Redis 长期用 `ziplist` 作为小集合的紧凑表示。它是一段连续内存，每个 entry 头部存"前一项长度 prevlen"用于反向遍历。问题：**修改任一 entry 可能引起 prevlen 字段从 1 字节升到 5 字节，进而触发后续所有 entry 的级联更新（cascading update）**——最坏 O(N²)。在大 ziplist 上是性能杀手，最终也成了 [CVE-2021-32625](https://github.com/redis/redis/security/advisories/GHSA-px9p-vmf3-h9mm) 等几个安全问题的根源。
+Redis 长期用 `ziplist` 作为小集合的紧凑表示。它是一段连续内存，每个 entry 头部存"前一项长度 prevlen"用于反向遍历。问题：**修改任一 entry 可能引起 prevlen 字段从 1 字节升到 5 字节，进而触发后续所有 entry 的级联更新（cascading update）**——最坏 O(N²)。在大 ziplist 上是性能杀手，最终也成了 [CVE-2021-32628](https://github.com/redis/redis/security/advisories/GHSA-vw22-qm3h-49pr)（并列 CVE-2021-32627）等几个安全问题的根源。
 
 Redis 7.0 引入 **listpack** 取代 ziplist，并在 7.x–8.x 内逐步把 hash / set / zset / list / stream 的内部小型表示全部迁移过去。Redis 8 里 ziplist 已经彻底退役。
 
@@ -188,9 +188,9 @@ typedef struct dictEntry {
 
 ### 4.2 负载因子与 rehash 触发
 
-- 默认 `dict_force_resize_ratio = 4`，`dict_force_resize_avoid = 5`
-- 当 `used / size >= 1` 且没有 BGSAVE/BGREWRITEAOF 进行时，触发 rehash 扩容
-- 有子进程时，阈值升到 5，避免在 fork 写时复制期间触发大量内存复制
+- 默认 `dict_force_resize_ratio = 4`
+- 正常（`DICT_RESIZE_ENABLE`）时，`used / size >= 1` 且没有 BGSAVE/BGREWRITEAOF 进行时，触发 rehash 扩容
+- 有子进程（`DICT_RESIZE_AVOID`）时，需 `used >= 4 * size`（即 `dict_force_resize_ratio = 4`）才强制扩容，避免在 fork 写时复制期间触发大量内存复制
 
 扩容目标：第一个 ≥ `used * 2` 的 2^N。
 
@@ -280,7 +280,7 @@ Level 2:  HEAD ------> [m=4] -----> [m=8] ---> NIL
 Level 1:  HEAD -> [m=2] -> [m=4] -> [m=8] ---> NIL
 Level 0:  HEAD -> [m=2] -> [m=4] -> [m=6] -> [m=8] -> NIL
 
-每个节点的层数随机生成：50% 概率升一层。
+每个节点的层数随机生成：每升一层的概率为 1/4（ZSKIPLIST_P=0.25）。
 预期高度 O(log N)，最大 ZSKIPLIST_MAXLEVEL = 32（源码常量，长期未变）。
 ```
 
@@ -304,7 +304,7 @@ typedef struct zskiplistNode {
 
 1. **实现简单**：跳表 100 行，红黑树要 500+ 行还容易写错
 2. **范围扫描快**：跳表底层是有序链表，连续 next 即可；红黑树要回溯节点栈
-3. **更省内存（在 Redis 场景下）**：每节点平均 1.33 指针（p=0.5 几何分布），低于红黑树固定的两个孩子指针
+3. **更省内存（在 Redis 场景下）**：每节点平均 1.33 指针（p=0.25 几何分布），低于红黑树固定的两个孩子指针
 
 工程考量超过纯算法 BigO 比较。
 
@@ -526,7 +526,7 @@ SCAN 不保证不重复——可能在 rehash 期间返回同一 key 两次。**
 没有 `MAXLEN` 的 Stream 会无限增长。生产必须配 `XADD ... MAXLEN ~ N` 或定时 `XTRIM`。
 
 ### ❌ 陷阱 10：以为 EXPIRE 是精确的
-Redis 的 active expire 周期默认每 100ms 一次，每次最多删 25% 已过期 key。**过期 key 可能在到期后几秒才真正被回收**。延迟敏感场景要主动 GET 触发 lazy expire。
+Redis 的 active expire 周期默认每 100ms 一次，每轮随机采样约 20 个带 TTL 的 key、删除其中已过期者；若过期比例 >25% 则立即重复一轮，否则结束。**过期 key 可能在到期后几秒才真正被回收**。延迟敏感场景要主动 GET 触发 lazy expire。
 
 ---
 

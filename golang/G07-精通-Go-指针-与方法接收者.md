@@ -256,7 +256,7 @@ type Config struct {
 替代方案：
 - 用包装类型 `type Opt[T any] struct{ V T; Set bool }`
 - 用 `Has` 字段：`type T struct { Timeout int; HasTimeout bool }`
-- Go 1.24+ 的 `database/sql.Null[T]`
+- Go 1.22+ 的 `database/sql.Null[T]`
 
 ### 4.4 函数参数 *T 是否复制
 

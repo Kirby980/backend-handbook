@@ -2,7 +2,7 @@
 
 > 配合 [INDEX.md](./INDEX.md) 与 [QUIZ.md](./QUIZ.md) 使用
 >
-> **📅 内容基准：PostgreSQL 18 + 17 LTS**（2026-05 时主流稳定版）
+> **📅 内容基准：PostgreSQL 18 + 17**（2026-05 时主流稳定版；PostgreSQL 无官方 LTS，每个大版本支持 5 年）
 
 ---
 

@@ -356,7 +356,7 @@ PARTITION BY RANGE (TO_DAYS(created_at)) (
 - **主键必须包含分区键**：上例 `PRIMARY KEY (id, created_at)` 必须包含 `created_at`
 - **外键不支持**
 - **跨分区 JOIN 性能差**
-- **分区上限**：1024（8.0+）
+- **分区上限**：8192（含子分区，非 NDB 引擎）
 
 ### 5.5 何时用分区表
 

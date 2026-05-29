@@ -13,7 +13,7 @@
 ```go
 client := anthropic.NewClient()
 msg, _ := client.Messages.New(ctx, anthropic.MessageNewParams{
-    Model:     anthropic.ModelClaudeOpus4_7,
+    Model:     anthropic.ModelClaudeOpus4_8,
     MaxTokens: 1024,
     Messages: []anthropic.MessageParam{
         anthropic.NewUserMessage(anthropic.NewTextBlock("Hello, Claude")),
@@ -28,7 +28,7 @@ fmt.Println(msg.Content[0].Text)
 
 | 模型 ID | 别名 | 角色 |
 |---|---|---|
-| `claude-opus-4-7` | Opus 4.7 | 顶配——复杂推理、长任务 Agent、代码生成 |
+| `claude-opus-4-8` | Opus 4.8 | 顶配——复杂推理、长任务 Agent、代码生成（Opus 4.7 为其前一版本） |
 | `claude-sonnet-4-6` | Sonnet 4.6（1M ctx beta） | 通用主力——200k 默认 / 1M context beta |
 | `claude-haiku-4-5-20251001` | Haiku 4.5 | 高吞吐 / 低延迟——分类、抽取、轻 RAG |
 
@@ -123,7 +123,7 @@ batch, _ := client.Messages.Batches.New(ctx, batchParams)
 
 ```json
 {
-  "model": "claude-opus-4-7",
+  "model": "claude-opus-4-8",
   "max_tokens": 1024,
   "system": "You are a helpful assistant.",
   "messages": [
@@ -314,10 +314,10 @@ req 4: [A][B][C][E]       ← 前 [A][B][C] 命中
 
 **最小缓存长度**：
 
-- Opus / Sonnet：≥ 1024 tokens
-- Haiku：≥ 2048 tokens
+- Sonnet 4.x：≥ 1024 tokens
+- Opus 4.5/4.6/4.7 与 Haiku 4.5：≥ 4096 tokens
 
-低于阈值的 prefix 不会被缓存（哪怕你打了 cache_control 也无效）。
+（旧的 1024 / 2048 阈值仅适用于 Claude 3.x / 早期 4 代模型。）低于阈值的 prefix 不会被缓存（哪怕你打了 cache_control 也无效）。
 
 ### 3.4 TTL：5min vs 1h
 
@@ -694,7 +694,7 @@ Claude 4.x 引入的"长思考"能力：模型在生成正式回复前先输出�
 
 ```go
 resp, _ := client.Messages.New(ctx, anthropic.MessageNewParams{
-    Model:     anthropic.ModelClaudeOpus4_7,
+    Model:     anthropic.ModelClaudeOpus4_8,
     MaxTokens: anthropic.F(int64(16000)),
     Thinking: anthropic.F(anthropic.ThinkingConfigEnabledParam{
         Type:         anthropic.F("enabled"),
@@ -972,7 +972,7 @@ func (m *CostMonitor) Track(model string, u anthropic.Usage) error {
 
 | 模型 | input | output | cache write 5m | cache read |
 |---|---|---|---|---|
-| `claude-opus-4-7` | 15 | 75 | 18.75 | 1.5 |
+| `claude-opus-4-8` | 15 | 75 | 18.75 | 1.5 |
 | `claude-sonnet-4-6` | 3 | 15 | 3.75 | 0.3 |
 | `claude-sonnet-4-6` (1M ctx 区段) | 6 | 22.5 | 7.5 | 0.6 |
 | `claude-haiku-4-5-20251001` | 1 | 5 | 1.25 | 0.1 |
@@ -1063,7 +1063,7 @@ Anthropic 不给默认值。漏写 → 400。
 
 ### 2. cache_control 加在小 prompt 上
 
-低于 1024 / 2048 token 阈值——cache_control 被忽略，多花 25% 的 cache write 钱却没缓存。**自己监控 `CacheCreationInputTokens > 0` 但 `CacheReadInputTokens == 0`**——这是"花钱没收益"信号。
+低于阈值（Sonnet 4.x 为 1024、Opus 4.x / Haiku 4.5 为 4096 token）——cache_control 被忽略，多花 25% 的 cache write 钱却没缓存。**自己监控 `CacheCreationInputTokens > 0` 但 `CacheReadInputTokens == 0`**——这是"花钱没收益"信号。
 
 ### 3. messages 顺序错
 
@@ -1136,7 +1136,7 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 ### 13.1 模型版图
 
 ```
-顶配:        Opus 4.7         （15/75 USD per M tokens）
+顶配:        Opus 4.8         （15/75 USD per M tokens；Opus 4.7 为其前一版本）
 通用:        Sonnet 4.6       （3/15；1M ctx 区段 6/22.5）
 快速:        Haiku 4.5        （1/5；2025-10-01 release 起 ID 含日期）
 ```
@@ -1151,21 +1151,21 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 
 | 维度 | Claude 4.x | GPT-5 | Gemini 2.5 |
 |---|---|---|---|
-| 长上下文 | Sonnet 1M | 400k（GPT-5 main） | 2M Pro / 1M Flash |
+| 长上下文 | Sonnet 1M | 400k（GPT-5 main） | 1M Pro / 1M Flash（2M 在 Gemini 3.1 Pro） |
 | 思考链 | extended thinking（可见 / 加密） | reasoning model（o3-mini）独立产品线 | thinking mode |
 | Tool use | tool_use（成熟） | function calling（v3，Responses API） | function calling |
 | 多模态 | vision（不含音频生成） | vision + audio + voice | vision + audio + 视频原生 |
 | Prompt caching | ephemeral 5m/1h（成熟） | 自动 prompt caching（透明） | implicit + explicit |
 | Batch | 50% | 50%（24h） | 50% |
-| 代码能力 | Opus 4.7 业界顶尖（SWE-bench 高分） | GPT-5 强 | Gemini 2.5 Pro 强 |
+| 代码能力 | Opus 4.8 业界顶尖（SWE-bench 高分） | GPT-5 强 | Gemini 2.5 Pro 强 |
 | Agent loop | Anthropic agent SDK + Claude Code | OpenAI agents SDK | Google ADK |
 
 **2026 年 5 月的真实选型经验**：
 
-- 复杂 Agent / 高准代码 → Opus 4.7
+- 复杂 Agent / 高准代码 → Opus 4.8
 - 默认主力 → Sonnet 4.6（性价比之王）
 - 高吞吐分类 → Haiku 4.5 或 Gemini Flash
-- 超长 context（书本 / 代码库） → Gemini 2.5 Pro（2M）或 Sonnet 4.6（1M）
+- 超长 context（书本 / 代码库） → Gemini 2.5 Pro（1M，需 2M 用 Gemini 3.1 Pro）或 Sonnet 4.6（1M）
 - 需要 OpenAI 生态绑定（Whisper、TTS、Realtime API） → GPT-5 系列
 
 ### 13.3 MCP 与 Agent SDK
@@ -1211,7 +1211,7 @@ client.Messages.New(ctx, anthropic.MessageNewParams{
 
 **练习 3**：你要离线给 50 万条评论做情感分类。预算很紧。设计完整方案。
 
-**练习 4**：写 Go 函数 `callWithFallback(ctx, prompt)` —— 优先用 Opus 4.7；如果 429 或 529 退化到 Sonnet 4.6；如果再次 429 退化到 Haiku 4.5。每次重试要把 model 切到下一档。
+**练习 4**：写 Go 函数 `callWithFallback(ctx, prompt)` —— 优先用 Opus 4.8；如果 429 或 529 退化到 Sonnet 4.6；如果再次 429 退化到 Haiku 4.5。每次重试要把 model 切到下一档。
 
 **练习 5**：解释 extended thinking 与 tool use 同时启用时的事件顺序（SSE 里）。
 
@@ -1254,7 +1254,7 @@ client.Messages.New(ctx, anthropic.MessageNewParams{
 
 ```go
 var models = []string{
-    anthropic.ModelClaudeOpus4_7,
+    anthropic.ModelClaudeOpus4_8,
     anthropic.ModelClaudeSonnet4_6,
     anthropic.ModelClaudeHaiku4_5,
 }
@@ -1361,7 +1361,7 @@ messages = append(messages, anthropic.NewUserMessage(toolResults...))
 |---|---|
 | SDK 选型 | 官方 `anthropic-sdk-go`，必要时直接 HTTP |
 | Messages API | system 顶层、user/assistant 交替、max_tokens 必填 |
-| Prompt caching | cache_control ephemeral、4 个 breakpoint、5m/1h TTL、1024/2048 阈值 |
+| Prompt caching | cache_control ephemeral、4 个 breakpoint、5m/1h TTL、Sonnet 4.x 1024 / Opus 4.x · Haiku 4.5 4096 阈值 |
 | Cache 计费 | write 1.25x（5m）/ 2x（1h）；read 0.1x |
 | Streaming | SSE event：message_start / content_block_* / message_delta / message_stop |
 | Batch | input+output 半价、24h、最多 100k 请求 |

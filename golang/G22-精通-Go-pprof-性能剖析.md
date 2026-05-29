@@ -413,7 +413,7 @@ heap profile → 找最大 alloc 源 → 用 sync.Pool 或减少分配。
 
 ### 9.2 JSON 序列化慢
 
-CPU profile → reflect.Type 大量出现 → 用 easyjson / sonic / sonnet 生成代码 marshal。
+CPU profile → reflect.Type 大量出现 → 代码生成用 easyjson；运行时高性能库用 sonic（JIT）、sonnet（纯 Go、无 unsafe/无代码生成）等。
 
 ### 9.3 大量字符串分配
 

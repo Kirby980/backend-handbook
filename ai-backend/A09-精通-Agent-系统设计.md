@@ -292,7 +292,7 @@ ReAct 是**反应式**的——每一步只考虑当前观察。问题：
 **Plan-and-Execute**（也叫 Plan-and-Solve）把任务拆两阶段：
 
 ```
-阶段 1（Planner，Opus 4.7 等强模型）：
+阶段 1（Planner，Opus 4.8 等强模型）：
   - 接收用户任务
   - 输出 step-by-step 计划（结构化 JSON）
 
@@ -880,15 +880,16 @@ loop 结束:
 
 ### 9.3 Anthropic Memory Tool
 
-Anthropic 2025 内置了 **memory tool**（Claude 4.x 系列起原生支持）。模型可以主动用三个内置操作：
+Anthropic 在 2025-09 推出了 beta 版 **memory tool**（需 beta header `context-management-2025-06-27`）。它是**基于文件**的：模型在 memory 目录下对文件做增删改查：
 
 ```
-memory.create(key, content)
-memory.update(key, content)
-memory.recall(query) → 返回相关 memory
+create  → 在 memory 目录创建文件
+read    → 读取 memory 目录下的文件
+update  → 修改文件内容
+delete  → 删除文件
 ```
 
-后端只需要实现这三个函数（背后接你的存储）。模型决定**何时存、何时查**。
+存储后端由开发者在客户端侧实现（没有模型内置的 `recall(query)` 语义检索原语）。常与 context editing 配合使用。模型决定**何时存、何时查**。
 
 ### 9.4 Memory 类型分类
 
@@ -1724,7 +1725,7 @@ Agent 系统设计与 MCP 的边界：
 
 2026 年 5 月几个公认强势的 Agent 任务：
 
-- **代码工程**：Claude Code（Opus 4.7）—— SWE-bench Verified ~70%+
+- **代码工程**：Claude Code（Opus 4.8）—— SWE-bench Verified ~70%+
 - **网络浏览**：OpenAI Operator / Anthropic computer use ——能完成基础订机票、填表
 - **数据分析**：Code Interpreter（多家） + agent loop ——已能跑完整 EDA
 - **客服**：客户专属 Agent ——回答率 ~80%+，剩余 20% 转人工

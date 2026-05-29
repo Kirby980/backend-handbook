@@ -149,12 +149,12 @@ flowchart TD
 timeline
     title Redis 关键里程碑
     2009 : Redis 1.0
-    2013 : Redis 2.6 Lua 脚本
+    2012 : Redis 2.6 Lua 脚本
     2015 : Redis 3.0 Cluster GA
     2017 : Redis 4.0 模块系统 + 混合持久化
     2018 : Redis 5.0 Streams
     2020 : Redis 6.0 RESP3 + I/O 多线程 + ACL
-    2021 : Redis 7.0 Functions + sharded Pub/Sub + ACL v2
+    2022 : Redis 7.0 Functions + sharded Pub/Sub + ACL v2
     2024 March : 改双许可证 RSALv2/SSPL → 引发 Valkey fork
     2024 April : Valkey fork (Linux Foundation, BSD-3)
     2025 May : Redis 8.0 重新开源 (AGPLv3) + 集成模块

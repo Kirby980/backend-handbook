@@ -440,7 +440,7 @@ PostgreSQL 是一门"看着简单实则博大"的技术——它既是 OLTP 主�
 
 - [INDEX.md](./INDEX.md) — 课程总目录
 - [ROADMAP.md](./ROADMAP.md) — Mermaid 可视化路线图
-- 官方文档：[postgresql.org/docs/18](https://www.postgresql.org/docs/18/) / [17 LTS](https://www.postgresql.org/docs/17/)
+- 官方文档：[postgresql.org/docs/18](https://www.postgresql.org/docs/18/) / [17](https://www.postgresql.org/docs/17/)
 - 源码：[github.com/postgres/postgres](https://github.com/postgres/postgres)
 - 必读书：《PostgreSQL Internals》(Egor Rogov)
 - 社区博客：[pganalyze.com/blog](https://pganalyze.com/blog) / [crunchydata.com/blog](https://www.crunchydata.com/blog)

@@ -109,7 +109,7 @@ ALTER USER 'app'@'%' IDENTIFIED WITH mysql_native_password BY 'pwd';
 
 | 内存项 | 默认 | 说明 |
 |---|---|---|
-| thread_stack | 256 KB | 线程栈 |
+| thread_stack | 1 MB | 线程栈（MySQL 8.0.27+ 64 位默认 1048576 字节；8.0.26 及更早为 280 KB） |
 | net_buffer_length | 16 KB | 协议接收缓冲 |
 | sort_buffer_size | 256 KB | 排序用（按需翻倍直到上限） |
 | join_buffer_size | 256 KB | 无索引 Join 用 |
@@ -117,7 +117,7 @@ ALTER USER 'app'@'%' IDENTIFIED WITH mysql_native_password BY 'pwd';
 | read_rnd_buffer_size | 256 KB | 随机读缓冲 |
 | tmp_table_size | 16 MB | 内存临时表上限 |
 
-理论"一个 idle 连接 ≈ 500 KB"，但**一个执行复杂 Join + Order By 的连接**很容易瞬间用到几十 MB。如果你有 1000 个并发执行复杂 SQL 的连接，总内存可能上 GB——这是为什么生产要用**连接池 + 合理上限**。
+理论"一个 idle 连接 ≈ 1.2 MB"（线程栈一项就占 1 MB），但**一个执行复杂 Join + Order By 的连接**很容易瞬间用到几十 MB。如果你有 1000 个并发执行复杂 SQL 的连接，总内存可能上 GB——这是为什么生产要用**连接池 + 合理上限**。
 
 ### 2.3 thread_pool（企业版 / Percona / MariaDB）
 

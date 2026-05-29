@@ -166,7 +166,7 @@ MinKey < null < numbers (int/long/double/decimal 一起比) < string < object < 
 ### 2.4 字段命名约束
 
 - 不能以 `$` 开头（操作符前缀）
-- 不能含 `.`（路径分隔符）—— 8.0+ 部分场景允许，但兼容性差
+- 不能含 `.`（路径分隔符）—— 5.0+ 起服务端及 5.0 兼容驱动放宽了限制（允许含 `.` 或 `$` 前缀的字段名），但需用 `$getField`/`$setField` 访问，仍不推荐
 - `_id` 是保留字段（每个文档必须有）
 
 ---
@@ -220,9 +220,9 @@ db.composite.insertOne({ _id: { date: "2026-05-13", user: 42 }, count: 100 })
 
 实战：大多数场景 ObjectId 够好。极高写入 QPS（> 100k）才需要 hash 后缀打散。
 
-### 3.4 ObjectId 的 8.0 改进
+### 3.4 ObjectId 的 counter 语义
 
-MongoDB 8.0 把 ObjectId 内部 counter 升级为 random （非 counter），改善并发场景下连续插入的 page 热点。
+ObjectId 的最后 3 字节始终是"递增计数器（初始值随机）"，自 MongoDB 3.4 spec 起即如此，8.0 未对此做任何改变。5 字节随机值用于防冲突、3 字节 counter 保证同进程同秒内的顺序。
 
 ---
 

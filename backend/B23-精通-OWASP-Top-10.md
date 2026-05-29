@@ -418,7 +418,7 @@ Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.examp
 
 ### 与 2019 版的关键变化
 
-- **Injection 移除**——不是攻击消失了，而是合并到 API8 (Security Misconfiguration)，因为 API 注入主要靠正确的参数化 + 框架默认防护。
+- **Injection 移除**——不是攻击消失了，而是 Injection（API8:2019）被移除（不再单独列项），并非合并到 Security Misconfiguration；OWASP 认为 API 场景下注入主要通过正确的参数化 + 框架默认防护来覆盖。
 - **新增 API6 / API7 / API10**——分别覆盖业务流滥用、SSRF（云时代的高危）、调用第三方时的盲信任。
 - **Mass Assignment + Excessive Data Exposure 合并**为 API3（同源问题：对象属性级授权缺失）。
 

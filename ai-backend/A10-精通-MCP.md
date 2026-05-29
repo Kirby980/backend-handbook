@@ -387,7 +387,7 @@ sampling/createMessage
 
 ### 2.5 Roots（根目录）
 
-2024-12 新增的 client 能力：
+2024-11-05 初版规范即包含的 client 能力：
 
 ```
 client → server 暴露："你能访问哪些文件夹 / URI"
@@ -1826,10 +1826,10 @@ Replit      ← Replit AI / Replit Agent
 
 ### 12.2 标准化进程
 
-- 2024-11-25：v0.1 spec 发布（初版）
-- 2024-12-19：v0.2 spec（roots、annotations）
-- 2025-03-26：Authorization spec（OAuth 2.1）+ Streamable HTTP 替代 HTTP+SSE
-- 2025-09：DRAFT 把 MCP server 与 Authorization Server 解耦
+- 2024-11-05：初版规范发布（含 roots 等 client 能力）
+- 2025-03-26：Authorization spec（OAuth 2.1）+ Streamable HTTP 替代 HTTP+SSE + tool annotations（readOnlyHint/destructiveHint 等）
+- 2025-06-18：structured outputs（结构化工具输出）+ elicitation（server 反向向用户征询输入）
+- 2025-11-25：一周年版规范
 - 2026-Q1：spec 进入 "stable lifecycle"——重大变更需 RFC 流程
 
 2025 年底成立 **MCP Steering Committee**，包括 Anthropic、OpenAI、Microsoft、Google 各派代表。规范在 GitHub `modelcontextprotocol/modelcontextprotocol` 公开演进。**不再是 Anthropic 单方主导**——这是 MCP 能被全行业接受的关键。

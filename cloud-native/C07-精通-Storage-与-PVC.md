@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块三 资源与存储
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：90 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.32/1.33、CSI spec v1.10、Velero 1.15+、Rook 1.15、Longhorn 1.7、OpenEBS 4.x）
+> 内容基准：2026 年 5 月（Kubernetes 1.34/1.35、CSI spec v1.10、Velero 1.15+、Rook 1.15、Longhorn 1.7、OpenEBS 4.x）
 
 ---
 
@@ -434,9 +434,9 @@ PV 可以声明支持多种模式——PVC 绑定时按所需 mode 选其一。�
 |---|---|---|
 | `Retain` | PVC 删除后，PV 保留（状态 Released），底层数据**不删** | 主流 |
 | `Delete` | PVC 删除后，PV **和底层资源（EBS、磁盘）都删** | 主流 |
-| `Recycle` | PVC 删除后，运行 `rm -rf` 清空 PV 后变 Available | **1.31 起完全废弃** |
+| `Recycle` | PVC 删除后，运行 `rm -rf` 清空 PV 后变 Available | **长期 deprecated，至今未移除（不建议使用）** |
 
-`Recycle` 早就被废弃（K8s 1.11 起 deprecated，1.31+ 移除）——不要再用。
+`Recycle` 早就被废弃（K8s 1.11 起 deprecated），但截至 1.33+ 仍被支持、并未移除（仅 NFS/HostPath 支持，官方建议用动态供应替代）——不要再用。
 
 ### 4.2 Retain：默认保险
 
@@ -1613,17 +1613,17 @@ sum by (node) (kubelet_volume_stats_capacity_bytes != 0)
 | **VolumeSnapshot** | GA | 主流；周期化通过 Velero / Operator 完成 |
 | **PVC Retention Policy** | 1.27 GA | 生产标配 |
 | **RecursiveReadOnlyMounts** | alpha | 1.31 beta |
-| **VolumeAttributesClass** | 1.29 alpha | 1.31 beta；用于动态调整卷 IOPS/带宽 |
+| **VolumeAttributesClass** | 1.29 alpha | GA（1.34）；用于动态调整卷 IOPS/带宽 |
 | **In-place Volume Expansion** | GA | 主流 |
 | **Generic Ephemeral** | GA | 主流 |
 | **CSI ephemeral inline** | GA | secrets-store / vault 标配 |
 
 ### 13.2 新趋势：VolumeAttributesClass（VAC）
 
-K8s 1.29 引入 `VolumeAttributesClass` — 允许**不重建卷**就动态调 IOPS / throughput：
+K8s 1.29 引入 `VolumeAttributesClass`（1.34 GA，API 升级至 `storage.k8s.io/v1`）— 允许**不重建卷**就动态调 IOPS / throughput：
 
 ```yaml
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 kind: VolumeAttributesClass
 metadata:
   name: ebs-high-iops

@@ -257,10 +257,10 @@ B1 挂 → ISR 空 → 从所有 replica 选最先恢复的 → 可能是 B2
 
 | 设置 | 优点 | 缺点 |
 |---|---|---|
-| `false`（默认 1.0+） | 不丢数据 | leader 全挂时 partition 不可用 |
+| `false`（默认 0.11.0.0+） | 不丢数据 | leader 全挂时 partition 不可用 |
 | `true` | 总能选主 | 可能丢数据 |
 
-**默认 false 是 Kafka 1.0 后的更安全行为**。
+**默认 false 是 Kafka 0.11.0.0+（KIP-106，2017 起）的更安全行为**。
 
 ### 4.4 Preferred Replica Election
 

@@ -58,7 +58,7 @@ PUT myindex
 
 - 用最小够用的类型节省空间
 - `scaled_float`：小数转整数存（如 9.99 × 100 = 999），最适合金融金额
-- `half_float`：16 位浮点，向量场景常用
+- `half_float`：16 位半精度浮点数值类型，节省存储；注意它是数值字段类型，与向量无关。dense_vector 的 16 位浮点存储应使用 `element_type: bfloat16`（ES 9.3 起）
 
 ### 1.3 时间类
 

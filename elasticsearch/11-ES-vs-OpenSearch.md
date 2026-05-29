@@ -27,16 +27,17 @@
 ### 1.1 时间线
 
 ```
-2010 Feb   Elasticsearch 1.0 (Apache 2.0)
+2010 Feb   Elasticsearch 首个版本 0.4.0 发布 (Apache 2.0)
+2014 Feb   Elasticsearch 1.0 GA
 2015       X-Pack 商业插件出现（闭源）
 2019       Open Distro for Elasticsearch by AWS（Apache 2.0 fork，加自己的 security）
 2021 Jan   Elastic 改协议：7.11+ 用 SSPL 或 ELv2 双协议 ← 关键转折
-2021 Apr   AWS 宣布 OpenSearch（1.0 在 6 月发布）
+2021 Apr   AWS 宣布 OpenSearch（1.0 在 2021 年 7 月发布）
 2022       OpenSearch 2.0 / Elasticsearch 8.0 安全默认 GA / dense_vector GA
 2023       两边都加 vector / kNN
 2024 Aug   Elastic 加回 AGPLv3 第三选项，从 8.16 起生效（"open source"标签恢复）
 2024 Sep   AWS 把 OpenSearch 项目移交给 Linux Foundation
-2025       Elasticsearch 9.0（Lucene 10、ESQL GA）/ OpenSearch 3.0
+2025       Elasticsearch 9.0（Lucene 10、ES|QL LOOKUP JOIN tech preview、logsdb 默认）/ OpenSearch 3.0
 2026       两边都在演化，再合并已基本不可能
 ```
 
@@ -161,7 +162,7 @@ DSL 几乎完全一致，但有一些边角差异：
 | `match` / `bool` / `term` / `range` | ✅ | ✅ |
 | `knn` 顶级查询 | ✅ Lucene HNSW | ✅ kNN 插件（lucene / faiss / nmslib 引擎） |
 | `dense_vector` 字段 | ✅ | ✅（参数与 ES 略不同，元数据字段命名差异） |
-| `semantic_text` | ✅ ES 8.16+ | ❌ |
+| `semantic_text` | ✅ ES 8.15+（8.18+ GA） | ❌ |
 | `sparse_vector` / ELSER | ✅ | ⚠️ Neural Search 插件，模型不同 |
 | `text_expansion` | ✅ | ⚠️ Neural Sparse |
 | `rule_query`（rule-based query） | ✅ | ❌ |
@@ -270,7 +271,7 @@ FROM logs-*
 特点：
 - 管道式（类似 Splunk SPL）
 - 在 coord 端编译成执行计划
-- 支持跨索引 join（lookup join, ES 8.13+）
+- 支持跨索引 join（lookup join, ES 8.18/9.0 tech preview，8.19/9.1 GA）
 - 比传统 SQL 接口（`_sql`）快很多
 
 OS 这边对应是 **PPL（Piped Processing Language）**：

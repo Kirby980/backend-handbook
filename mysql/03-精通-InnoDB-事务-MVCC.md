@@ -111,10 +111,10 @@ undo 不只用来回滚——还实现 MVCC 的"历史版本链"。
 ### 2.3 undo 的物理存储
 
 ```
-undo log → 存于 undo tablespace（独立 .ibu 文件，5.7+）
+undo log → 存于 undo tablespace（默认 undo_001/undo_002，无扩展名）
 ```
 
-8.0+ 默认 2 个 undo tablespace，可在线增减。`innodb_undo_log_truncate=ON` 让 undo 不再无限膨胀（自动 truncate）。
+MySQL 8.0 起初始化即默认创建 2 个 undo tablespace（undo_001/undo_002），可在线增减；`.ibu` 扩展名仅用于显式 `CREATE UNDO TABLESPACE` 创建的文件。`innodb_undo_log_truncate=ON` 让 undo 不再无限膨胀（自动 truncate）。
 
 监控 undo 大小：
 

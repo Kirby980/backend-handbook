@@ -93,7 +93,7 @@ SELECT dept, name, salary FROM (
 WHERE rn <= 3;
 ```
 
-注意：8.0+ 可以更简洁用 `QUALIFY` 子句——但 **MySQL 不支持 QUALIFY**（PostgreSQL / Snowflake 才支持）。
+注意：有些方言可以更简洁用 `QUALIFY` 子句——但 **MySQL 与 PostgreSQL 均不支持 QUALIFY**（支持的是 Snowflake / BigQuery / DuckDB）。
 
 ### 1.4 偏移类函数
 

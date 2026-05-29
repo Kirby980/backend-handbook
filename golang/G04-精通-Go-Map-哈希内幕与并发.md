@@ -162,7 +162,7 @@ for _, k := range keys {
 }
 ```
 
-或用 Go 1.21+ 的 `slices.Sorted(maps.Keys(m))`（需 `golang.org/x/exp/maps` 或等待标准库迭代器稳定）。
+或者更简洁：自 Go 1.23 起标准库 `slices`/`maps` 已提供迭代器版本，直接 `for _, k := range slices.Sorted(maps.Keys(m))` 即可（无需 `golang.org/x/exp`）。
 
 ---
 

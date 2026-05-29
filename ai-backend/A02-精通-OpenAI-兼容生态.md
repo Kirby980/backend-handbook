@@ -35,10 +35,11 @@ OpenAI 在 2024-2025 同时维护这三套 API，让"OpenAI 协议"成为了一�
 
 | ID | 别名 | 角色 |
 |---|---|---|
+| `gpt-5.5` | GPT-5.5 | 当前旗舰，复杂推理 / 长任务 |
 | `gpt-5` | GPT-5 main | 顶配，复杂推理 / 长任务 |
 | `gpt-5-mini` | GPT-5 mini | 平衡价格 / 速度 |
 | `gpt-5-nano` | GPT-5 nano | 极致便宜 / 高吞吐 |
-| `o3` / `o3-mini` | reasoning models | 数学 / 代码 / 形式推理 |
+| 推理模式 | GPT-5.x thinking/reasoning | 数学 / 代码 / 形式推理（o3/o3-mini 已退役） |
 | `gpt-4o` / `gpt-4o-mini` | 老一代多模态 | 仍存在 / 价格已大幅下调 |
 
 ---
@@ -914,7 +915,7 @@ client := openai.NewClient(
     option.WithAPIKey(os.Getenv("OPENROUTER_API_KEY")),
 )
 client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-    Model: openai.F("anthropic/claude-opus-4-7"),  // 用 OpenAI 协议调 Claude
+    Model: openai.F("anthropic/claude-opus-4-8"),  // 用 OpenAI 协议调 Claude
 })
 ```
 
@@ -949,16 +950,17 @@ POST https://api.anthropic.com/v1/chat/completions
 
 ---
 
-## 第十章：模型选型——GPT-5 / GPT-5-mini / o3 / 4o-mini
+## 第十章：模型选型——GPT-5.5 / GPT-5-mini / 4o-mini
 
 ### 10.1 2026 年 5 月主力图谱
 
+> 2026-04-23 GPT-5.5 发布（API 2026-04-24 上线），成为当前旗舰；推理能力已并入 GPT-5.x 的 thinking/reasoning 模式。整条 o 系列（o1/o3/o3-mini/o4-mini）已于 2026-02-13 从 ChatGPT 退役，o3 API 字符串处于 sunset 倒计时，**不应作为新项目推荐**。
+
 ```
-GPT-5         （顶配）  ~ Opus 4.7 / Gemini 2.5 Pro 同档
+GPT-5.5       （顶配，含推理）~ Opus 4.8 / Gemini 2.5 Pro 同档
 GPT-5 mini    （平衡）  ~ Sonnet 4.6 / Gemini 2.5 Flash
 GPT-5 nano    （极便宜） ~ Haiku 4.5 / Gemini 2.5 Flash Lite
-o3            （reasoning）数学 / 代码 / 形式推理
-o3-mini       （reasoning 便宜）
+（推理）       已并入 GPT-5.x thinking/reasoning 模式，o3/o3-mini 已退役
 gpt-4o-mini   （遗留多模态便宜）大幅降价仍在用
 ```
 
@@ -966,11 +968,12 @@ gpt-4o-mini   （遗留多模态便宜）大幅降价仍在用
 
 | 模型 | input | cached input | output |
 |---|---|---|---|
+| `gpt-5.5`（旗舰） | ~5 | ~0.5 | ~30 |
 | `gpt-5` | ~10 | ~1 | ~40 |
 | `gpt-5-mini` | ~0.6 | ~0.06 | ~2.4 |
 | `gpt-5-nano` | ~0.1 | ~0.01 | ~0.4 |
-| `o3` | ~30 | ~7.5 | ~120 |
-| `o3-mini` | ~3 | ~0.75 | ~12 |
+| `o3`（已退役 / sunset，仅供参考） | ~30 | ~7.5 | ~120 |
+| `o3-mini`（已退役，仅供参考） | ~3 | ~0.75 | ~12 |
 | `gpt-4o-mini` | ~0.15 | ~0.075 | ~0.6 |
 
 > 实际价格以 [openai.com/pricing](https://openai.com/pricing) 为准。
@@ -978,13 +981,15 @@ gpt-4o-mini   （遗留多模态便宜）大幅降价仍在用
 ### 10.3 何时选什么
 
 - **chatbot / 通用问答**：gpt-5-mini（性价比之王）
-- **复杂 Agent / 高准代码**：gpt-5 或 o3
-- **数学 / 形式推理 / 谜题**：o3 / o3-mini
+- **复杂 Agent / 高准代码**：gpt-5.5 或 gpt-5
+- **数学 / 形式推理 / 谜题**：gpt-5.5 / gpt-5 的 thinking/reasoning 模式（o3/o3-mini 已退役）
 - **高吞吐分类、批量打标**：gpt-5-nano / 4o-mini
 - **长文档**：gpt-5（400k context）
 - **多模态（图像 + 音频）**：gpt-4o（多模态 GA 时间最长） / gpt-5
 
 ### 10.4 reasoning 模型的特殊性
+
+> 下面以 `o3-mini` 为例说明 reasoning 模型的 API 行为差异。注意 o3/o3-mini 已退役，新项目应改用 GPT-5.x 的 thinking/reasoning 模式（同样具备下列特性）。
 
 ```go
 client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
@@ -1317,7 +1322,7 @@ delta_4: tool_calls: [{index:0, function: {arguments: "\"NYC\"}"}}]
 
 ### 13.1 GPT-5 时代
 
-GPT-5 系列在 2025 年发布，2026 年 5 月已稳定：
+GPT-5 系列在 2025 年发布，2026 年 5 月已稳定（当前旗舰为 2026-04-23 发布的 GPT-5.5）：
 
 - main: 复杂推理、长上下文（400k）
 - mini: 性价比主力，绝大部分应用场景
@@ -1345,10 +1350,10 @@ Anthropic 是单一 Messages API，对比之下 OpenAI 的多 API 历史包袱�
 
 | 维度 | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
-| 最强 reasoning | o3 / GPT-5 | Claude Opus 4.7 | Gemini 2.5 Pro Deep Think |
+| 最强 reasoning | GPT-5.5 / GPT-5 thinking | Claude Opus 4.8 | Gemini 2.5 Pro Deep Think |
 | 性价比主力 | GPT-5 mini | Sonnet 4.6 | Gemini 2.5 Flash |
-| 长上下文 | 400k | 1M (Sonnet 4.6 beta) | 2M (Pro) |
-| 代码 | GPT-5、o3 | Opus 4.7 业内顶尖 | Gemini 2.5 Pro 强 |
+| 长上下文 | 400k | 1M (Sonnet 4.6 beta) | 1M (2.5 Pro)；2M 在 Gemini 3.1 Pro |
+| 代码 | GPT-5.5、GPT-5 | Opus 4.8 业内顶尖 | Gemini 2.5 Pro 强 |
 | 多模态 | 图像 / 音频 / 视频 / TTS / Whisper / Realtime | 图像（无音频生成） | 图像 / 音频 / 视频原生 |
 | 内置 tools | web/file_search/code_interpreter/computer_use | （需自建 / 通过 MCP） | grounding (Google 搜索) |
 | API 数 | 3 套（Chat/Resp/Assist） | 1 套（Messages） | 2 套（v1beta/Gemini API） |
@@ -1642,7 +1647,7 @@ Responses 内置 web_search 完全在 OpenAI 服务端运行——你不需要�
 | Structured output | response_format json_schema strict（推荐） |
 | Streaming | data chunk + `[DONE]`（Chat）/ 命名事件（Responses） |
 | 兼容生态 | 换 baseURL 即可；只能依赖基础特性（messages + tools） |
-| 模型选型 | GPT-5 顶 / mini 平衡 / nano 便宜 / o3 推理 |
+| 模型选型 | GPT-5.5 旗舰 / GPT-5 顶 / mini 平衡 / nano 便宜（o3 推理已退役，并入 GPT-5.x thinking） |
 | Prompt caching | 自动启用，无 cache_control，监控 cached_tokens |
 | Batch | 半价 24h，JSONL 文件 → POST |
 | 限流 | RPM + TPM 头，retry-after 字符串时长 |

@@ -182,7 +182,7 @@ backlog_size = max_disconnect_seconds × peak_write_throughput_bytes_per_sec
 
 老 Redis：master 上 key 过期时由 master 发 `DEL` 命令给 replica。但**replica 上 lazy expire 不会触发 DEL**——如果业务在 replica 上读到一个"已过期但 master 还没扫到"的 key，会返回值（不一致）。
 
-Redis 6.0+：replica 也维护自己的过期跟踪；客户端读取过期 key 时 replica 返回 nil。
+Redis 3.2+：replica 读取已逻辑过期但未收到主节点 DEL 的 key 时返回 nil（key 仍在内存中，直到主节点 DEL 传来）。Redis 6.0 改进的是主动过期（active expire cycle）算法，新增 `active-expire-effort` 等，并非从节点读返回 nil 的逻辑。
 
 ### 3.3 复制延迟监控
 

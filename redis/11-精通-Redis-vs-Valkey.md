@@ -6,7 +6,7 @@
 
 ## 引言：开源软件商业化的代表性事件
 
-2024 年 3 月 21 日，Redis Inc. 宣布把 Redis 从 BSD-3 改为 **RSALv2 + SSPLv1** 双源可见许可证（不再是 OSI 认可的开源协议）。这是继 MongoDB（2018 SSPL）、Elastic（2021 ELv2）、CockroachDB（2021 BSL）、HashiCorp（2023 BSL）之后又一个明星开源项目"重新许可"事件。
+2024 年 3 月 20 日，Redis Inc. 宣布把 Redis 从 BSD-3 改为 **RSALv2 + SSPLv1** 双源可见许可证（不再是 OSI 认可的开源协议）。这是继 MongoDB（2018 SSPL）、Elastic（2021 ELv2）、CockroachDB（2021 BSL）、HashiCorp（2023 BSL）之后又一个明星开源项目"重新许可"事件。
 
 不到 10 天，Linux Foundation 联合 AWS / Google / Oracle / Ericsson / Snap 等 fork 出 **Valkey**（基于 Redis 7.2.4，BSD-3）。一年后 Redis Inc. 又妥协，发布 **Redis 8.0 (2025-05) 加入 AGPLv3 作为第三个许可证选项**——三选一。
 
@@ -29,7 +29,7 @@
 2018          Redis 5.0 Streams
 2018          MongoDB → SSPL（OSI 不认可）
 2021          Elastic → SSPL/ELv2（ES fork OpenSearch）
-2024 March 21 Redis Inc. → RSALv2 / SSPLv1（不再 OSI 开源）
+2024 March 20 Redis Inc. → RSALv2 / SSPLv1（不再 OSI 开源）
 2024 March 28 Linux Foundation 宣布 Valkey fork（基于 Redis 7.2.4）
 2024 April    AWS / Google Cloud / Oracle 加入 Valkey
 2024 April    Valkey 7.2.5 首个独立 release
@@ -118,7 +118,7 @@ Linux Foundation 联合多个大公司启动 Valkey：
 
 - **内置数据类型模块**（JSON / TimeSeries / Bloom / Cuckoo / Top-K / CMS / T-Digest / Vector Set，详 R09）
 - **RediSearch 内置**（FT.SEARCH / FT.CREATE 等）
-- **Active-Active CRDTs**（多区域双写最终一致，企业版功能下放）
+- **Active-Active CRDT 仍是 Redis Enterprise 商业版独有，开源 Redis 8.0 不含**（开源版真正下放的是模块：JSON / TimeSeries / Bloom / Search 等）
 - **某些性能优化**（新的 IO 线程模型、新的 backlog 实现）
 
 ### 3.3 Valkey 8.0 独有

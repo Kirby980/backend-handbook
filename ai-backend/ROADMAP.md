@@ -348,7 +348,7 @@ graph LR
     subgraph 模型层
     M1[Claude 3.5] --> M2[Claude 4.x<br>1M context]
     M3[GPT-4] --> M4[GPT-5<br>Responses API]
-    M5[Gemini 1.5] --> M6[Gemini 2.5<br>2M context]
+    M5[Gemini 1.5<br>2M context] --> M6[Gemini 2.5<br>1M context]
     end
 
     subgraph 协议层

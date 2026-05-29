@@ -178,7 +178,7 @@
 |---|---|
 | **A01 Claude** | Claude 4.7 Opus / 4.6 Sonnet / 4.5 Haiku；Sonnet 4.6 支持 1M context；prompt caching 5min/1h；extended thinking GA；citations、files、batch、memory tool 等多个工具就绪 |
 | **A02 OpenAI** | GPT-5 系列发布；Responses API 替代 Chat Completions 成主推；Assistants v2 → 待并入 Responses |
-| **A03 Token** | 主流模型上下文：Claude 1M / Gemini 2M / GPT-5 400k；prompt caching 让长上下文经济性可控 |
+| **A03 Token** | 主流模型上下文：Claude 1M / Gemini 1M / GPT-5 400k；prompt caching 让长上下文经济性可控 |
 | **A07 RAG** | hybrid retrieval 成标配；late interaction（ColBERT/ColPali）兴起；BBQ 量化（ES 8.18 GA）让大库可负担 |
 | **A09 Agent** | Anthropic agentic loop / OpenAI agents SDK / LangGraph 三大方向；多 Agent 协作模式（Orchestrator-Worker）落地 |
 | **A10 MCP** | MCP 已是 IDE / Agent / Tool 的事实标准（Claude Code、Cursor、Windsurf 全部原生支持）；Anthropic / OpenAI / Google 联合推进 |

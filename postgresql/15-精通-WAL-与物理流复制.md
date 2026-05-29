@@ -90,13 +90,14 @@ $PGDATA/pg_wal/
 └── archive_status/             # 归档状态目录
 ```
 
-文件名 24 位 16 进制，含义：
+文件名 24 位 16 进制，由 3 段各 8 位拼成，含义：
 
 ```
-00000001  0000000000000003
-└── 1 ──┘ └──── 2 ────────┘
+00000001  00000000  00000003
+└── 1 ──┘ └── 2 ──┘ └── 3 ──┘
 1. timeline（8 位）
-2. LSN 高 64 位 / 16MB → 文件序号（16 位）
+2. logid = LSN 高 32 位（8 位）
+3. segment = LSN 低 32 位 / 16MB → 段内序号（8 位）
 ```
 
 把文件名拆开就是 timeline + LSN。
@@ -457,7 +458,7 @@ synchronous_standby_names = ''       # 空 = 异步复制
 | 值 | COMMIT 等什么 |
 |---|---|
 | `off` | 不等本地 fsync（性能高，可能丢提交） |
-| `local` | 等本地 fsync（默认行为，不等备库） |
+| `local` | 等本地 fsync（不等备库） |
 | `remote_write` | 等备库 walreceiver write 到 OS（备库 OS 没崩就不丢） |
 | `on`（默认） | 等备库 walreceiver fsync 到盘 |
 | `remote_apply` | 等备库 startup 进程 replay 完（**备库查询能立即看到主库刚提交**） |
@@ -575,16 +576,16 @@ hot_standby_feedback = on    # 备库定期告诉主库"我还在用 xmin=X"，�
 |---|---|
 | READ COMMITTED | 支持 |
 | REPEATABLE READ | 支持 |
-| SERIALIZABLE | **不支持**（需要 SERIALIZABLE READ ONLY DEFERRABLE 替代） |
+| SERIALIZABLE | **不支持**（备库报 `cannot use serializable mode in a hot standby`，改用 REPEATABLE READ 替代） |
 
 ```sql
--- 备库长报表
-BEGIN ISOLATION LEVEL SERIALIZABLE READ ONLY DEFERRABLE;
+-- 备库长报表（备库不支持 SERIALIZABLE，用 REPEATABLE READ）
+BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
 SELECT ...;
 COMMIT;
 ```
 
-DEFERRABLE 会等到能保证可串行化的 snapshot 才执行，避免冲突。
+REPEATABLE READ 在备库上提供稳定 snapshot；若需要可串行化级别的完整性保证，只能在主库用 `SERIALIZABLE READ ONLY DEFERRABLE`（DEFERRABLE 会等到能保证可串行化的 snapshot 才执行，避免冲突）。
 
 ---
 
@@ -1005,7 +1006,7 @@ FROM pg_stat_archiver;
 ## 2026 现状
 
 - **PG 18（2025-09）**：异步 IO（io_uring/posix_aio）可显著降低 WAL 写盘和数据页 IO 等待；改进了 streaming 协议的 keepalive。
-- **PG 17（2024-09 LTS）**：内置 incremental backup（`--incremental`）和 `pg_combinebackup`；`walsummarizer` 进程；failover slot 实验性，订阅在主库故障后能继续。
+- **PG 17（2024-09）**：内置 incremental backup（`--incremental`）和 `pg_combinebackup`；`walsummarizer` 进程；failover slot 实验性，订阅在主库故障后能继续。
 - **WAL 压缩 `wal_compression`** 默认仍 off，可选 `pglz`/`lz4`/`zstd`（PG 15+），FPW 多的场景压缩比通常 50%+。
 - **`pg_walinspect` 扩展**（PG 15+）允许 SQL 查询 WAL record 内容，调试更方便（不用每次 `pg_waldump`）。
 - **`pg_basebackup` 默认开启 manifest**（PG 13+），含 SHA-256 校验。

@@ -102,7 +102,7 @@ SHOW VARIABLES LIKE 'innodb_old_blocks_time';
 
 ```sql
 SHOW VARIABLES LIKE 'innodb_buffer_pool_instances';
--- 默认 8（当 buffer_pool_size ≥ 1GB 时）
+-- buffer_pool_size ≤ 1GiB 时默认 1；> 1GiB 时默认按 min(buffer pool hint, CPU hint) 动态计算（范围 1–64）
 ```
 
 数据按 `hash(space_id, page_no) % instances` 分到不同实例，每个实例独立加锁。
@@ -330,7 +330,7 @@ innodb_io_capacity_max = 4000   # 紧急情况上限
 ### 4.3 innodb_max_dirty_pages_pct
 
 ```ini
-innodb_max_dirty_pages_pct = 75      # 脏页占比上限
+innodb_max_dirty_pages_pct = 90      # 脏页占比上限（8.0+ 默认 90，5.7 为 75）
 innodb_max_dirty_pages_pct_lwm = 10  # 加速刷脏的低水位（8.0+）
 ```
 
@@ -612,7 +612,7 @@ innodb_io_capacity = 4000               # 按存储测出
 innodb_io_capacity_max = 8000
 innodb_flush_method = O_DIRECT
 innodb_flush_neighbors = 0              # SSD
-innodb_max_dirty_pages_pct = 75
+innodb_max_dirty_pages_pct = 90         # 8.0+ 默认 90（5.7 为 75）
 innodb_max_dirty_pages_pct_lwm = 10
 
 # === Doublewrite ===

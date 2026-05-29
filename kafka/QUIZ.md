@@ -90,8 +90,8 @@ partition **只能加不能减**，起步保守。
 <details><summary>答案</summary>
 
 - Kafka < 2.4：RoundRobin 轮询
-- Kafka 2.4-3.2：StickyPartitioner（粘到一个直到 batch 满）
-- Kafka 3.3+：UniformStickyPartitioner（带负载均衡）
+- Kafka 2.4-3.2：sticky 分区（KIP-480，类 UniformStickyPartitioner/DefaultPartitioner，粘到一个直到 batch 满）
+- Kafka 3.3+：KIP-794 内置默认分区器（按 batch.size 字节切换 + 自适应负载，慢 broker 少给数据）；UniformStickyPartitioner 类自 3.3 起 deprecated
 
 为什么不用 RoundRobin？— 让 batch 失效（每 partition 都只有 1 条记录）。Sticky 让连续记录粘同 partition 实现真正 batching。
 
@@ -356,16 +356,16 @@ linger.ms=10：
 
 </details>
 
-### Q3.3 ⭐⭐ UniformStickyPartitioner vs StickyPartitioner
+### Q3.3 ⭐⭐ sticky 分区演进：KIP-480 vs KIP-794
 
 <details><summary>答案</summary>
 
-老 StickyPartitioner：随机粘一个 partition 到 batch 满 / linger 到，再换。
+KIP-480（Kafka 2.4，类 UniformStickyPartitioner/DefaultPartitioner）：随机粘一个 partition 到 batch 满 / linger 到，再换。
 
-UniformStickyPartitioner（Kafka 3.3+）：
+KIP-794（Kafka 3.3+，内置默认分区器逻辑，移除 partitioner.class + 设 partitioner.ignore.keys=true 启用；UniformStickyPartitioner 类自 3.3 起 deprecated）：
 
-- 同样粘性
-- 但选 partition 时**优先选 broker 队列短的**（负载均衡）
+- 同样粘性，但按 batch.size 字节切换
+- 选 partition 时**优先选 broker 队列短的**（自适应负载，慢 broker 少给数据）
 - 避免老版本下出现"运气差粘到慢 broker"
 
 效果：连续记录仍达成 batching，同时避免热点 broker。
@@ -1075,7 +1075,7 @@ LSO = Last Stable Offset = 第一个未完成事务起点。
 
 v1（Kafka 2.5 前）：每 task 一个 transactional.id，但全 consumer 共享一个，rebalance 时复杂。
 
-v2（Kafka 2.5+）：
+v2（KIP-447，Kafka 2.6 引入；要求 broker >= 2.5）：
 
 - transactional.id 跟 consumer group + partition 绑定
 - rebalance 时自动重新 init
@@ -1090,7 +1090,7 @@ v2（Kafka 2.5+）：
 <details><summary>答案</summary>
 
 - LSO 卡 10 分钟，下游 read_committed consumer 全 stall
-- transaction.timeout.ms 可能触发 abort（默认 15min，调小看场景）
+- transaction.timeout.ms 默认 60s（producer 端），10min 事务早就会被触发 abort（除非显式调大）；broker 端上限 transaction.max.timeout.ms 默认 15min
 - broker 端事务状态保留时间延长
 - 失败重做的代价大（10 分钟工作丢）
 
@@ -1332,7 +1332,7 @@ echo never > /sys/kernel/mm/transparent_hugepage/enabled
 - `exactly_once`（v1）：每 task 独立 transactional producer
 - `exactly_once_v2`（v2）：thread 级 producer 共享，事务 commit 路径优化
 
-v2 网络开销少 50%，吞吐高 1.5-2×。Kafka 2.5+ 推荐 v2。
+v2 网络开销少 50%，吞吐高 1.5-2×。KIP-447（Kafka 2.6 引入；要求 broker >= 2.5）推荐 v2。
 
 </details>
 

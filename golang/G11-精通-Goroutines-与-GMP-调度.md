@@ -208,7 +208,7 @@ go func() {
 
 ### 5.3 创建 M
 
-如果所有 P 都被解绑的 M 占用且新 G 还在等：runtime 自动**创建新的 M**。M 池上限是 10000（`GoMaxThreads`）。
+如果所有 P 都被解绑的 M 占用且新 G 还在等：runtime 自动**创建新的 M**。M 数量上限默认 10000（由 `runtime/debug.SetMaxThreads` 设置，运行时内部为 `sched.maxmcount`）。
 
 ```go
 import _ "runtime/debug"

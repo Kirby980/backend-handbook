@@ -2,7 +2,7 @@
 
 > 配合 [INDEX.md](./INDEX.md) 与 [QUIZ.md](./QUIZ.md) 使用
 >
-> **📅 内容基准：MongoDB 8.0 LTS + 9.x**（2026-05 时主流稳定版）
+> **📅 内容基准：MongoDB 8.x**（8.0 major + 8.1/8.2/8.3 rapid releases，截至 2026-05 最新为 8.3）
 
 ---
 
@@ -278,8 +278,8 @@ timeline
     2022 : 6.0 Queryable Encryption (Preview)
     2023 : 7.0 LTS / Queryable Encryption GA / Time Series 优化
     2024 October : 8.0 LTS / vectorSearch GA / 查询性能提升
-    2025 : 9.x 持续演进
-    2026 : 主流生产基线 MongoDB 8.0 LTS
+    2025 : 8.1/8.2 rapid release
+    2026 : 8.3 / 8.0 仍为主流生产基线
 ```
 
 ---

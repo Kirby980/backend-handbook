@@ -32,7 +32,7 @@ SQL → Parser (词法/语法) → AST
     → Executor
 ```
 
-5.7 之后优化器代码大幅重构（`sql/range_optimizer/`、`sql/join_optimizer/`），8.0 引入 hypergraph optimizer（`secondary_engine_cost_threshold` 起作用时）。
+5.7 之后优化器代码大幅重构（`sql/range_optimizer/`、`sql/join_optimizer/`），8.0.31 引入 hypergraph optimizer（专为 HeatWave/二级引擎服务，社区版仅 debug 构建可用）。
 
 ### 1.2 主要优化能力
 
@@ -48,7 +48,7 @@ SQL → Parser (词法/语法) → AST
 | Window function | 8.0+ |
 | CTE / Recursive CTE | 8.0+ |
 | Lateral derived table | 8.0.14+ |
-| Hypergraph join optimizer | 8.0.21+（实验性） |
+| Hypergraph join optimizer | 8.0.31+（HeatWave/二级引擎专用，社区版仅 debug 构建可用） |
 
 ---
 
@@ -263,7 +263,7 @@ temporary：
 - 看是否能改成不要 GROUP BY / DISTINCT
 - 加索引让 GROUP BY 用 Loose index scan
 - 给临时表更多内存：`tmp_table_size` / `max_heap_table_size`
-- 临时表落盘转 InnoDB 用：8.0+ 默认 `internal_tmp_disk_storage_engine = InnoDB`
+- 临时表落盘恒用 InnoDB：8.0.16 起移除了 `internal_tmp_disk_storage_engine`，磁盘上的内部临时表一律使用 InnoDB；内存临时表引擎由 `internal_tmp_mem_storage_engine`（默认 TempTable）控制
 
 ---
 
@@ -531,7 +531,7 @@ SELECT * FROM big WHERE col1 = 'x' ORDER BY id LIMIT 10;
 
 - `JOIN_FIXED_ORDER` Hint 跳过搜索
 - 拆 SQL
-- 8.0+ 用 hypergraph optimizer
+- 8.0.31+ 用 hypergraph optimizer（仅 HeatWave/二级引擎，社区版仅 debug 构建可用）
 
 ### 11.5 NULL 的特殊性
 

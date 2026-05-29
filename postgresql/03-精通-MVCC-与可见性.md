@@ -418,7 +418,7 @@ bit_off  = (xid % 4) * 2
 
 CLOG 文件存磁盘，但实际访问极频繁（每次可见性判定可能查多次），PG 用 **SLRU buffer** 缓存：
 
-- `clog_buffers`（PG 17+ 自动调，默认 16 个 8KB 页 → 128 KB）
+- `transaction_buffers`（PG 17+ 引入，默认 0 = 按 `shared_buffers/512` 自动调，下限 16 页/128 KB、上限 1024 页）
 - LRU 替换
 - 多 backend 用 lwlock 控制并发
 
@@ -1302,7 +1302,7 @@ TPS 为 1 万的库，autovacuum 完全停掉一周会发生什么？
 - 超过 `autovacuum_freeze_max_age`（默认 2 亿）后，PG 会强制启动 anti-wraparound vacuum（即使 autovacuum 关闭也会启动一种特殊形式；如果完全屏蔽，则继续累积）
 - 超过 `vacuum_failsafe_age`（默认 16 亿）后，VACUUM 切换 failsafe 模式
 - 接近 21 亿后，PG 拒绝接受新事务（防止 wraparound），强制单用户模式 VACUUM
-- 如果继续不处理 → 23 亿时 wraparound 触发，全库数据"消失"
+- 如果继续不处理 → 越过 2³¹（约 21 亿）边界时 wraparound 触发，全库数据"消失"
 
 ---
 

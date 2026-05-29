@@ -20,7 +20,7 @@ PostgreSQL 用两个一等公民的特性把这两件事吞下来：
 - 区分 JSON / JSONB 两种类型的物理差异和性能含义
 - 默写出 `->`、`->>`、`#>`、`#>>`、`@>`、`?`、`?|`、`?&`、`@?`、`@@` 的语义
 - 用 `jsonpath` 表达式查询深层嵌套 JSON 并配合 GIN 索引
-- 用 PG 16+ 的 `JSON_EXISTS / JSON_VALUE / JSON_QUERY` 写 SQL/JSON 标准查询
+- 用 PG 17+ 的 `JSON_EXISTS / JSON_VALUE / JSON_QUERY` 写 SQL/JSON 标准查询
 - 用 PG 17+ 的 `JSON_TABLE` 把 JSON 数组炸成关系表
 - 在 `jsonb_ops` 与 `jsonb_path_ops` 之间做正确选择
 - 用表达式 GIN 索引把"高频路径"加速 100 倍
@@ -244,9 +244,9 @@ SELECT '{"a": 1}'::jsonb @? 'lax $.a[*]';   -- true
 SELECT '{"a": 1}'::jsonb @? 'strict $.a[*]';  -- false
 ```
 
-### 3.4 SQL/JSON 标准函数（PG 16+）
+### 3.4 SQL/JSON 标准函数（PG 17+）
 
-PG 16 引入完整的 SQL/JSON 查询函数，PG 17 进一步完善：
+PG 16 引入 `IS JSON` 谓词，PG 17 引入完整的 SQL/JSON 查询函数（`JSON_EXISTS / JSON_VALUE / JSON_QUERY` 与 `JSON_TABLE` 同批）：
 
 | 函数 | 返回 | 标准等价 |
 |---|---|---|
@@ -774,7 +774,7 @@ SELECT * FROM t WHERE data ? 'phone';
 -- jsonpath：深层过滤
 SELECT * FROM t WHERE data @? '$.orders[*] ? (@.amount > 1000)';
 
--- SQL/JSON 标准（PG 16+）
+-- SQL/JSON 标准（PG 17+）
 SELECT JSON_VALUE(data, '$.user.age' RETURNING int) FROM t;
 
 -- JSON_TABLE 炸开（PG 17+）
@@ -935,7 +935,7 @@ ORDER BY hybrid DESC LIMIT 20;
 |---|---|
 | JSONB 引擎 | 稳定多年，PG 17 进一步优化大对象更新 |
 | jsonpath | 默认开启；执行计划成本估算改进 |
-| SQL/JSON 标准 | PG 16 函数集 + PG 17 JSON_TABLE，已超越 MySQL/SQL Server |
+| SQL/JSON 标准 | PG 16 `IS JSON` 谓词 + PG 17 查询函数/JSON_TABLE，已超越 MySQL/SQL Server |
 | UUIDv7 + JSONB | PG 18 内置 `uuidv7()`，与 JSONB 文档主键天然契合 |
 | 中文 parser | zhparser 仍维护，pg_jieba 增加 PG 17/18 兼容 |
 | 全文检索 | 进入"够用"阶段，pgvector 抢走一部分场景（语义检索） |

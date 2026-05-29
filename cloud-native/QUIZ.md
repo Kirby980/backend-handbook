@@ -486,7 +486,7 @@
 6. 官方上限 5000 节点、150000 Pod，但**大厂经验 1500-2000 节点最舒服**，再多 etcd / scheduler 压力陡增。拆多集群理由：① 故障域隔离；② 区域 / 合规分隔；③ 大版本升级回滚域；④ 团队权限隔离。
 7. CA：基于 nodegroup（云厂商 ASG），按 Pending Pod 添加节点；Karpenter：不依赖 nodegroup，直接调用云 API 按需开机器，**可挑机型 + 即时启动**。spot 场景：Karpenter 可在 spot 中断时秒级换机型，CA 受 ASG 模板限制反应慢。
 8. drain 流程：① 找该节点所有 Pod；② 检查 PDB（minAvailable / maxUnavailable）允许后 evict；③ kubelet 收 evict → 发 SIGTERM → 等 `terminationGracePeriodSeconds` → SIGKILL。PDB 保业务可用，TGP 保单 Pod 优雅退出。
-9. Karmada：CNCF 沙盒，多集群资源编排 + 调度，活跃；KubeFed v2：联邦控制面，已不推荐（项目放缓）；Cluster API：**多集群生命周期管理**（创建 / 升级集群本身）；Argo ApplicationSet：GitOps 视角的多集群部署，不管集群本身。
+9. Karmada：CNCF 孵化（Incubating），多集群资源编排 + 调度，活跃；KubeFed v2：联邦控制面，已不推荐（项目放缓）；Cluster API：**多集群生命周期管理**（创建 / 升级集群本身）；Argo ApplicationSet：GitOps 视角的多集群部署，不管集群本身。
 10. ① 镜像层瘦身（distroless < 50MB）；② 节点镜像预热；③ Pod readiness probe 调到 1s 间隔但 failureThreshold 给余量；④ initContainer 串行 → 并行（同时 fetch 多个依赖）；⑤ 应用本身 lazy init → eager init 分离热路径；⑥ JVM `--XX:+TieredCompilation` 或 GraalVM AOT；⑦ NodeLocal DNS 避免冷启动 DNS 失败重试。
 
 </details>

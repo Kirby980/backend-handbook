@@ -228,7 +228,7 @@ Server → Client:
 - 类型贫乏，map / set 等高级类型靠客户端再解析
 
 **RESP3**（Redis 6+ 引入）：
-- 14 种类型：map、set、bool、double、null、verbatim string、attribute（带元数据的响应）
+- 15 种类型（= 5 个 RESP2 类型 + 10 个 RESP3 新增类型）：map、set、bool、double、null、verbatim string、attribute（带元数据的响应）
 - Push 类型支持 invalidation 通知
 
 ### 4.2 RESP3 的客户端开关

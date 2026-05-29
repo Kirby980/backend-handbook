@@ -302,7 +302,7 @@ DELETE 后：`t_ctid = (0, 0)` 或保留指向自己（不再链接到新版本�
 
 ### 3.4 t_infomask2（2 B）
 
-低 11 bit：列数（`HEAP_NATTS_MASK = 0x07FF`，最多 1664 列）
+低 11 bit：列数（`HEAP_NATTS_MASK = 0x07FF`，理论最多 2047 个属性；单表用户列上限 `MaxHeapAttributeNumber = 1600`）
 
 高 5 bit 是标志：
 

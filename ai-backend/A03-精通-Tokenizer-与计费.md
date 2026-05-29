@@ -511,7 +511,7 @@ Claude vision 算法：图片按近似公式 `tokens ≈ (width × height) / 750
 2025.10   Claude Sonnet 4.5 1M beta     1M
 2025.12   GPT-5                         400k (main) / 1M (long-ctx beta)
 2026.03   Claude Sonnet 4.6 1M (GA)     1M
-2026.04   Gemini 2.5 Pro                2M (GA)
+2026.02   Gemini 3.1 Pro                2M (GA)
 ```
 
 ### 5.2 长 context 的工程意义
@@ -539,7 +539,7 @@ Claude vision 算法：图片按近似公式 `tokens ≈ (width × height) / 750
 
 Sonnet 4.6（200k 截断）：要先 RAG 检索 / chunk，召回率取决于 embedding 质量
 Sonnet 4.6（1M）：     可一次性扔进去，准确率高但单次成本 5-10x
-Gemini 2.5 Pro（2M）： 可扔进去 + 视频 / 长音频；延迟最长
+Gemini 2.5 Pro（1M）： 可扔进去 + 视频 / 长音频；延迟最长（需 2M 用 Gemini 3.1 Pro）
 ```
 
 **经验**：≤ 100k 直接全文喂；100k-500k 考虑 RAG + 缓存；> 500k 走专门的长上下文模型。
@@ -865,7 +865,7 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 日常 chatbot：           Sonnet 4.6 默认；Haiku 4.5 兜底
 高准代码 / Agent：       Opus 4.7
 高吞吐分类 / 抽取：       Haiku 4.5 / Gemini Flash / DeepSeek V3.5
-超长文档 (>200k)：       Sonnet 4.6 1M 或 Gemini 2.5 Pro 2M
+超长文档 (>200k)：       Sonnet 4.6 1M 或 Gemini 2.5 Pro 1M（需 2M 用 Gemini 3.1 Pro）
 中文专项：               Qwen3 Max / GLM-4.6 / DeepSeek V3.5
 强 reasoning：           o3 / Opus 4.7 (extended thinking)
 本地 / 私有部署：         开源 LLaMA 4 / Qwen3 / DeepSeek V3.5

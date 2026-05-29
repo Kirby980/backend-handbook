@@ -35,7 +35,7 @@
 - 它能调 tool / RAG / 浏览器——任何中间数据都是新的注入入口
 - 它的失败模式是**概率性**的——传统 fuzzing 无法穷举
 
-2023 年还是"LLM 安全是个学术问题"；2026 年 5 月，**几乎每一个生产 LLM 应用都被红队打过至少一轮**——攻击者 GitHub 上能下到自动 jailbreak 工具，企业内部已成立"AI 安全团队"，EU AI Act 高风险条款 2025-08 强制生效，NIST AI RMF 1.1 成为美国联邦合规底座。本章把 LLM 应用的安全防御拆开——从 OWASP LLM Top 10 到 Go 中间件实现，从 prompt injection 攻防到红队工具链。
+2023 年还是"LLM 安全是个学术问题"；2026 年 5 月，**几乎每一个生产 LLM 应用都被红队打过至少一轮**——攻击者 GitHub 上能下到自动 jailbreak 工具，企业内部已成立"AI 安全团队"，EU AI Act 的 GPAI（通用 AI 模型）义务自 2025-08-02 适用、高风险（Annex III）义务与执法自 2026-08-02 适用，NIST AI RMF（1.0）成为美国联邦合规底座。本章把 LLM 应用的安全防御拆开——从 OWASP LLM Top 10 到 Go 中间件实现，从 prompt injection 攻防到红队工具链。
 
 > **核心心法**：LLM 安全是**分层防御**，没有银弹。每一层都会被绕过——你要做的是把成本逼到攻击者放弃。
 
@@ -2214,7 +2214,7 @@ vision 模型：图片里的隐写文字 / 半透明文字 / 二维码（指向�
 
 ### 14.1 法规框架
 
-#### EU AI Act（2025-08 高风险条款生效）
+#### EU AI Act（GPAI 义务 2025-08-02 适用；高风险义务与执法 2026-08-02 适用）
 
 ```
 风险等级:
@@ -2232,7 +2232,7 @@ vision 模型：图片里的隐写文字 / 半透明文字 / 二维码（指向�
 
 罚款：最高 €35M 或 7% 全球营收。
 
-#### NIST AI RMF 1.1（2025-XX）
+#### NIST AI RMF 1.0（2023）
 
 美国版"AI 风险管理框架"——非强制，但**联邦合同 / 政府采购**事实上必须遵从。
 
@@ -2696,7 +2696,7 @@ T+30: 撰写初步 incident note，发布到 #security-incidents 频道
 | Abuse 检测 | 异常长度 / 频率 / jailbreak 分数 → score 评分 |
 | 红队 | promptfoo / Garak / Lakera；CI 集成 |
 | 中间件设计 | Before/After hook；Pipeline 组合 |
-| 法规 | EU AI Act (2025-08)、NIST AI RMF、生成式 AI 暂行办法 |
+| 法规 | EU AI Act (GPAI 2025-08；高风险 2026-08)、NIST AI RMF、生成式 AI 暂行办法 |
 | 2026 趋势 | Constitutional classifier / spotlighting / formal verification |
 
 铁律：

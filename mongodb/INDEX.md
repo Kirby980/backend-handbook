@@ -4,7 +4,7 @@
 > 每篇约 10000-15000 字，含底层结构、查询执行、性能调优、生产陷阱、练习题
 > 适合从中级到高级后端 / DBA / SRE 工程师
 >
-> **📅 内容基准：MongoDB 8.0 LTS**（2024-10 GA，长期支持至 2027）+ **MongoDB 9.x 演进**
+> **📅 内容基准：MongoDB 8.0 LTS**（2024-10 GA，支持至 2029-10）
 > 默认存储引擎 WiredTiger；本课程不涉及 MMAPv1 等过时引擎
 > 同时覆盖 **MongoDB Atlas** 托管特性、字段级加密 (FLE)、Queryable Encryption、Time Series Collections
 

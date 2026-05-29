@@ -47,7 +47,7 @@ ISO/IEC 9075-9（SQL/MED，2003）规定了"标准 SQL 如何访问外部数据"
 - **Foreign Table**：远端表在本地的"视图代理"
 - **Foreign Schema**：用 `IMPORT FOREIGN SCHEMA` 批量导入
 
-PG 8.4 引入 SQL/MED 基础，PG 9.1 引入第一个 wrapper（`file_fdw`），PG 9.3 引入 `postgres_fdw` 并支持写。**PG 10+ 起 join pushdown、PG 11+ aggregate pushdown、PG 14+ 异步执行**——每个大版本都在补完 FDW 能力。
+PG 8.4 引入 SQL/MED 基础，PG 9.1 引入第一个 wrapper（`file_fdw`），PG 9.3 引入 `postgres_fdw` 并支持写。**PG 9.6 起 join pushdown、PG 10+ aggregate pushdown、PG 14+ 异步执行**——每个大版本都在补完 FDW 能力。
 
 ### 1.2 FDW 工作流（一条 SQL 的旅程）
 
@@ -194,9 +194,9 @@ IMPORT FOREIGN SCHEMA public FROM SERVER pg_orders INTO remote;
 | WHERE 过滤 | 9.3 | 一开始就有 |
 | 列裁剪（SELECT 列） | 9.3 | |
 | ORDER BY 排序 | 9.6 | |
-| JOIN（同 SERVER） | **10** | 必须同 SERVER 的两张外部表 |
+| JOIN（同 SERVER） | **9.6** | 必须同 SERVER 的两张外部表 |
 | Aggregate（SUM/COUNT/...） | **10** | |
-| LIMIT/OFFSET | 9.6 | |
+| LIMIT/OFFSET | 12 | |
 | INSERT/UPDATE/DELETE | 9.3 / 9.3 / 9.3 | |
 | 批量 INSERT | 14 | `batch_size` 选项 |
 | TRUNCATE | 14 | |

@@ -756,7 +756,7 @@ flowchart TD
 
 ### 6.3 Istio Ambient + Gateway API（2026 主流组合）
 
-Istio 1.24（2026）默认 Ambient Mesh，与 Gateway API 深度整合：
+Istio 1.24（2024-11，Ambient Mode GA）让 Ambient Mesh GA、可选用（sidecar 仍为默认数据面，ambient 需显式启用；2026 年稳定线已是 1.28+），与 Gateway API 深度整合：
 
 ```yaml
 # 用 Istio 实现的 Gateway，开 Ambient

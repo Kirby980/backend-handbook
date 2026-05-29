@@ -266,7 +266,7 @@ SNI 明文暴露你访问哪个域——**直接被审查 / 监控 / 被动指�
 
 - **Cloudflare**：所有客户域名默认 ECH 已启用，公钥通过 DNS HTTPS RR 分发
 - **Firefox** ≥ 119：默认开启 ECH（DoH 模式下）
-- **Chrome** ≥ 123：默认开启 ECH（HTTPS RR 命中时）
+- **Chrome** ≥ 117：默认开启 ECH（HTTPS RR 命中时）
 - **服务端**：BoringSSL、wolfSSL 已经支持；OpenSSL 3.5+ 实验支持
 - **DNS**：必须发布 `HTTPS` RR 携带 `ech=...` 公钥（base64-encoded ECHConfigList）
 

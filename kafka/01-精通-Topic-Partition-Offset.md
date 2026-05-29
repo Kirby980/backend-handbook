@@ -314,7 +314,7 @@ Consumer Group C (audit): 1 consumer
 
 ### 5.2 group 内的 partition 分配
 
-默认策略 **RangeAssignor**（按 partition 范围）或 **StickyAssignor**（粘性，rebalance 时尽量不变）。
+默认 `partition.assignment.strategy = [RangeAssignor, CooperativeStickyAssignor]`：默认生效 **RangeAssignor**（按 partition 范围），列表中保留 **CooperativeStickyAssignor**（粘性，rebalance 时尽量不变）以便平滑切换到协作式 rebalance。
 
 KIP-848 协议（Kafka 4.0 默认）改由 **broker 端**统一计算分配——客户端只接收结果。这消除了"客户端版本不一致导致分配冲突"的问题。详 K04。
 

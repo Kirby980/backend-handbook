@@ -358,7 +358,7 @@ Kafka 经典存储模型：**所有数据都在 broker 本地磁盘**。
 
 ### 6.2 KIP-405 Tiered Storage
 
-3.6 GA。把**冷数据移到对象存储**（S3 / Azure Blob / GCS）：
+3.6 以 Early Access 引入，Kafka 3.9 才正式 GA（生产可用）。把**冷数据移到对象存储**（S3 / Azure Blob / GCS）：
 
 ```
 ┌──────────────────────────┐

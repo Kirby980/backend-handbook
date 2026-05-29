@@ -580,7 +580,7 @@
 9.1 **B**　9.2 **B**　9.3 **C**（agentic loop 允许并行）　9.4 **C**　9.5 **B**
 
 ## A10 MCP
-10.1 **B**　10.2 **B**　10.3 **D**（四类原语是 Tools / Resources / Prompts / Sampling）　10.4 **B**　10.5 **B**
+10.1 **B**　10.2 **B**　10.3 **D**（MCP 原语分两组——服务端：Tools / Resources / Prompts；客户端：Sampling / Roots / Elicitation；Pipelines 不属于任何一类）　10.4 **B**　10.5 **B**
 
 ## A11 LLM Gateway
 11.1 **D**（SQL 转写不属于 LLM Gateway 的核心）　11.2 **B**　11.3 **B**　11.4 **B**　11.5 **D**（协议不是主要差别）

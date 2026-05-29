@@ -19,7 +19,7 @@ Redis 在 5.0 (2018) 引入了 **Streams**——一个时间序列日志结构 +
 
 读完之后你应该能回答：
 
-- Streams 的 ID `1715587200-0` 是怎么生成的？保证唯一吗
+- Streams 的 ID `1715587200000-0` 是怎么生成的？保证唯一吗
 - Consumer Group 的 Pending Entries List 是什么，怎么用它保证"消息至少一次"
 - Sharded Pub/Sub 解决了原始 Pub/Sub 的什么致命问题
 - 一个 Redis 实例能扛多少 Stream 写入？什么时候要换 Kafka

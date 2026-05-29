@@ -454,7 +454,7 @@ if err := g.Wait(); err != nil { /* ... */ }
 - 任一 fn 返回非 nil err → ctx cancel
 - `g.Wait()` 等所有完成，返回第一个非 nil error
 
-### 10.3 SetLimit（Go 1.21+）
+### 10.3 SetLimit（golang.org/x/sync v0.1.0+，2022-10）
 
 ```go
 g.SetLimit(10)   // 同时最多 10 个 goroutine
@@ -633,7 +633,8 @@ for {
 `slices`、`maps` 包（Go 1.23）新增了大量迭代器返回值——`slices.All`/`slices.Values`/`slices.Backward`/`slices.Chunk`、`maps.Keys`/`maps.Values`/`maps.All`/`maps.Insert`/`maps.Collect`。组合后非常顺手：
 
 ```go
-top3 := slices.Collect(iter.Take(slices.Sorted(maps.Values(scores)), 3))
+sorted := slices.Sorted(maps.Values(scores)) // slices.Sorted 返回 []E
+top3 := sorted[:min(3, len(sorted))]          // 取前 3 个，直接切片即可
 ```
 
 > 参考：[Range Over Function Types（Go 官方博客）](https://go.dev/blog/range-functions)、[Go 1.23 release notes — iter](https://go.dev/doc/go1.23#iter)。

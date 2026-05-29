@@ -1108,7 +1108,7 @@ pgbadger -j 4 -f stderr /var/log/postgresql/postgresql-*.log -o report.html
 9. **rows estimate=1** 时 planner 倾向 Nested Loop——估算 1 行时 Nested Loop 永远最便宜。如果实际几千行就是灾难。这是 estimate 偏差最危险的形式。
 10. **PG 12 之前 CTE 是 fence**——老 SQL 升级到 PG 12+ 后 plan 行为可能变化（CTE 内联）。
 11. **prepared statement 的 plan 看不到** ——用 PG 16 的 `EXPLAIN (GENERIC_PLAN)`。
-12. **JIT 编译时间计入 Planning Time**——OLTP 小查询可能因为 JIT 反而变慢，调高 `jit_above_cost`。
+12. **JIT 编译时间计入 Execution Time**（单独的 JIT 块统计）——OLTP 小查询可能因为 JIT 反而变慢，调高 `jit_above_cost`。
 13. **EXPLAIN 输出与实际执行不一致**——VERBOSE / SETTINGS 帮你发现某些 GUC 被 session 覆盖了。
 14. **看 EXPLAIN 不看 BUFFERS**——很多"慢"是因为冷数据 IO，不是 plan 错了。
 

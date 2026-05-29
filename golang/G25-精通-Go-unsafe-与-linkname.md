@@ -393,7 +393,7 @@ p := unsafe.StringData(s)
 ```
 
 ### ❌ 陷阱 4：linkname 到非稳定 API
-比如 linkname 到 `runtime.fastrand`——Go 1.22 已改名 `runtime.cheaprand`，1.24 又对外暴露了 `math/rand/v2`。每次升级都可能找不到符号 → 程序 crash。**Go 1.23 起 linker 也开始限制对 std 内部符号的 linkname**，不在白名单的 std 包符号 linkname 直接编译失败（除非 `-linkname-allow-list` 开口）。结论：**只 linkname 公开 API；私有符号视为随时会变**。
+比如 linkname 到 `runtime.fastrand`——Go 1.22 已改名 `runtime.cheaprand`。每次升级都可能找不到符号 → 程序 crash。`math/rand/v2` 是 Go 1.22 新增的独立标准库包（与 runtime 内部 `fastrand`/`cheaprand` 无关），官方建议用它替代对 runtime 随机函数的 linkname 访问。**Go 1.23 起 linker 也开始限制对 std 内部符号的 linkname**，不在白名单的 std 包符号 linkname 直接编译失败（除非 `-linkname-allow-list` 开口）。结论：**只 linkname 公开 API；私有符号视为随时会变**。
 
 ### ❌ 陷阱 5：CGO 调用后 Go GC 移动栈
 传给 C 的指针生命周期内 Go runtime 保证 pin；但越过 syscall boundary 后规则复杂，遵守 cgo 文档。

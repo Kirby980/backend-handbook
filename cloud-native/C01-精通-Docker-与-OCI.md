@@ -229,7 +229,7 @@ ls -l /proc/12345/ns/
 nsenter -t 12345 -n -m bash
 ```
 
-**user namespace** 是 2026 年生产建议必开的：让容器内的 root（uid=0）在宿主上其实是 uid=100000，即使容器 escape 也拿不到宿主 root。Docker `--userns-remap`、K8s `userNamespaces`（1.30 alpha→1.33 beta）都用到这点。
+**user namespace** 是 2026 年生产建议必开的：让容器内的 root（uid=0）在宿主上其实是 uid=100000，即使容器 escape 也拿不到宿主 root。Docker `--userns-remap`、K8s `userNamespaces`（1.25 alpha、1.30 beta 默认关、1.33 beta 默认开、1.36 GA）都用到这点。
 
 ### 2.2 Cgroup v2：资源边界
 

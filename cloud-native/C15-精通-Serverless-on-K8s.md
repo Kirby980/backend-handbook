@@ -71,7 +71,7 @@ Knative 偏 Serverless（容器为单位），OpenFaaS 偏 FaaS（函数为单�
 
 ## 第二章：Knative Serving 架构深拆
 
-Knative 是 Google 2018 推出、2024 CNCF 毕业的项目，**Cloud Run 在 K8s 上的开源对等**。
+Knative 是 Google 2018 推出、2022 年成为 CNCF 孵化项目、2025-09 毕业（Graduated）的项目，**Cloud Run 在 K8s 上的开源对等**。
 
 ### 2.1 核心组件
 
@@ -295,7 +295,7 @@ spec:
 
 Knative 体量大、组件多（kourier / activator / autoscaler / webhook / controller / queue-proxy），运维负担不小。
 
-**KEDA HTTP add-on**（2024 GA）只把"HTTP 触发 + scale-to-zero"那部分做好，**保留 K8s 原生 Deployment**。
+**KEDA HTTP add-on**（仍为 beta，0.x，未 GA，生产慎用）只把"HTTP 触发 + scale-to-zero"那部分做好，**保留 K8s 原生 Deployment**。
 
 ### 5.1 架构
 
@@ -567,9 +567,9 @@ spec:
 
 ## 第十章：2026 现状
 
-- **Knative 1.16+** 稳定，CNCF Graduated（2024-03）
+- **Knative 1.22（2026-04）/1.21** 受支持版本，CNCF Graduated（2025-09）
 - **Knative ServiceMesh integration** 与 Istio Ambient 官方协同方案 GA
-- **KEDA 2.16+** 是 CNCF Graduated（2024），HTTP add-on 1.0 已 GA
+- **KEDA 2.16+** 是 CNCF Graduated（2023-08），HTTP add-on 仍为 beta（0.x），未 GA，生产慎用
 - **Cloud Run for K8s** Google 推动 Knative 与 Cloud Run API 兼容
 - **OpenFaaS Pro** 商业化推进，社区版相对停滞
 - **Wasm Serverless 兴起**：SpinKube / Knative + WasmEdge / WASM as runtime，毫秒级冷启动（详见 C17）

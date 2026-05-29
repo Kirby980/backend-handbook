@@ -203,7 +203,7 @@ write.lock
 | 操作 | 频率 | 持久 | 可搜索 |
 |---|---|---|---|
 | **refresh** | 默认 1s | ❌（segment 在 page cache） | ✅ |
-| **flush** | 默认 30min 或 translog 512MB | ✅（fsync segment + 清 translog） | ✅ |
+| **flush** | translog 达 10GB（上限磁盘 1%，下限 10MB） | ✅（fsync segment + 清 translog） | ✅ |
 | **commit** | Lucene 概念，等同 ES flush | ✅ | ✅ |
 
 关键：**refresh 让数据可搜，flush 让数据持久**。崩溃后丢的是 `flush 之后 + translog` 之外的数据。
@@ -310,7 +310,7 @@ ES 内部的乐观并发控制：
 |---|---|---|---|---|
 | `default` | LZ4 | 高 | 1× | 极快 |
 | `best_compression` | DEFLATE | 中 | 2-4× 节省 | 慢 ~30% |
-| ES 9 加入 ZSTD | ZSTD | 中-高 | 类似 best_compression | 比 DEFLATE 快 |
+| ES 8.14 起 stored fields 默认使用 ZSTD | ZSTD | 中-高 | 类似 best_compression | 比 DEFLATE 快 |
 
 **适用**：
 
@@ -1102,7 +1102,7 @@ URL 字符串可能很长，超过 2KB 的不参与倒排，避免 term dict 爆
 |---|---|---|
 | 语法 | 标准 SQL | 管道式（类 SPL） |
 | 引擎 | 解释执行 | 编译 + 向量化 |
-| Join | 有限（lookup） | ESQL 8.13+ 支持 |
+| Join | 有限（lookup） | ES|QL LOOKUP JOIN：8.18/9.0 预览，8.19/9.1 GA |
 | 性能 | 一般 | 比 _sql 快很多 |
 | ES 9 推荐 | 不再积极发展 | 主推 |
 

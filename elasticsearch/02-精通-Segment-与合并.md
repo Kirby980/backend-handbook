@@ -641,7 +641,7 @@ PUT _component_template/logs-template
 
 ### 11.2 LogsDB
 
-ES 8.12+ 的 `logsdb` 模式 —— 针对日志场景的优化存储，与 OpenSearch 的 `compression: zstd` 并行。
+ES 8.17 起 GA 的 `logsdb` 模式 —— 针对日志场景的优化存储，与 OpenSearch 的 `compression: zstd` 并行。
 
 ```bash
 PUT _component_template/logs-default

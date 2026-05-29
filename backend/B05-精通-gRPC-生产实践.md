@@ -62,7 +62,13 @@ Envoy 控制平面把后端列表推给 client。Istio、Cloud-native 主流。
 
 **手工 endpoint list**
 ```
-grpc.NewClient("static:///10.0.1.1:50051,10.0.1.2:50051")
+// grpc-go 无内置 static scheme；固定地址列表用 manual.Resolver（自定义注册），
+// 单地址可用 passthrough:///10.0.1.1:50051
+r := manual.NewBuilderWithScheme("myfixed")
+r.InitialState(resolver.State{Addresses: []resolver.Address{
+    {Addr: "10.0.1.1:50051"}, {Addr: "10.0.1.2:50051"},
+}})
+grpc.NewClient(r.Scheme()+":///", grpc.WithResolvers(r))
 ```
 适合本地开发、固定部署。
 
@@ -527,7 +533,7 @@ func RateLimit() grpc.UnaryServerInterceptor {
 
 | 知识点 | 关键记忆 |
 |---|---|
-| 服务发现 | DNS / xDS / static |
+| 服务发现 | DNS / xDS / manual |
 | 负载均衡 | client-side round_robin + headless service |
 | 超时 | client 必设；deadline 跨链传播 |
 | 重试 | 仅幂等 + 退避 + 抖动 + budget |

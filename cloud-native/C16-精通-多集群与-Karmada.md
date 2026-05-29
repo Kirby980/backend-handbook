@@ -651,7 +651,7 @@ spec:
 - **MCS API** alpha → beta（2025），多家实现支持
 - **OCM (Open Cluster Management)** Red Hat 推动，与 ACM 商业化对应
 - **KubeFed v2** 项目已 archive
-- **Liqo** 1.0 GA（2024），生态扩张中
+- **Liqo** 1.0 GA（2025-03），生态扩张中
 - **GitOps 多集群** ArgoCD ApplicationSet + Cluster API + Karmada 三角是主流栈
 - **AI 训练多集群**：Karmada + Volcano 调度跨集群 GPU，2025 大量场景落地
 - **Edge multi-cluster**：KubeEdge / Akri / Rancher Fleet 千万级边缘节点管理

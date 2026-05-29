@@ -116,8 +116,9 @@ db.users.find({ "addresses.city": "NYC" });
 - schema 真的需要刚性约束
 
 特性：
-- 4.0+ 单文档事务
-- 4.2+ 跨文档事务（性能较差）
+- 4.0+ 副本集多文档（跨文档）ACID 事务
+- 4.2+ 分片集群多文档事务（性能较差）
+- 单文档写操作自始就是原子的
 - replica set + sharding
 - aggregation pipeline（强大但 SQL 用户陡）
 

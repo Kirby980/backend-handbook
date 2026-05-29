@@ -86,9 +86,12 @@ PG 的 MVCC 是真·多版本——`UPDATE` 不会原地修改，而是把旧 tu
 
 如果带 `ANALYZE`，再加一件：更新统计信息（pg_statistic）。
 
-### 2.2 工作流程（5 个阶段）
+### 2.2 工作流程（7 个阶段）
 
 ```
+[0] initializing
+    准备阶段：获取 ShareUpdateExclusive 锁，初始化内部状态
+
 [1] scanning heap
     扫描堆表，找到 dead tuple，收集它们的 CTID
     若使用并行：每个 worker 扫描一段
@@ -101,12 +104,15 @@ PG 的 MVCC 是真·多版本——`UPDATE` 不会原地修改，而是把旧 tu
     回到堆表，把第一阶段记下的 dead tuple 真正释放
     （line pointer 标记 LP_DEAD，槽位可重用）
 
-[4] cleanup indexes
+[4] cleaning up indexes
     对每个索引做最终清理（B-tree 空页回收等）
 
-[5] truncate (可选)
+[5] truncating heap (可选)
     如果表末尾有大段空页，截断文件返还磁盘给 OS
     持 AccessExclusive 锁瞬间，可能引起业务感知
+
+[6] performing final cleanup
+    清理 FSM、更新 pg_class 统计、上报统计信息
 ```
 
 `pg_stat_progress_vacuum`（PG 9.6+）实时展示当前阶段。
@@ -778,7 +784,7 @@ FROM pg_stat_progress_vacuum p
 JOIN pg_stat_activity a USING (pid);
 ```
 
-`phase` 五个值：scanning heap / vacuuming indexes / vacuuming heap / cleaning up indexes / truncating heap / final cleanup。
+`phase` 七个值：initializing / scanning heap / vacuuming indexes / vacuuming heap / cleaning up indexes / truncating heap / performing final cleanup。
 
 ### 11.2 表 vacuum / analyze 历史
 

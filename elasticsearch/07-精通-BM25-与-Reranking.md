@@ -426,7 +426,7 @@ rank_i(d) = 文档 d 在第 i 个 retriever 的排名
 
 ### 6.2 ES 的 LTR 插件
 
-ES 8.16+ 内置 LTR 框架（之前是社区插件 elasticsearch-learning-to-rank）：
+ES 8.12+ 内置 LTR 框架（之前是社区插件 elasticsearch-learning-to-rank）：
 
 ```bash
 PUT _ml/trained_models/my_ltr_model

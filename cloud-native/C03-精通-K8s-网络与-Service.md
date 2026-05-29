@@ -4,7 +4,7 @@
 > 路线图来源：云原生 / Kubernetes 工程 · 模块一 容器与编排基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：75 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.32 / 1.33 · EndpointSlice 默认 · Topology Aware Routing GA · Gateway API v1 · Cilium 1.16+）
+> 内容基准：2026 年 5 月（Kubernetes 1.32 / 1.33 · EndpointSlice 默认 · Topology Aware Routing 1.33 GA · Gateway API v1 · Cilium 1.16+）
 
 ---
 
@@ -1034,7 +1034,7 @@ spec:
 
 ### 9.2 解法
 
-Service 加注解（1.21+ alpha → 1.27+ GA）：
+Service 加注解（1.21 alpha → 1.27 改名+topology-mode 注解 → 1.33 GA）：
 
 ```yaml
 apiVersion: v1
@@ -1042,7 +1042,7 @@ kind: Service
 metadata:
   name: backend-svc
   annotations:
-    service.kubernetes.io/topology-mode: Auto    # 1.27+
+    service.kubernetes.io/topology-mode: Auto    # 1.27 改名引入注解，1.33 GA
 spec:
   selector: {app: backend}
   ports: [{port: 80, targetPort: 8080}]
@@ -1068,17 +1068,16 @@ kube-proxy / Cilium 看到 hint，**只把流量发到 hint 包含本 zone 的 e
 - 每个 zone 都需要有足够的可服务端点
 - 否则 fallback 到全集群（防止"流量太集中"）
 
-### 9.4 PreferClose 模式（1.31+）
+### 9.4 PreferClose 模式（1.31 beta）
 
-更激进：
+更激进：注意 `PreferClose` 不是 `topology-mode` 注解的取值（该注解只接受 `Auto`/`Disabled`），而是 Service 的 `spec.trafficDistribution` 字段取值（1.30 alpha、1.31 beta；后续版本已更名为 `PreferSameZone`，`PreferClose` 仍兼容）：
 
 ```yaml
-metadata:
-  annotations:
-    service.kubernetes.io/topology-mode: PreferClose
+spec:
+  trafficDistribution: PreferClose    # 1.30 alpha、1.31 beta；新名 PreferSameZone
 ```
 
-让 hint 优先**当前节点**所在 zone，而非 controller 计算的"全局优解"。
+让流量优先**当前节点**所在 zone，而非 controller 计算的"全局优解"。
 
 **注意**：会破坏 LB 行为——通常**只对集群内部 Service** 启用。
 

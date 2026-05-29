@@ -396,7 +396,7 @@ throttle-time > 0 → 客户端被限速。
 
 ## 第七章：审计
 
-Kafka 4.0 没有内置审计 log，但可以：
+Kafka（截至 4.3.x）没有内置审计 log，但可以：
 
 ### 7.1 Authorizer 日志
 
@@ -520,7 +520,7 @@ kafka-acls.sh --list --principal User:bob
 
 **根因**：
 
-- 客户端版本太老（< 2.6），KIP-792 / KRaft 协议不支持
+- 客户端版本太老（< 2.6），不满足 KRaft 集群要求的新 protocol / API 版本
 - SASL 机制配置变了
 
 **修复**：

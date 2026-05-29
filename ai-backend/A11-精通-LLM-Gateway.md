@@ -1410,7 +1410,7 @@ CDN 厂商(Cloudflare、Fastly)推出了"AI Gateway"产品,在 edge 节点就完
 
 ### 14.4 OpenAI 兼容 API 成为事实标准
 
-2026 年几乎所有 LLM provider 都提供 OpenAI 兼容端点(Anthropic 的 `claude.ai/openai/v1`,Google 的 OpenAI-compatible mode)。这让 Gateway 的协议层大幅简化 - 双协议网关(OpenAI + Anthropic 兼容)已经够用。
+2026 年几乎所有 LLM provider 都提供 OpenAI 兼容端点(Anthropic 的 `https://api.anthropic.com/v1/`（OpenAI SDK 形式，路径 /chat/completions）,Google 的 OpenAI-compatible mode)。这让 Gateway 的协议层大幅简化 - 双协议网关(OpenAI + Anthropic 兼容)已经够用。
 
 ### 14.5 Token-based pricing 趋向统一
 

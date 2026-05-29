@@ -21,7 +21,7 @@
 - **多模型混用**。同一个业务流可能调 Claude Sonnet 做主推理、调 Haiku 做分类、调 GPT-4o 做 fallback、调本地 Llama 3 做嵌入。每个模型的指标维度都要分开统计。
 - **新维度爆炸**。user_id、session_id、agent_step、tool_name、model、provider、prompt_version、cache_status……一个 trace 上动辄十几个 dimension。
 
-正因为这些新挑战，"LLM Observability" 在 2024-2026 年成为一个独立的细分领域，催生了 Langfuse、Phoenix、Helicone、Traceloop 等一批专业工具，OpenTelemetry 也在 2025 年正式发布了 GenAI Semantic Convention 1.0，标志着 LLM 可观测性走向标准化。
+正因为这些新挑战，"LLM Observability" 在 2024-2026 年成为一个独立的细分领域，催生了 Langfuse、Phoenix、Helicone、Traceloop 等一批专业工具，OpenTelemetry 也在推进 GenAI Semantic Convention（截至 2026-05 仍处于 experimental/Development 阶段、正在快速演进、尚未 stable），推动 LLM 可观测性走向标准化。
 
 本文目标：用 Go 工程师能落地的方式，把 LLM 可观测性的"三柱再造"——trace、metric、log——讲透，并给出 Langfuse / Phoenix / OTel 三套真实可跑的集成代码，覆盖从单次调用到 agent 链路、从在线监控到离线评测的完整闭环。
 
@@ -135,7 +135,7 @@ LLM 延迟比传统 API 复杂得多：
 
 ## 3. OpenTelemetry GenAI Semantic Convention
 
-2025 年 9 月，OpenTelemetry 发布 GenAI Semantic Convention 1.0 GA。这是一个里程碑事件：从此 LLM 可观测性有了厂商中立的标准，OTel 是 trace 的"通用语"，Langfuse/Phoenix/Datadog 都向其兼容。
+OpenTelemetry 的 GenAI Semantic Convention 截至 2026-05 仍处于 experimental/Development 阶段、正在快速演进、尚未 stable。即便如此，它已成为 LLM 可观测性走向厂商中立标准的重要方向，OTel 是 trace 的"通用语"，Langfuse/Phoenix/Datadog 都向其兼容。
 
 ### 3.1 核心 attribute 命名空间
 
@@ -143,7 +143,7 @@ LLM 延迟比传统 API 复杂得多：
 |------|------|------|
 | `gen_ai.system` | 提供商 | `anthropic`, `openai`, `google` |
 | `gen_ai.request.model` | 请求模型 | `claude-sonnet-4-6` |
-| `gen_ai.response.model` | 实际响应模型 | `claude-sonnet-4-6-20251029` |
+| `gen_ai.response.model` | 实际响应模型 | `claude-sonnet-4-6` |
 | `gen_ai.operation.name` | 操作类型 | `chat`, `embeddings`, `text_completion` |
 | `gen_ai.request.temperature` | 温度 | `0.7` |
 | `gen_ai.request.max_tokens` | 最大 token | `4096` |
@@ -804,11 +804,11 @@ type Price struct {
 
 // 2026-05 参考价格（实际以官方为准）
 var Table = map[string]Price{
-    "claude-opus-4-7":    {15, 75, 1.50, 18.75},
+    "claude-opus-4-7":    {5, 25, 0.50, 6.25},
     "claude-sonnet-4-6":  {3, 15, 0.30, 3.75},
     "claude-haiku-4-5":   {1.00, 5.00, 0.10, 1.25},
-    "gpt-5":              {2.50, 10, 0.25, 2.50},
-    "gpt-5-mini":         {0.15, 0.60, 0.015, 0.15},
+    "gpt-5":              {1.25, 10, 0.125, 1.25},
+    "gpt-5-mini":         {0.25, 2.00, 0.025, 0.25},
 }
 
 func Compute(model string, inTok, outTok, cacheReadTok, cacheWriteTok int) float64 {
@@ -1144,14 +1144,14 @@ flowchart LR
 11. **没有 sandbox 区分**。dev/staging/prod 共用一个 Langfuse project 会污染金线数据。
 12. **采样率全局一刀切**。错误请求 100% 采、慢请求 100% 采、其他 1% 采，是更优策略。
 13. **忽略 OTel attribute cardinality 上限**。user_id / session_id 作为 attribute 会撑爆 metric backend，应只放 trace。
-14. **token 数靠自己估**。务必使用 provider 返回的 usage，自己用 tiktoken 估算会偏差 ±5%。
+14. **token 数靠自己估**。务必使用 provider 返回的 usage；不要用 tiktoken（OpenAI 分词器）去估 Claude token，跨模型分词器不同，偏差很大。
 15. **golden set 永远不更新**。golden set 会随业务漂移老化，至少季度审查一次。
 
 ---
 
 ## 13. 2026 年现状速览
 
-- **OTel GenAI Convention 1.0 GA**（2025-09）：成为厂商中立的事实标准。Anthropic、OpenAI、Google 的官方 SDK 在 2026 年陆续原生集成。
+- **OTel GenAI Convention**（截至 2026-05 仍为 experimental/Development、尚未 stable）：正朝厂商中立的事实标准演进。Anthropic、OpenAI、Google 的官方 SDK 在 2026 年陆续集成。
 - **Langfuse 3.x**（2025 年发布）：核心新增 prompt management、自定义 evaluator、与 OTel 双向兼容（既能接收 OTLP，也能导出 OTLP）；OSS self-host 仍是首选；Langfuse Cloud 推出 EU/US 双 region。
 - **Arize Phoenix 4.x**（2026 年初）：完整 OTel GenAI 支持、内置 30+ evaluator、与 Arize AX 商业产品打通；最受欢迎的"OTel 原生"开源选项。
 - **Helicone 2.x**：新增对 Anthropic 的 prompt caching 透明计费、自动 PII redaction；对低代码团队仍是最快的接入方式。
@@ -1160,7 +1160,7 @@ flowchart LR
 - **W&B Weave**：与 Models / Eval 打通，是研究团队的首选。
 - **Anthropic 官方 dashboard**：新增 organization-level cost 与 abuse detection（2025 末），但仍非通用 observability 工具，建议自建 + Anthropic 控制台双视图。
 - **EU AI Act 2025-08 生效**：高风险 LLM 应用必须保留 trace 日志至少 6 个月、PII 处理需有 DPIA；这对观测系统的保留期与合规审计提出明确要求。
-- **NIST AI RMF 2.0**（2026 草案）：把"可观测性"列为 Manage 函数下的明确控制项，企业内审将要求覆盖 cost / quality / 安全事件全链路。
+- **NIST AI RMF 1.0**（2023）+ **Generative AI Profile**（NIST AI 600-1, 2024-07）：把"可观测性"列为 Manage 函数下的明确控制项，企业内审将要求覆盖 cost / quality / 安全事件全链路。
 
 ---
 

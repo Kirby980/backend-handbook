@@ -382,7 +382,7 @@ LATENCY DOCTOR     # 人话报告
 
 ```
 Dave, I have observed latency spikes in this Redis instance.
-You can use it to fix specific issues.
+You don't mind talking about it, do you Dave?
 
 1) High AOF fsync latency: 130 ms. The OS is unable to fsync your AOF
    in less than 130 ms. This is likely due to slow disk I/O.

@@ -1909,7 +1909,7 @@ MCP 与 Tool Use 的关系：
 
 ### 12.4 OpenAI Responses API
 
-OpenAI 2024-10 推出 Responses API——一套类似 Anthropic 的"content block + tool"模型。2026 年仍未完全替代 Chat Completions，但官方在主推。新项目建议直接走 Responses API。
+OpenAI 2025-03 推出 Responses API——一套类似 Anthropic 的"content block + tool"模型。2026 年仍未完全替代 Chat Completions，但官方在主推。新项目建议直接走 Responses API。
 
 跨 API 的 Tool Use 抽象层值得抽出去——见 **A02 精通 OpenAI 兼容生态**。
 
@@ -1919,7 +1919,7 @@ OpenAI 2024-10 推出 Responses API——一套类似 Anthropic 的"content bloc
 
 - **Anthropic Agent SDK**（2025 Q3）——和 Claude Code 共用核心
 - **OpenAI Agents SDK**（2025 Q1）——前身 Swarm
-- **Google ADK**（2024 Q4）——Vertex AI 配套
+- **Google ADK**（2025 Q2，2025-04-09 于 Google Cloud NEXT 发布）——Vertex AI 配套
 
 这些 SDK 把 tool registry / loop / memory / multi-agent 封装好。但**底层仍是本章讲的协议**——理解 raw 层是必要的，因为高级抽象的"逃生窗口"全在 raw 层。
 

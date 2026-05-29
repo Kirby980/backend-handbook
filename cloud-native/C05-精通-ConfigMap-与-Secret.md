@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块二 流量与配置
 > 难度：⭐⭐⭐
 > 预计阅读时间：70 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.33、External Secrets Operator 0.10+、Sealed Secrets v0.27+、Vault 1.18+、Reloader 1.x、SPIFFE/SPIRE 1.10+）
+> 内容基准：2026 年 5 月（Kubernetes 1.34/1.35、External Secrets Operator 0.10+、Sealed Secrets v0.27+、Vault 1.18+、Reloader 1.x、SPIFFE/SPIRE 1.10+）
 
 ---
 

@@ -174,7 +174,7 @@ typedef struct BTPageOpaqueData
 typedef struct BTMetaPageData
 {
     uint32      btm_magic;          /* 魔数 0x053162 */
-    uint32      btm_version;        /* 版本号（PG 13+ = BTREE_VERSION 4） */
+    uint32      btm_version;        /* 版本号（PG 12+ = BTREE_VERSION 4） */
     BlockNumber btm_root;           /* 当前根页号 */
     uint32      btm_level;          /* 根页层级（即树高 - 1） */
     BlockNumber btm_fastroot;       /* 快速根（避免遍历多余的"瘦"层） */
@@ -1518,7 +1518,7 @@ CREATE INDEX ON t(col) WITH (fillfactor = 70);
 - **改进的索引扫描**：异步 IO 让 BitmapHeapScan 后的堆访问大幅加速
 - **B-tree skip scan 扩展**：更多场景受益
 
-### PG 17（2024-09 发布，LTS）
+### PG 17（2024-09 发布）
 
 - **Improved parallel VACUUM**：索引并行清理
 - **incremental backup**：减小重建副本的 I/O

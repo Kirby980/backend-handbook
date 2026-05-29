@@ -481,7 +481,7 @@ s, ok := x.(string)           // 安全断言
 s := string(65)        // "A"（合法但常被滥用）
 s2 := string(65)+ "X"  // "AX"
 n := 12345
-s3 := string(n)        // "ሙ"（U+3039 字符）——通常你想要的是 strconv.Itoa(n)
+s3 := string(n)        // "〹"（U+3039 字符）——通常你想要的是 strconv.Itoa(n)
 ```
 
 `go vet` 会对 `string(intVal)` 这种可疑用法警告。

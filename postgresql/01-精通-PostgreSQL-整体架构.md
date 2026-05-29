@@ -247,7 +247,7 @@ pg_multixact/
   offsets/   ← 成员列表的索引
 ```
 
-生产经验：高并发外键场景会大量产生 MultiXact，监控 `pg_stat_database.multixact_id` 不要逼近 wraparound 阈值。
+生产经验：高并发外键场景会大量产生 MultiXact，用 `SELECT datname, mxid_age(datminmxid) FROM pg_database;` 监控 MultiXact 年龄，不要逼近 wraparound 阈值（`autovacuum_multixact_freeze_max_age`，默认 4 亿）。
 
 ---
 
@@ -845,7 +845,7 @@ JOIN pg_stat_activity blocking ON blocking.pid = ANY(pg_blocking_pids(blocked.pi
 ## 2026 现状
 
 - **PG 18（2025-09 发布，2026 主流）**：异步 IO（`io_method = io_uring`）大幅降低读放大下的等待；UUIDv7 内置；虚拟生成列；改进的统计信息。
-- **PG 17 LTS（2024-09）**：incremental backup（`pg_basebackup --incremental`）；改进的 VACUUM 内存管理；MERGE...RETURNING。
+- **PG 17（2024-09）**：incremental backup（`pg_basebackup --incremental`）；改进的 VACUUM 内存管理；MERGE...RETURNING。
 - **stats collector 已死（PG 15+）**：所有累积统计走共享内存，性能好一个数量级。
 - **PgBouncer 1.21+**：protocol-level prepared statement support，终于摆脱 transaction mode 的痛点。
 - **pgcat / Odyssey 崛起**：Rust / 多线程实现的连接池，PgBouncer 单线程瓶颈下的替代选项。

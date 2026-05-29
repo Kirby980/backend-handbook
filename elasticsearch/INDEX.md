@@ -104,7 +104,7 @@
 - [ ] 实现 hybrid search：BM25 + dense_vector + RRF 融合
 - [ ] 设计一次 force_merge 的执行计划（什么时段、几个 segment、内存预算）
 - [ ] 给 P99 写入延迟飙升的集群列出 5 条诊断假设
-- [ ] 解释 ES 9 的 ESQL / Lookup join / Aggregations as Time Series 三大新特性
+- [ ] 解释 ES 9 的 Lookup join（tech preview）/ Lucene 10 / logsdb 默认 等新特性（ES|QL 已在 8.14 GA）
 - [ ] 选 ES 9 还是 OpenSearch 3 并说出理由
 
 ---

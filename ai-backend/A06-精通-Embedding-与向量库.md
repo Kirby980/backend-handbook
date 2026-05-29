@@ -146,7 +146,7 @@ OpenAI、Voyage、Cohere 等 API 返回的向量已经归一化（norm ≈ 1）�
 | Google text-embedding-gecko | 768 | 中 | 2048 | $0.025 | Google Cloud 生态 |
 | Anthropic via Voyage | 1024 | 强 | 32k | $0.12 | Claude 推荐搭配 |
 
-**Anthropic 没有自己的 embedding API**——官方推荐 Voyage AI（已收购，2024-10）。
+**Anthropic 没有自己的 embedding API**——官方推荐合作伙伴 Voyage AI；Voyage AI 于 2025-02-24 被 MongoDB 收购（与 Anthropic 的关系仅为推荐/合作）。
 
 ### 2.2 开源模型
 
@@ -324,7 +324,7 @@ db.Insert(normalized)
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-pgvector 0.7（2024）后支持 HNSW，0.8（2025）支持 binary quantization。2026 年 5 月稳定版是 0.8.x。
+pgvector 0.5.0（2023）引入 HNSW，0.7.0（2024）引入 binary quantization，0.8.0（2024-10）引入 iterative index scans。2026 年 5 月稳定版是 0.8.x。
 
 ### 5.1 表设计
 

@@ -1702,7 +1702,7 @@ Flux 大集群调优：
 
 | 项目 | 2026 状态 |
 |---|---|
-| **ArgoCD** | 3.x 主线（2024-12 GA）；ApplicationSet 一等公民；Gateway API rollout 支持；CMP v2 稳定 |
+| **ArgoCD** | 3.x 主线（2025-05 GA）；ApplicationSet 一等公民；Gateway API rollout 支持；CMP v2 稳定 |
 | **Flux v2** | 2.4+ 稳定；OCI artifact 主流；Pipeline 概念 alpha；FluxCD CLI 工程化体验持续提升 |
 | **Argo Rollouts** | 1.8+；支持 Gateway API HTTPRoute；Plugin 系统让分析提供者扩展更轻 |
 | **Flagger** | 1.40+；支持 Gateway API；Apple Pkl 等新模板系统初步集成 |

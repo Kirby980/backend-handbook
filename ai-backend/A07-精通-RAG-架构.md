@@ -699,7 +699,7 @@ ORDER BY embedding <=> $1
 LIMIT 50;
 ```
 
-但 pgvector 早期版本对带 WHERE 的向量查询性能差（先全扫再过滤）。新版本 + HNSW 索引 + `iterative_scan` 已经大幅改善（2025 年发布的 pgvector 0.8+）。
+但 pgvector 早期版本对带 WHERE 的向量查询性能差（先全扫再过滤）。新版本 + HNSW 索引 + `iterative_scan` 已经大幅改善（2024 年 10 月发布的 pgvector 0.8+）。
 
 **Pinecone / Milvus / Qdrant** 都内置 metadata filter，性能好。**自托管选 Milvus / Qdrant / Weaviate / Vespa**，托管选 Pinecone。
 

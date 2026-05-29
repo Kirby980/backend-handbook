@@ -381,7 +381,7 @@ WITH (
 | `bge-large-zh-v1.5` | 1024 | 4 KB | 40 GB | 中文高质量 |
 | `all-MiniLM-L6-v2` (sentence-transformers) | 384 | 1.5 KB | 15 GB | 轻量多语言 |
 | `voyage-3-large` (Voyage) | 1024 | 4 KB | 40 GB | 评测领先 |
-| Anthropic 自家 embedding（2026） | 1024 | 4 KB | 40 GB | 与 Claude 配套 |
+| `voyage-3.5` (Voyage) | 1024 | 4 KB | 40 GB | Voyage AI（Anthropic 推荐，与 Claude 配套） |
 
 **Matryoshka Embedding（俄罗斯套娃）**：OpenAI v3 系列支持降维使用——把 1536 维直接截前 512 维仍然能保留 90%+ 的语义信息。生产中常见做法是：
 
@@ -734,7 +734,7 @@ SELECT count(*)::float / 10 AS recall FROM hnsw;
 | **Matryoshka embedding** | OpenAI v3 系列引领；混合维度索引常见 |
 | **混合检索（BM25 + 向量）** | RAG 默认；RRF / 加权融合都常见 |
 | **PG 18 异步 IO** | 对 HNSW 部分查询路径有性能改善 |
-| **Anthropic / Voyage embeddings 集成** | Anthropic Files API + 自家 embedding（2026） |
+| **Anthropic / Voyage embeddings 集成** | Anthropic Files API + Voyage AI 嵌入（Anthropic 推荐第三方，无自研模型） |
 | **多模态向量** | 图像 / 视频 embedding 入库与文本同库混存 |
 | **CloudNativePG + pgvector** | K8s 上的标准化部署模式 |
 | **AWS Aurora pgvector 优化** | Aurora 专门做了 HNSW 优化版本 |

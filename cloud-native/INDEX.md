@@ -206,5 +206,5 @@
 | **C11 可观测** | OpenTelemetry CNCF Graduated；Prometheus 3.0；Pixie / Hubble / Coroot eBPF 可观测崛起 |
 | **C12 安全** | Pod Security Admission 默认替代 PSP（已删）；Kyverno 与 Gatekeeper 并立；SBOM / SLSA 在企业普及 |
 | **C14 GitOps** | ArgoCD 3.x / Flux v2 稳定；Argo Rollouts / Flagger 用于渐进式发布；OCI 仓库存 Helm chart 主流 |
-| **C15 Serverless** | Knative CNCF Graduated（2024-03）；KEDA 2.16+ Graduated；KEDA HTTP add-on GA；Cloud Run for K8s 推 Knative 兼容；KServe AI 推理 scale-to-zero 标配 |
+| **C15 Serverless** | Knative CNCF Graduated（2025-09，2025-10 宣布）；KEDA 2.16+ Graduated；KEDA HTTP add-on GA；Cloud Run for K8s 推 Knative 兼容；KServe AI 推理 scale-to-zero 标配 |
 | **C16 多集群** | Karmada CNCF Incubation；Cluster API v1.7+；Cilium Cluster Mesh 事实标准；MCS API alpha→beta；KubeFed v2 archive；Liqo 1.0 GA |

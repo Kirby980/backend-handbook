@@ -286,7 +286,7 @@ WHERE next_id - id > 1;
 ```sql
 SELECT u.id, u.name, t.top_orders
 FROM users u
-LATERAL (
+JOIN LATERAL (
   SELECT jsonb_agg(o ORDER BY o.amount DESC) FILTER (WHERE rn <= 3) AS top_orders
   FROM (SELECT o.*, ROW_NUMBER() OVER (ORDER BY amount DESC) rn FROM orders o WHERE o.user_id = u.id) o
 ) t ON true;

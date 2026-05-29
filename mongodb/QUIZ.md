@@ -42,7 +42,7 @@
 
 - 时间戳前缀让 ObjectId 大致按生成时间排序（不严格单调，多机器并发）
 - random + counter 防冲突
-- 8.0 把内部 counter 改为更 random 化，改善高并发热点
+- counter 在进程启动时初始化为随机值（长期规范行为），改善高并发热点
 
 </details>
 
@@ -407,15 +407,9 @@ in-memory 老版本满 → 下沉到 `WiredTigerHS.wt`（history store）。
 
 <details><summary>答案</summary>
 
-技术可关：
+自 MongoDB 6.1 起，journaling **始终启用、无法关闭**：`storage.journal.enabled` 选项以及 `--journal` / `--nojournal` 命令行参数均已被移除，带该选项启动 mongod 会直接报错（`Unrecognized option: storage.journal.enabled`）无法启动。
 
-```yaml
-storage:
-  journal:
-    enabled: false
-```
-
-代价：
+为什么不能没有 journal：
 
 - 单节点崩溃 → 必须 **resync**（从其他副本全量复制）
 - 大数据量 resync 极慢

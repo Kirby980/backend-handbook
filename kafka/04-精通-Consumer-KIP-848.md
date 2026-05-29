@@ -17,9 +17,9 @@ Producer 复杂在性能（batch、压缩、idempotent），Consumer 复杂在**
 
 - **0.8-0.9**：High-level Consumer + ZK（已废）
 - **0.10**：New Consumer API + Group Coordinator broker
-- **2.4**：Incremental Cooperative Rebalance (KIP-429)
-- **2.5**：Sticky Assignor
-- **3.7+**：**KIP-848 新协议（broker 主导 rebalance）** preview
+- **0.11**：StickyAssignor（KIP-54）
+- **2.4**：Incremental Cooperative Rebalance / CooperativeStickyAssignor (KIP-429)
+- **3.7**：**KIP-848 新协议（broker 主导 rebalance）** Early Access；**3.8/3.9**：Preview
 - **4.0**：KIP-848 GA + 老协议 deprecated
 
 这章把 Consumer 的内部、KIP-848 革命性变化、最佳实践讲透。读完之后你应能：
@@ -92,7 +92,7 @@ while (true) {
 
 | 参数 | 默认 | 含义 |
 |---|---|---|
-| `session.timeout.ms` | 45000（KIP-848 前 10000） | 多久没心跳算成员死了 |
+| `session.timeout.ms` | 45000（旧默认 10000，KIP-735 提升） | 多久没心跳算成员死了 |
 | `heartbeat.interval.ms` | 3000 | 心跳间隔（应 ≤ session.timeout / 3） |
 | `max.poll.interval.ms` | 300000 (5min) | 两次 poll 最大间隔，超就踢 |
 | `max.poll.records` | 500 | 单次 poll 拉多少条 |
@@ -165,7 +165,7 @@ sequenceDiagram
 |---|---|
 | `RangeAssignor` (默认 < 2.4) | 按 topic 切片：每 topic 单独按字典序分 |
 | `RoundRobinAssignor` | 全 topic 全 partition 一起轮 |
-| `StickyAssignor` (2.0+) | 尽量保持上次分配不变（最小迁移） |
+| `StickyAssignor` (0.11+) | 尽量保持上次分配不变（最小迁移） |
 | `CooperativeStickyAssignor` (2.4+) | sticky + 增量 rebalance |
 
 CooperativeSticky 是 pre-KIP-848 时代的最佳选择——已经能做到"只迁移变化的 partition，其他不动"。

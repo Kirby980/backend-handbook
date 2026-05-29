@@ -286,9 +286,9 @@ var jsonb pgtype.JSONB
 err := pool.QueryRow(ctx, "SELECT data FROM events WHERE id=$1", id).Scan(&jsonb)
 ```
 
-### 6.5 Go 1.24+ 的 `database/sql.Null[T]` —— 终结 `NullString` 系列样板
+### 6.5 Go 1.22 的 `database/sql.Null[T]` —— 终结 `NullString` 系列样板
 
-Go 1.24 把 `database/sql` 里那一堆 `NullString` / `NullInt64` / `NullTime` / `NullBool` 用泛型统一成一个 `sql.Null[T]`：
+Go 1.22 把 `database/sql` 里那一堆 `NullString` / `NullInt64` / `NullTime` / `NullBool` 用泛型统一成一个 `sql.Null[T]`：
 
 ```go
 var name sql.Null[string]

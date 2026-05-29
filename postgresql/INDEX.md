@@ -4,7 +4,8 @@
 > 每篇约 10000-15000 字，含源码级原理、Go 客户端示例、性能调优、生产陷阱、练习题
 > 适合从中级到高级后端 / DBA / SRE / 平台工程师
 >
-> **📅 内容基准：PostgreSQL 18**（2025-09 发布，2026 主流）+ **PostgreSQL 17 LTS**（2024-09 发布，长期支持）
+> **📅 内容基准：PostgreSQL 18**（2025-09-25 发布，2026 主流稳定版）+ **PostgreSQL 17**（2024-09 发布，上一稳定版）
+> ⚠️ PostgreSQL **无官方 "LTS" 概念**——每个大版本统一获 5 年支持（PG 17 至 2029-11、PG 18 至 2030-11）；"LTS" 仅见于第三方托管服务（如 AWS Aurora）。**2026 新项目应直接上 PG 18。**
 > 涵盖 PG 18 异步 IO、incremental backup、UUIDv7、SQL/JSON、MERGE...RETURNING、虚拟生成列等新特性
 
 ---
@@ -124,7 +125,7 @@
 
 - **路线图**：[ROADMAP.md](./ROADMAP.md)
 - **测验题**：[QUIZ.md](./QUIZ.md)
-- **官方文档**：[postgresql.org/docs/18/](https://www.postgresql.org/docs/18/) / [17 LTS](https://www.postgresql.org/docs/17/)
+- **官方文档**：[postgresql.org/docs/18/](https://www.postgresql.org/docs/18/) / [17](https://www.postgresql.org/docs/17/)
 - **源码**：[github.com/postgres/postgres](https://github.com/postgres/postgres)（重点看 `src/backend/storage/`、`src/backend/access/heap/`、`src/backend/optimizer/`）
 - **必读书**：
   - 《PostgreSQL Internals》（Egor Rogov，免费英文版，必读）

@@ -247,11 +247,11 @@ Sum-8                 450.0n ± 1%   220.0n ± 2%  -51.11% (p=0.000 n=10)
 Sum-8                 24.00 ± 0%    0.00 ± 0%   -100.00% (p=0.000 n=10)
 ```
 
-`-51.11%` + `p=0.000` 表示：新版快了 51%，t-test p-value < 0.05 高度显著。
+`-51.11%` + `p=0.000` 表示：新版快了 51%，Mann-Whitney U 检验（Wilcoxon 秩和检验）p-value < 0.05 高度显著。
 
 ### 5.3 为什么必须 -count=N
 
-单次 benchmark 受系统噪音影响（GC、其他进程、temperature throttling）。`-count=10` 跑 10 次让 benchstat 做 t-test。
+单次 benchmark 受系统噪音影响（GC、其他进程、temperature throttling）。`-count=10` 跑 10 次让 benchstat 做 Mann-Whitney U 检验（默认 `assume=nothing`，用中位数做摘要、用 Mann-Whitney U-test 做 A/B 对比；只有显式 `assume=normal` 时才用 t-test）。
 
 ### 5.4 平稳的测试环境
 
@@ -570,7 +570,7 @@ func BenchmarkBuffer_Pool(b *testing.B) {
 | SetBytes | 输出 MB/s 吞吐 |
 | sub-bench | b.Run 多输入规模 |
 | RunParallel | 并发 benchmark |
-| benchstat | -count=10 + t-test |
+| benchstat | -count=10 + Mann-Whitney U 检验 |
 | 防优化 | sink 到包级变量 |
 
 下一篇 **G20 — 精通 Go 内存管理** 会拆开 GC 算法、GOGC / GOMEMLIMIT、tri-color marking、write barrier、stop-the-world 等核心。

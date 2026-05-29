@@ -159,7 +159,7 @@ producer.metrics().get("buffer-exhausted-records") // 因 buffer 满阻塞的次
 |---|---|
 | < 2.4 | DefaultPartitioner（有 key 用 hash，无 key 用 round-robin） |
 | 2.4-3.2 | StickyPartitioner（无 key 时粘到一个 partition 直到 batch 满） |
-| 3.3+ | **UniformStickyPartitioner**（带负载均衡的 sticky） |
+| 3.3+ | **不指定 partitioner.class**，由 producer 内置 strictly-uniform sticky 逻辑处理（KIP-794）；`DefaultPartitioner`/`UniformStickyPartitioner` 均已 `@Deprecated`（since 3.3） |
 
 ### 3.2 三种策略对比
 
@@ -606,7 +606,7 @@ delivery.timeout.ms=120000
 ```mermaid
 flowchart LR
     App[应用线程] -->|send| Ser[序列化]
-    Ser --> Part[Partitioner<br>UniformSticky 默认]
+    Ser --> Part[Partitioner<br>默认内置 sticky 分区逻辑 KIP-794]
     Part --> Acc[Accumulator<br>per-partition 队列]
     Acc -.->|batch 满或 linger 到| Sender[Sender 线程]
     Sender --> Comp[压缩 lz4]

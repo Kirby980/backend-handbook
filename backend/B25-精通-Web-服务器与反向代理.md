@@ -149,14 +149,14 @@ listen 443 ssl http2;
 add_header Alt-Svc 'h3=":443"; ma=86400';
 ```
 
-Nginx **1.25.0** (2023-04) 起内置 QUIC + HTTP/3，2026 stable 是 1.27.x。
+Nginx **1.25.0** (2023-05) 起内置 QUIC + HTTP/3，2026 年 5 月稳定分支是 1.30.x（mainline 1.31.x）；1.27/1.29 已 EOL。
 
 ### 2.7 NGINX One 与 F5 治理（2024-2025 重要变化）
 
 - **2024-09**：F5（Nginx 母公司）发布 **NGINX One**——把 NGINX OSS、NGINX Plus、统一管理控制台 (NGINX One Console)、telemetry 整合为一个 SaaS 产品。
 - **2024-11 NGINX Plus R33**：开始要求 JWT license 文件 + 周期性使用上报；**OSS 版（nginx.org 编译版）不受影响**——但企业用 Plus 要规划合规。
 - **2024-03**：F5 把 ModSecurity WAF 标记 EOL（Trustwave 2024-07 停止维护 ModSecurity）。生产 WAF 改用 Coraza、CRS 直跑、或 Cloudflare/Fastly 等托管 WAF。
-- **NGINX OSS 主线持续开源活跃**——开源版本在 1.27.x（含 HTTP/3、experimental QUIC tuning）。
+- **NGINX OSS 主线持续开源活跃**——开源 mainline 在 1.31.x、stable 1.30.x（含 HTTP/3）。
 
 > 参考：[F5 NGINX One](https://www.f5.com/products/nginx/one)、[NGINX Plus R33 release](https://docs.nginx.com/nginx/releases/)。
 

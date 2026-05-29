@@ -289,7 +289,7 @@ ES 实际存的 stored fields：
 "index": { "codec": "best_compression" }   // 用 Deflate / Zstandard
 ```
 
-默认 LZ4（快，压缩率 ~50%）。`best_compression` 用 Deflate / Zstandard（ES 9 引入），压缩率 ~70% 但 indexing 慢 10-20%。
+默认 LZ4（快，压缩率 ~50%）。`best_compression` 用 Deflate（ES 8.16/8.17 起底层改为 Zstandard），压缩率 ~70% 但 indexing 慢 10-20%。
 
 **适用**：cold / frozen tier 的存储。**不适用**：hot / warm（实时写入压力大）。
 
@@ -379,7 +379,7 @@ Lucene 的核心约定：**写入完成的 segment 文件永不修改**。
   "index": true,
   "similarity": "cosine",
   "index_options": {
-    "type": "int8_hnsw",   // ES 9 起默认量化到 int8，省 4x 内存
+    "type": "int8_hnsw",   // ES 8.14 起默认 int8_hnsw，省 4x 内存
     "m": 16,
     "ef_construction": 100
   }
@@ -404,7 +404,7 @@ Layer 0:  全部节点
 
 ### 9.3 量化：int8 / int4 / bbq
 
-ES 9 / Lucene 10 提供多档量化：
+ES 8.12 起陆续提供 int8/int4/bbq 多档量化（bbq 于 8.16 预览、9.0 GA）：
 
 | 量化 | 内存 | 召回率 | 适用 |
 |---|---|---|---|

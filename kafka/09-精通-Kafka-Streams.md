@@ -127,7 +127,7 @@ streams.start();
 
 ### 2.3 Scale Out
 
-加实例 = 加 thread → task 自动 rebalance（KIP-848 增量风格）。
+加实例 = 加 thread → task 自动 rebalance（Streams 侧由 KIP-1071 提供新协议，构建在 consumer 侧 KIP-848 之上）。
 
 实例数 ≤ partition 数。超过没用，多余实例空闲。
 
@@ -412,11 +412,11 @@ processing.guarantee=exactly_once_v2
 
 - 吞吐降 10-30%
 - 下游 read_committed consumer 看 LSO，延迟增加
-- 事务粒度由 `commit.interval.ms` 控制（默认 30s for v2）
+- 事务粒度由 `commit.interval.ms` 控制（EOS / exactly_once_v2 下默认 100ms；at_least_once 默认才是 30s）
 
 ### 7.4 transactional.id 怎么生成
 
-Streams 自动用 `application.id + task_id + producer_id`。
+Streams 自动用 `application.id + task.id`（task.id 静态映射到固定输入分区，从而保证跨实例 fencing；producer_id 是 broker 在 InitProducerId 时分配的独立内部 ID，不参与 transactional.id 构成）。
 
 → 多实例部署不会冲突，自动 fencing。
 
@@ -491,7 +491,7 @@ kafka.streams:type=stream-state-metrics,name=put-latency-avg
 
 ### 8.4 Rebalance 与 task 迁移
 
-KIP-848 之后 Streams 也走新协议，rebalance 几乎不影响处理。
+KIP-1071（Streams Rebalance Protocol，构建在 consumer 侧 KIP-848 之上）之后 Streams 也走新协议，rebalance 几乎不影响处理。
 
 老协议下 standby replica 是减小 rebalance 影响的关键：
 

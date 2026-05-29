@@ -35,7 +35,7 @@ listpack 把每个 entry 改成"自包含"：自己的总长度写在 entry 末�
 
 两个阈值任一触发：
 
-- `hash-max-listpack-entries 128`：字段数 > 128
+- `hash-max-listpack-entries 512`：字段数 > 512（Redis 7.x/8.x 默认；6.x 时代为 128）
 - `hash-max-listpack-value 64`：任一字段名或值长度 > 64
 
 切换是**单向**的：listpack → hashtable 后即使删字段也不退回。
@@ -109,11 +109,11 @@ Consumer Group 状态独立用 listpack + radix tree 存 PEL（Pending Entry Lis
 
 </details>
 
-### Q1.10 ⭐⭐⭐ 为什么 Redis 6 把 ziplist 全面换成 listpack 之后，hash / set / zset 的 listpack-entries 默认值改为 128？
+### Q1.10 ⭐⭐⭐ 为什么 Redis 7.0 把 ziplist 全面换成 listpack 之后，hash / set / zset 的 listpack-entries 默认值得以提高？
 
 <details><summary>答案</summary>
 
-ziplist 时代默认 64，因为 cascading update 在大 ziplist 上更危险。listpack 杜绝了 cascading update，可以安全用更大的紧凑结构 → 默认调到 128，**让更多 hash 留在 listpack 形态、内存更省**。
+ziplist 时代默认 64，因为 cascading update 在大 ziplist 上更危险。listpack 杜绝了 cascading update，可以安全用更大的紧凑结构 → 7.0 起 hash 默认调到 512（zset/set 仍为 128），**让更多 hash 留在 listpack 形态、内存更省**。
 
 </details>
 
@@ -209,7 +209,7 @@ INFO memory
 - 提供 `je_mallctl` 等接口让 Redis 主动整理碎片（active defrag 依赖）
 - 特定 size 命中固定 bin，分配更快
 
-Redis 6.2 后默认编译就用 jemalloc。
+Redis 在 Linux 上自 2.4 起默认编译即用 jemalloc（非 Linux 平台默认 libc malloc）。
 
 </details>
 
@@ -1316,7 +1316,7 @@ ACL SETUSER alice on >password ~cache:* +get +set +del
 
 <details><summary>答案</summary>
 
-- 2024-03-21：Redis Inc. 改双许可证 RSALv2 + SSPLv1（不再 OSI 开源）
+- 2024-03-20：Redis Inc. 改双许可证 RSALv2 + SSPLv1（不再 OSI 开源）
 - 2024-03-28：Linux Foundation 宣布 Valkey fork
 - 基础：Redis 7.2.4（最后一个 BSD 版本）
 - 许可证：BSD-3

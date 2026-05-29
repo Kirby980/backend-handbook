@@ -49,7 +49,7 @@ LLM 应用商业化的两座大山：
 | Output | $15 |
 | Cache write (5min) | $3.75 |
 | Cache read | $0.30 |
-| Cache write (1h, beta) | $6 |
+| Cache write (1h, GA) | $6 |
 
 **关键观察**：
 
@@ -174,7 +174,7 @@ resp.usage
 - 缓存最多 4 个 breakpoint（`cache_control` 位置）
 - 缓存按 prefix 命中——前缀完全相同才命中
 - 缓存最小 1024 tokens（Sonnet），不够不生效
-- TTL 默认 5min，beta 支持 1h（贵 60%）
+- TTL 默认 5min，GA 支持 1h cache（cache write 为 base 的 2x，5min 为 1.25x）
 
 **正确摆放顺序**：
 
@@ -207,7 +207,7 @@ resp.usage
 - **TTL 5min**：低频接口缓存命中率很低——比如每 10min 才一次调用，缓存被 evict
 - **冷启动**：第一个请求要写缓存（贵 25%）+ 后续才便宜，scale up 时容易踩
 - **多 user 隔离**：如果 system 里嵌了用户名，缓存就分流了——尽量保 system 全局
-- **provider 区别**：OpenAI 自动缓存（不需要 hint）但折扣只有 50% 左右；Anthropic 显式 hint + 90% 折扣
+- **provider 区别**：OpenAI 自动缓存（无需 hint），GPT-5 及更新模型折扣约 90%（cached input 付 10%）；Anthropic 需显式 cache_control，命中折扣约 90%
 
 ---
 
@@ -275,9 +275,9 @@ for result in client.messages.batches.results(batch.id):
   ▼
 意图分类器 (Haiku / 规则)
   │
-  ├──► 简单 (闲聊 / FAQ)        → Haiku 4.5  ($0.80/M out)
+  ├──► 简单 (闲聊 / FAQ)        → Haiku 4.5  ($5/M out)
   ├──► 中等 (摘要 / 通用 QA)     → Sonnet 4.6 ($15/M out)
-  └──► 复杂 (推理 / 代码 / 长链路) → Opus 4.7  ($75/M out)
+  └──► 复杂 (推理 / 代码 / 长链路) → Opus 4.7  ($25/M out)
 ```
 
 **省钱效应**：如果 60% 走 Haiku、30% Sonnet、10% Opus，平均成本只有"全用 Sonnet"的 30%。
@@ -442,7 +442,7 @@ Step N: 累积 N 倍 history
 
 **A. Prompt cache 是 Agent 的救命药**
 
-每步前缀（system + tool defs + 前 N-1 步历史）尽量命中缓存。Anthropic 的 1h cache（beta）非常适合 Agent 长任务。
+每步前缀（system + tool defs + 前 N-1 步历史）尽量命中缓存。Anthropic 的 1h cache（GA）非常适合 Agent 长任务。
 
 **B. Tool result 压缩 / 摘要**
 

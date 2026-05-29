@@ -496,7 +496,7 @@ type User @key(fields: "id") {
 # order-service
 type Order {
     id: ID!
-    user: User! @provides("name")
+    user: User! @provides(fields: "name")
     total: Float!
 }
 
