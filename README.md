@@ -1,6 +1,6 @@
 # 后端工程师深度课程 · 中文知识库
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **10 大专题、168 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **11 大专题、190 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
 > **📅 内容基准：2026 年 5 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF。
 
@@ -20,6 +20,7 @@
 | 🔎 **Elasticsearch** | 11 | ⭐⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 搜索 / 日志分析 | [elasticsearch/](./elasticsearch/INDEX.md) |
 | 🤖 **AI / LLM 后端** | 16 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | LLM 应用工程化 | [ai-backend/](./ai-backend/INDEX.md) |
 | ☸️ **云原生 / K8s** | 16 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 平台 / SRE / 应用上云 | [cloud-native/](./cloud-native/INDEX.md) |
+| 🕸️ **微服务架构** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 架构师 / 后端 / SRE | [microservices/](./microservices/INDEX.md) |
 
 - `INDEX.md` —— 总目录、模块划分、学习路径
 - `ROADMAP.md` —— Mermaid 可视化路线图
@@ -109,6 +110,20 @@ cloud-native/ C10–C12（Service Mesh / 可观测 / 安全） + backend/ B24 �
 cloud-native/ C13–C16（生产调优 / GitOps / Serverless / 多集群）
 ```
 
+### 路径 H：微服务架构师（3-4 个月）
+
+```
+microservices/ M01–M03（架构总览 / DDD 拆分 / 演进策略）
+   ↓
+microservices/ M04–M06（同步通信 / 服务发现 / 网关 BFF）
+   ↓
+microservices/ M07–M10（异步消息 / 分布式事务 / 幂等 / ES-CQRS）+ kafka/ 全套
+   ↓
+microservices/ M11–M16（限流熔断 / 韧性 / 锁 / 配置 / 网格 / 分布式 ID）
+   ↓
+microservices/ M17–M22（可观测 / 灰度 / 契约测试 / 安全 / 反模式）+ cloud-native/ C10 Service Mesh
+```
+
 > 每个专题的 `INDEX.md` 里都有更细致的路径建议（API 工程师特化、性能特化、架构师视角、RAG / Agent 特化、Operator 开发者特化等）。
 
 ---
@@ -126,7 +141,8 @@ cloud-native/ C13–C16（生产调优 / GitOps / Serverless / 多集群）
 ├── kafka/           # Kafka 12 篇（KRaft/KIP-848/事务/Streams/Connect）
 ├── elasticsearch/   # ES 11 篇（Lucene/分片/Query DSL/BM25/向量检索）
 ├── ai-backend/      # AI/LLM 16 篇（Claude/OpenAI/RAG/Agent/MCP/Gateway/安全）
-└── cloud-native/    # 云原生 16 篇（Docker/K8s/Gateway API/Service Mesh/Operator/GitOps/Serverless/多集群）
+├── cloud-native/    # 云原生 16 篇（Docker/K8s/Gateway API/Service Mesh/Operator/GitOps/Serverless/多集群）
+└── microservices/   # 微服务 22 篇（DDD/通信/服务发现/分布式事务/韧性/网格/可观测/安全/反模式）
 ```
 
 ---
