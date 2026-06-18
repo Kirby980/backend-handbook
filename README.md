@@ -1,8 +1,8 @@
 # 后端工程师深度课程 · 中文知识库
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **11 大专题、190 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **12 大专题、210 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
-> **📅 内容基准：2026 年 5 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF。
+> **📅 内容基准：2026 年 5 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
 
 ---
 
@@ -21,6 +21,7 @@
 | 🤖 **AI / LLM 后端** | 16 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | LLM 应用工程化 | [ai-backend/](./ai-backend/INDEX.md) |
 | ☸️ **云原生 / K8s** | 16 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 平台 / SRE / 应用上云 | [cloud-native/](./cloud-native/INDEX.md) |
 | 🕸️ **微服务架构** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 架构师 / 后端 / SRE | [microservices/](./microservices/INDEX.md) |
+| 🐧 **Linux / 操作系统** | 20 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 后端 / SRE / 平台 | [linux/](./linux/INDEX.md) |
 
 - `INDEX.md` —— 总目录、模块划分、学习路径
 - `ROADMAP.md` —— Mermaid 可视化路线图
@@ -124,6 +125,18 @@ microservices/ M11–M16（限流熔断 / 韧性 / 锁 / 配置 / 网格 / 分�
 microservices/ M17–M22（可观测 / 灰度 / 契约测试 / 安全 / 反模式）+ cloud-native/ C10 Service Mesh
 ```
 
+### 路径 I：Linux 系统 / 内核 / SRE 工程师（3-4 个月）
+
+```
+linux/ L01–L03（架构 / 进程 / 调度）
+   ↓
+linux/ L04–L10（内存 / 文件 / I/O：epoll / io_uring / 块设备）
+   ↓
+linux/ L11–L17（网络栈 / TCP / Socket / IPC / 同步 / 容器：namespace / cgroup）
+   ↓
+linux/ L18–L20（性能诊断 / eBPF / systemd）+ cloud-native/ C03 网络、C06 资源、C11 可观测
+```
+
 > 每个专题的 `INDEX.md` 里都有更细致的路径建议（API 工程师特化、性能特化、架构师视角、RAG / Agent 特化、Operator 开发者特化等）。
 
 ---
@@ -142,7 +155,8 @@ microservices/ M17–M22（可观测 / 灰度 / 契约测试 / 安全 / 反模�
 ├── elasticsearch/   # ES 11 篇（Lucene/分片/Query DSL/BM25/向量检索）
 ├── ai-backend/      # AI/LLM 16 篇（Claude/OpenAI/RAG/Agent/MCP/Gateway/安全）
 ├── cloud-native/    # 云原生 16 篇（Docker/K8s/Gateway API/Service Mesh/Operator/GitOps/Serverless/多集群）
-└── microservices/   # 微服务 22 篇（DDD/通信/服务发现/分布式事务/韧性/网格/可观测/安全/反模式）
+├── microservices/   # 微服务 22 篇（DDD/通信/服务发现/分布式事务/韧性/网格/可观测/安全/反模式）
+└── linux/           # Linux/OS 20 篇（架构/进程/调度/内存/I/O/网络/IPC/同步/容器/eBPF/systemd）
 ```
 
 ---
