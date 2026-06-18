@@ -662,3 +662,23 @@ $ sudo sysctl -w net.core.netdev_max_backlog=4000
 7. 对比 GRO 与 LRO：为什么 GRO 对转发安全而 LRO 不安全？做 K8s 宿主机时这两个该如何设置？开了 TSO 后用 `tcpdump` 排查 MSS 问题为什么会被误导，正确做法是什么？
 
 8. XDP 的四个主要动作（DROP/PASS/TX/REDIRECT）各自典型用途是什么？为什么 XDP 做 DDoS 丢包的单核成本远低于 iptables？写一段 XDP 程序时，为什么每次访问包数据前都要做边界检查？
+
+---
+
+## 参考答案
+
+1. 路径：网卡收帧并按 RSS 哈希选队列 → DMA 把帧直接写入该队列的 RX ring 缓冲区（CPU 未参与）→ ③ 网卡触发**硬中断**，硬中断处理只关本队列中断 + `napi_schedule()` 调度软中断后立即返回 → ⑤ **软中断 NET_RX_SOFTIRQ** 里 `net_rx_action` 调用驱动 **NAPI poll(budget)** 批量收割 RX ring、把每个 buffer 包成 sk_buff → ⑥ `napi_gro_receive`（GRO 合并）→ `ip_rcv`（查路由/netfilter）→ `tcp_v4_rcv`（按五元组查到 struct sock，TCP 状态机处理）→ ⑦ 数据挂入 `sk->sk_receive_queue`，`sk_data_ready` 唤醒进程 → 进程从内核拷贝数据到用户 `buf`，`recv()` 返回。两个批处理优化点：**NAPI 一次 poll 收多个包**（减少中断/收割次数）、**GRO 把多个小段合并成一个大 skb**（减少协议栈遍历次数）。
+
+2. 硬中断会抢占当前 CPU 上的一切、刷新 cache，开销大；让它"只关中断 + 调度软中断"就把真正耗时的收包工作推迟到软中断里**批量轮询（NAPI poll）**完成，既降低中断频率又能一次处理一批包。若回到"每包一中断"模型，高 pps 下中断速率极高，CPU 绝大部分时间在保存/恢复上下文、反复刷 cache。极端时中断到来速率超过处理速率，CPU 永远在响应中断、永远轮不到上层处理逻辑——这就是 **receive livelock（接收活锁）**：系统没崩但有效吞吐归零。NAPI 在硬中断后关本队列中断、改用软中断轮询，轮询期间不再中断，从根上避免活锁。
+
+3. 四个指针把缓冲区分成三段：headroom（`head..data`，预留给前面要加的协议头）、实际数据（`data..tail`，payload + 已加的协议头）、tailroom（`tail..end`，预留给数据增长或尾部字段）。发包时各层"加协议头"用 `skb_push`，即把 **`data` 指针向前（向 head 方向）移动 n 字节**，消耗 **headroom**。这样加头只是指针运算、把头写进预留空间，无需重新分配缓冲区或拷贝整个 payload，因此极大减少拷贝（数据只分配一次，各层靠移动指针加/剥头）。
+
+4. `skb_clone()` 只复制 `sk_buff` 结构体本身，两个 skb 各有独立 head/data/tail 指针但**共享同一块数据缓冲区**（dataref 增加）；`skb_copy()` 连数据缓冲区一起深拷贝，两份完全独立。tcpdump 抓包走 clone 共享路径——它只读不写，与协议栈正常处理共享同一份数据，故理论上不影响转发性能。若 clone 之后（`skb_cloned()` 为真）某层要修改包数据，必须先 `skb_unshare()` / `pskb_expand_head()` 做实际拷贝（写时复制），否则会直接破坏共享方（如抓包侧）看到的数据。
+
+5. 这是收包软中断全压在单核的典型瓶颈。命令序列：① 确认根因 `mpstat -P ALL 1`（见 CPU5 `%soft` 98%、其余近 0）、`cat /proc/net/softnet_stat`（CPU5 行第 3 列 time_squeeze 持续增长，说明 net_rx_action 处理不完被迫退出）；② 优先上硬件多队列 `ethtool -l eth0` 看 Combined 可否 >1，可则 `sudo ethtool -L eth0 combined 8` 并把各队列中断 pin 到不同核；③ 单队列网卡无法 RSS 时用软件散核 `echo ff > /sys/class/net/eth0/queues/rx-0/rps_cpus`、开 RFS `echo 32768 > /proc/sys/net/core/rps_sock_flow_entries`、`echo 4096 > /sys/class/net/eth0/queues/rx-0/rps_flow_cnt`、`sysctl -w net.core.netdev_max_backlog=4000`；④ 验证 `%soft` 摊到多核、time_squeeze 不再增长、P99 回落。三者：**RSS**（硬件按五元组哈希分多队列+多中断到多核，软件零开销，**首选**）；**RPS**（软件按包哈希选目标 CPU 经 backlog 散核，队列不足/单队列时用，**次选**，有 IPI/跨核开销）；**RFS**（在 RPS 基础上让流跟着消费它的应用所在 CPU 走，提升 cache 局部性）。优先级：RSS > RPS（+RFS 补 cache 局部性）。
+
+6. 第 2 列是 **dropped**：因目标 CPU 的 backlog 队列满而丢的包；非零增长说明 RPS backlog 处理不过来，调优动作是调大 `net.core.netdev_max_backlog`，并排查目标核是否本身过载（需扩大散核范围或减负）。第 3 列是 **time_squeeze**：一次 `net_rx_action` 没在 budget/时间内处理完就被迫退出的次数；非零增长说明单核软中断处理不过来，调优动作是上 RSS 多队列 / RPS+RFS 散核（必要时调 `netdev_budget`）。
+
+7. GRO 是内核软件合并，**严格**只合并"合并后能被无损还原成原始包序列"的段（各字段一致、序号连续），所以对转发安全（转发时能正确切回原始包）；LRO 是网卡硬件合并、是**有损**的，可能丢弃/合并掉头部差异信息，破坏转发与 bridging 语义，所以做路由器/网桥/容器宿主时不能用。K8s 宿主机做转发：**GRO on、LRO off**。开了 TSO 后 tcpdump 抓包点在分段之前，会看到一个"超大段"（如 64KB）而非线缆上切好的多个 MSS 段，排查 MSS/MTU/分片时被误导；正确做法是排查时临时 `ethtool -K eth0 gso off tso off gro off lro off` 看接近真实的包，排查完务必开回（关掉显著掉吞吐、涨 CPU）。
+
+8. `XDP_DROP`：立即丢弃，典型用于 DDoS 防护（在最前面丢攻击流量）；`XDP_PASS`：正常上送协议栈，放行不感兴趣的包；`XDP_TX`：从收到的同一网卡原路发回，用于反射类负载均衡/回包；`XDP_REDIRECT`：重定向到另一网卡/CPU/AF_XDP socket，用于 L4 LB、用户态收包、cpumap。XDP 丢包成本远低于 iptables，是因为 XDP 在驱动收到包、**还没造 sk_buff、还没进协议栈**的最早时刻就执行，被 DROP 的包从不分配 skb、从不走 netfilter 链；而 iptables 是在 skb 已创建、进协议栈后才在 netfilter hook 里逐条规则匹配，每包开销大得多。每次访问包数据前要做边界检查（如 `(void *)(eth+1) > data_end`），是因为 eBPF **verifier 的硬性要求**——它在加载时静态证明程序不会越界访问 DMA buffer 之外的内存，缺少边界检查的程序无法通过验证、加载失败。

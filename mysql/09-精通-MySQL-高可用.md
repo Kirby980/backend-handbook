@@ -727,4 +727,34 @@ mysql_upgrade   # 8.0 还需要，8.4 已内置到 server 启动流程
 
 ---
 
+## 参考答案
+
+**1.** 3 节点 MGR 挂 2 个，剩 1 个不足多数派（多数派=2），该节点**自动停止接受写**（进入只读/卡住，保护一致性）。恢复：修复另外至少 1 个节点重新加入凑够多数派；若全部宕过需要 `dba.rebootClusterFromCompleteOutage()` 或在数据最新节点上 `SET GLOBAL group_replication_bootstrap_group=ON; START GROUP_REPLICATION;` 重新引导，再加回其余节点。
+
+**2.** 推荐单主模式：只有一个 Primary 接受写，避免多节点同时改同一行产生 certification 冲突回滚，简单且满足绝大多数高可用需求。多主成灾难的场景：多个节点高频更新**同一批热点行**——冲突检测大量回滚、性能骤降、应用要处理频繁的事务回滚；且多主要求所有表有主键、不能用外键、不支持 SERIALIZABLE。
+
+**3.** 主库 crash 前最后一秒 100 个事务：**异步复制**——这些事务可能还没传到从库，提升从库为主后**永久丢失**；**半同步**——若未超时退化，至少一个从库已收到这些事务的 binlog，不丢（退化期间仍可能丢）；**MGR**——已提交意味着已获多数派确认，多数派存活时**不丢**。
+
+**4.** Router vs ProxySQL 感知 Primary 切换的根本区别：MySQL Router 直接读取 InnoDB Cluster 的 **metadata schema**，自动、实时感知拓扑与 Primary 变化，故障转移对应用透明、零配置；ProxySQL **不理解 MGR metadata**，需要外部组件（如 Orchestrator、调度脚本或 MGR 监控 view）告诉它谁是新 Primary，或依赖对后端的健康探测 + hostgroup 配置才能切换。
+
+**5.** MGR 必须开 GTID：MGR 用 GTID 唯一标识每个事务，依此做**成员间的事务认证（certification）、新节点加入时的增量追赶、故障切换后的位点对齐**。没有 GTID 就无法判断各节点执行了哪些事务、无法保证全序与一致性，所以 `gtid_mode=ON` 与 `enforce_gtid_consistency=ON` 是硬性前提。
+
+**6.** 跨机房 RTT=30ms 的 3 节点 MGR 单事务写延迟下界 ≈ **30ms**。因为提交需获得多数派（2/3）确认，Primary 必须把 WriteSet 广播到至少一个其他机房节点并收到 ACK，一来一回即一个跨机房 RTT，故写延迟下界约等于到第二近节点的 RTT（同机房若有节点可更低，但 3 机房各 1 节点时第二个 ACK 必跨机房）。
+
+**7.** `group_replication_unreachable_majority_timeout=0`（无限）的危险：当某节点被网络分区成**少数派**时，它不会自动退出，会一直保持 ONLINE 状态、甚至（多主或配置不当时）继续接受写，造成**脑裂式的幽灵数据**，网络恢复后与主组数据冲突、需人工对账。应设为如 30s + `group_replication_exit_state_action=READ_ONLY`。
+
+**8.** 4 节点与 3 节点 MGR 容错能力**相同**，都只容忍 1 个故障。多数派 = floor(n/2)+1：3 节点多数派=2、容忍挂 1；4 节点多数派=3、同样只容忍挂 1（挂 2 就剩 2 < 3 不足多数派）。所以 4 节点比 3 节点多花一台机器却没增加容错，偶数节点无收益——故推荐奇数（3/5/7）。
+
+**9.** Clone Plugin 加新节点 vs 传统 binlog dump 的优势：Clone 是**物理拷贝**整个数据目录 + 自动应用 redo + 自动定位 binlog/GTID 位点续传，一条命令完成、速度快（适合大数据量）、无需手工 mysqldump 导出导入与手动设置位点；传统 binlog dump 走逻辑备份 + 手动 CHANGE REPLICATION，慢、易出错、大库耗时极长。InnoDB Cluster 加节点默认即用 Clone。
+
+**10.** 每秒 10 万写 + 跨同城 3 机房 + 强一致 + 自动故障转移的拓扑设计：
+- **同城 3 机房 RTT 通常 < 2-5ms**，适合 MGR 强一致。用 **InnoDB Cluster（MGR 单主）+ 5 节点按 2+2+1 分布到 3 机房**，任一机房整体故障后剩余节点仍≥3 构成多数派，自动选举新 Primary。
+- **写入 10 万/s**：单 MGR 组难以承载 10 万写，需在 MGR 之上做**水平分片**（按业务键分多个分片，每个分片是一套 3/5 节点 MGR），用 Vitess 或 ShardingSphere 路由；写流量分摊到各分片。
+- **接入层**：MySQL Router / Vitess vtgate 做读写分离与故障转移透明化，应用连虚拟入口。
+- **一致性**：MGR 多数派提交保证组内强一致；分片内单分片事务走本地强一致，跨分片用 TCC/SAGA/最终一致避免分布式 XA 的高延迟。
+- **跨机房延迟控制**：每个分片的多数派尽量落在 RTT 最低的机房组合；配 `group_replication_unreachable_majority_timeout` + `exit_state_action=READ_ONLY` 防脑裂。
+- **灾备**：可再用 ClusterSet 异步复制到异地 DR 机房。
+
+---
+
 > 📁 下一篇：[M10 精通 JSON、窗口函数与 CTE](./10-精通-JSON-窗口函数.md)

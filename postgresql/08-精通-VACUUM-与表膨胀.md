@@ -1095,6 +1095,43 @@ FROM pg_stat_user_tables WHERE n_tup_upd > 10000 ORDER BY 2 DESC LIMIT 20;
 
 ---
 
+## 参考答案
+
+1. **为什么 PG 需要 VACUUM**：存储模型上 PG 是堆表多版本——UPDATE/DELETE 不原地改，旧版本物理留在堆页里，必须靠 VACUUM 显式回收死元组并维护可见性映射、FSM；MySQL InnoDB 把旧版本写到 undo log，当前行原地更新，commit 后旧版本由 purge 线程隐式回收，表本身不因 MVCC 膨胀。清理策略：PG 是"延迟批量清理"（autovacuum 按阈值触发），InnoDB 是"后台 purge 持续清理"。
+
+2. **100 次 UPDATE 的膨胀**：仅有 PK、且更新的 `v` 列**无索引**时满足 HOT 条件——新版本写在同页、通过 HOT 链指向，**索引不膨胀**（PK 项不变），堆页内 100 个死版本可被页内整理（HOT pruning）复用。加了 `idx_v` 后，更新了被索引列 → HOT 失效，每次 UPDATE 都新增一个索引项，**index 膨胀**，堆也更易跨页膨胀。
+
+3. **autovacuum 触发公式**：
+   - VACUUM：`n_dead_tup > autovacuum_vacuum_threshold + autovacuum_vacuum_scale_factor × reltuples`（默认 50 + 0.2×N）。
+   - INSERT-only VACUUM（PG 13+）：`n_ins_since_vacuum > autovacuum_vacuum_insert_threshold + autovacuum_vacuum_insert_scale_factor × reltuples`（默认 1000 + 0.2×N）。
+   - ANALYZE：`n_mod_since_analyze > autovacuum_analyze_threshold + autovacuum_analyze_scale_factor × reltuples`（默认 50 + 0.1×N）。
+   3 亿行大表用默认 scale_factor 阈值高达 6000 万，应改为固定小阈值：`ALTER TABLE t SET (autovacuum_vacuum_scale_factor=0, autovacuum_vacuum_threshold=500000, autovacuum_vacuum_insert_scale_factor=0, autovacuum_vacuum_insert_threshold=1000000, autovacuum_vacuum_cost_limit=2000)`，并加大 maintenance_work_mem。
+
+4. **wraparound 流程**：xid 是 32 位环形（约 21 亿可用）→ 需要把老元组 freeze（标记为"永久可见"，不再依赖 xid 比较）→ 三层阈值：`vacuum_freeze_min_age`（多老的 xid 才 freeze）、`vacuum_freeze_table_age`（表 age 超过则下次 VACUUM 全表扫描 aggressive）、`autovacuum_freeze_max_age`（默认 2 亿，超过强制触发 **anti-wraparound autovacuum**，即使 autovacuum 关闭也会跑且不可被普通锁中断）→ 再不处理逼近 `vacuum_failsafe_age`（默认 16 亿）进入 failsafe（跳过索引清理只顾 freeze）→ 接近 21 亿 PG **拒绝新事务**，只能单用户模式 VACUUM。
+
+5. **阻塞 vacuum 三杀手检测与修复**：
+   ```sql
+   -- 长事务
+   SELECT pid, now()-xact_start AS dur, state, query FROM pg_stat_activity
+   WHERE state <> 'idle' AND xact_start < now()-interval '5 min' ORDER BY xact_start;
+   -- 修复：SELECT pg_terminate_backend(pid);
+   -- prepared transaction（两阶段事务残留）
+   SELECT gid, prepared, owner FROM pg_prepared_xacts ORDER BY prepared;
+   -- 修复：ROLLBACK PREPARED 'gid';
+   -- 未消费 / 不活跃复制槽
+   SELECT slot_name, active, restart_lsn FROM pg_replication_slots WHERE NOT active;
+   -- 修复：SELECT pg_drop_replication_slot('slot_name');
+   ```
+   三者都会卡住全局 OldestXmin / 保留 WAL，导致 VACUUM 无法推进 horizon。
+
+6. **200GB 大膨胀表处理**：(a) dead tuple 回收——先确认无长事务/旧 slot 卡 horizon，再 `VACUUM (VERBOSE) events` 或调高其 autovacuum 强度让其追上；(b) 物理空间归还——在线用 `pg_repack -t events`（需约 2× 磁盘、瞬时锁），不能停服时避免 `VACUUM FULL`（持 ACCESS EXCLUSIVE）；(c) 索引去膨胀——`REINDEX INDEX CONCURRENTLY`（pg_repack 会一并重建）;(d) 预防——下调该表 scale_factor、设固定阈值、加大 cost_limit、监控 n_dead_tup/膨胀率、消除长事务与未用 slot。
+
+7. **HOT 触发条件**：UPDATE **未修改任何被索引的列** 且 新版本能放进**同一个堆页**（fillfactor 留出空间）。`users(id PK, email UNIQUE, name, last_login, login_count)` 中 `last_login`/`login_count` 是高频更新且无索引的列——典型 HOT 场景，设 `FILLFACTOR=80~90` 给页内留空间让新版本同页存放，最大化 HOT 比例、减少索引与堆膨胀。
+
+8. **实验解释**：A 持有 `pg_sleep(60)` 期间快照活跃，其 snapshot.xmin 卡住全局 OldestXmin。B 制造的 100 个死元组虽然 `n_dead_tup` 上升，但在 A 提交前 `VACUUM` **无法回收**它们——因为这些版本可能对 A 仍可见，VACUUM 只能清理早于 OldestXmin 的死元组。A 提交后 horizon 推进，再次 VACUUM 才真正回收。这演示了"长事务阻塞 vacuum 推进"的核心机制。
+
+---
+
 ## 延伸阅读
 
 - 官方文档：[Routine Vacuuming](https://www.postgresql.org/docs/18/routine-vacuuming.html)

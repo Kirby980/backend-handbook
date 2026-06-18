@@ -671,3 +671,38 @@ pthread_mutex_init(m, &attr);
 7. **排障题（吞吐上不去 CPU 没满）**：一个 Go 服务 QPS 卡在某个值上不去，但 CPU 利用率只有 40%，看起来「有劲使不出」。用 off-CPU 火焰图 / `go tool pprof` 的 block/mutex profile 怀疑锁争用。给出完整定位流程，并列出至少三种缓解锁争用的改造方向（缩小临界区、分片锁、无锁结构、RCU/读写锁、改用 channel 等）。
 
 8. **排障题（伪共享）**：一个并发计数模块，把线程数从 4 加到 16，吞吐不升反降。`perf c2c` 显示某个结构体所在缓存行有大量跨核传输（HITM）。诊断为伪共享，给出用缓存行对齐填充修复的代码，并解释为什么填充后吞吐随核数恢复线性增长。
+
+---
+
+## 参考答案
+
+1. **无竞争锁的开销**：单线程无竞争时，`lock` 用一条 CAS 把 futex word 从 0 改成 1 即成功，`unlock` 用一条原子操作改回 0，全程纯用户态，根本不触发 `futex` 系统调用。`futex(FUTEX_WAIT/FUTEX_WAKE)` 只在 CAS 失败（锁被占、需睡眠）或解锁时发现「有等待者」标记才调用。单线程没有竞争，所以 `strace -c` 统计到的 `futex` 次数接近 0，远小于一亿。这正是「无竞争免系统调用」的快路径设计。
+
+2. **CAS 自增**：无锁自增是「读当前值 → 算 old+1 → `atomic_compare_exchange` 写回，失败重试」的循环（正文 §2.2）。多线程下两种方式结果都应等于 N×次数（正确），但无竞争/低竞争时 CAS 通常吞吐更高（无系统调用、无睡眠唤醒），高竞争时 CAS 因重试增多也会退化。第二个场景里「只计数、不依赖该计数去发布/读取其它数据」时，各次自增之间没有需要约束顺序的其它访存，只需保证「这一个自增原子且不丢」，因此 `memory_order_relaxed` 足够——relaxed 仍保证操作本身原子，只是不提供 acquire/release 那样的跨变量顺序与可见性约束，而这里不需要。
+
+3. **可见性 bug 复现**：消费者 `while(ready==0);` 后 `use(data)`，生产者 `data=42; ready=1;`。在弱内存序架构（ARM）上，生产者两个写可能被重排、或消费者侧读被重排，导致看到 `ready==1` 时 `data` 还不是 42（正文 §1.2 指出编译器重排 + CPU/缓存重排两个原因）。修复用 acquire/release 配对：生产者 `data=42; smp_store_release(&ready,1);`，消费者 `if (smp_load_acquire(&ready)) use(data);`（用户态对应 C11 `memory_order_release`/`acquire`）。release 保证 `data=42` 不重排到 `ready=1` 之后，acquire 保证看到 `ready==1` 后对 `data` 的读不前移，建立 happens-before。
+
+4. **锁选型**（各举一例，理由对照正文 §3.5）：
+   - spinlock：中断处理里更新一个计数/摘链表指针。临界区极短（ns 级），且中断上下文不能睡眠，只能用不睡眠的锁。
+   - mutex：进程上下文里较长、可能睡眠的互斥（如改一个需要分配内存的数据结构）。临界区长，自旋会浪费 CPU，且允许睡眠。
+   - rwlock：读多写少、读临界区较短的共享数据。允许多读者并发，又比 RCU 简单。
+   - seqlock：`jiffies`/时间戳这类「写极少、写者不能被读者挡住、读者可重试」的数据。读者不阻塞写者。
+   - RCU：路由表/FIB、dcache 这类读极多写极少的结构，要求读端几乎零开销、多核近线性扩展，rwlock 的读端原子计数都嫌贵。
+
+5. **RCU 流程**：时序见正文 §4.3 图——`rcu_assign_pointer` 切指针后，可能仍有「切换前就 `rcu_dereference` 拿到旧指针」的读者在用旧数据；`synchronize_rcu()` 阻塞写者直到宽限期结束（所有这些老读者退出），之后 `kfree(old)` 才安全。经典 RCU 要求读临界区不能睡眠，是因为宽限期判定依赖这一前提：读临界区内不睡眠，那么「某 CPU 经历一次上下文切换/静止态（quiescent state）」就证明该 CPU 上切换前的所有老读临界区都已结束；当每个 CPU 都报告过一次静止态，宽限期即结束。若读临界区可睡眠，这个推断不再成立。
+
+6. **futex 三态**：三态是 0=空闲、1=持有无等待者、2=持有有等待者（正文 §6.3）。两态（0/1）的话，解锁者无法在用户态判断是否有线程在内核等待队列上，只能每次解锁都保守地调 `FUTEX_WAKE`，即使没人等也付出一次系统调用。引入「2=有等待者」后，加锁慢路径会把状态置为 2，解锁时若发现状态是 1（仅自己持有、无等待者）就直接改回 0 并跳过 `FUTEX_WAKE`，纯用户态完成；只有状态为 2 时才需要 `FUTEX_WAKE` 唤醒。这正是「无等待者时解锁免系统调用」的关键。
+
+7. **排障题（吞吐上不去 CPU 没满）**：定位流程——(1) 现象是 CPU 不满但吞吐封顶，典型 off-CPU 等待（线程睡在 futex 上）；(2) `go tool pprof` 抓 block profile（`runtime.SetBlockProfileRate`）和 mutex profile（`runtime.SetMutexProfileFraction`），看哪段调用栈阻塞/争用时间最长；(3) 系统层用 `offcputime`（eBPF）做 off-CPU 火焰图，或 `bpftrace` 统计 `FUTEX_WAIT` 次数按 goroutine/函数定位热点锁（正文「生产实践一」）；(4) 确认是某把 mutex 的争用。缓解方向（至少三种，对照正文）：缩小临界区（只把真正需要互斥的部分放锁内）、分片锁/sharding（按 key 哈希拆成多把锁降低争用）、改无锁结构或原子操作、读多写少改 rwlock 或 RCU、用 channel 把共享状态改为消息传递归一到单 goroutine。
+
+8. **排障题（伪共享）**：诊断——`perf c2c` 的 HITM（命中其它核 Modified 缓存行）说明多个核反复抢同一条缓存行的所有权，即两个本应无关的热点变量落在同一条 64 字节缓存行上发生伪共享（正文 §1.3、生产实践二）。修复用缓存行对齐填充，让每个核/分片的计数器独占一条缓存行：
+
+   ```c
+   struct percpu_counter {
+       atomic_long_t count;
+       char pad[64 - sizeof(atomic_long_t)];   /* 填充到一整条 cache line */
+   } __attribute__((aligned(64)));
+   struct percpu_counter counters[NR_CPUS];     /* 每核一个，互不 invalidate */
+   ```
+
+   填充后每个核写自己的缓存行，不再触发对其它核缓存行的 invalidate（不再 cache line bouncing），写操作不需要协议往返抢独占权，因此各核的更新彼此独立、互不拖累，吞吐才能随核数恢复近线性增长。

@@ -721,4 +721,33 @@ graph LR
 
 ---
 
+## 参考答案
+
+1. GET by `_id` 是强一致的——它会查 translog（写入立即落 translog），即使新文档还在内存 buffer、尚未 refresh 成可搜 segment 也能取到。SEARCH 是近实时（NRT），必须等到下一次 refresh（默认 1s）把内存 buffer 转成可被搜索的 segment 后才能命中。
+
+2. 拉长 refresh 间隔会延迟"写入到可搜"的可见性（最长延迟约 30s）；同时因为生成新 segment 的频率下降，小 segment 数量减少，后台 merge 压力随之降低。本质是用可见延迟换写吞吐与更少的 merge IO。
+
+3. translog 是 WAL：写文档时先 append translog 再更新内存 buffer，崩溃后从最近 commit 点重放 translog 重建未落盘 segment 的状态，保证已 ack 的写不丢。`durability=async` 改为按 `sync_interval`（默认 5s）批量 fsync，写吞吐提升 30-50%，代价是掉电时最多丢最近一个 sync 间隔内（约 5s）已 ack 的写。
+
+4. 500 个 segment 意味着每次查询要在该 shard 内重复"打开 segment + 查倒排"500 次，CPU/IO 开销大、FST 等元数据占用线性增长，查询延迟上升。健康值通常是每 shard 几十到几百，500 偏高，说明合并跟不上写入。
+
+5. force_merge max_num_segments=1 会忽略 `max_merged_segment`（5GB）上限合出一个超大 segment。后续少量写入会产生新的小 segment，但这个超大 segment 因为太大几乎不会再被合并（合并代价极高），于是它永远是个"大球"，且新增的小段无法并入——所以 force_merge 必须只在不再写入的索引上做。
+
+6. 正常。删除只在 `.liv` 文件里打 tombstone（标记位），物理数据仍在 segment 里，要等该 segment 被合并才真正释放。强制释放：对只读索引 `POST idx/_forcemerge`（或带 `only_expunge_deletes=true` 只清理 deleted 多的 segment）。
+
+7. `refresh=true` 每次写都立即生成一个新（很小的）segment，导致 segment 数爆炸、合并跟不上、查询变慢。正确做法：生产用 `refresh=wait_for`（等下一次自动 refresh 再返回，不额外造 segment），或批量写入后末尾统一 `POST idx/_refresh`；`refresh=true` 仅用于测试。
+
+8. 因为 segment 记录每个字段的 min/max（如 @timestamp），按时间过滤时可整段跳过不相关 segment（段级分区裁剪）。按时间 rollover 切成多个小索引后，过期数据可以直接 delete 整个索引（O(1)，比 delete_by_query 快得多），且查询能裁剪掉无关时间段的索引，删除/查询都更高效。
+
+9. 普通合并产生的单个 segment 不超过 5GB，是为了避免出现过大的 segment——大 segment 后续再参与合并时读写代价极高、耗时极长，会长时间占用 IO。限制大小让合并保持渐进、可控。
+
+10. 1TB/天日志 ILM 示例：
+- **hot**（SSD，正在写）：`refresh_interval: 30s`、`replicas: 1`、`translog.durability: async`、`codec: best_compression`，按 `max_age: 1d` 或 `max_primary_shard_size: 50gb` rollover；hot 阶段不 force_merge（仍在写）。
+- **warm**（min_age 3d，停止写入）：`replicas: 1`、shrink 减少 shard、`forcemerge max_num_segments: 1`、`index.blocks.write: true` 设只读。
+- **cold**（min_age 14d）：`replicas: 0`、迁到便宜 SSD/HDD tier、可 freeze；依赖 searchable snapshot 做数据保护。
+- **frozen**（min_age 60d）：`searchable_snapshot` 把数据放对象存储，本地仅缓存，磁盘成本降到 1/10。
+- **delete**（min_age 180d）：直接删索引。
+
+---
+
 > 📁 下一篇：[E03 精通集群拓扑与节点角色](./03-精通-集群拓扑.md)

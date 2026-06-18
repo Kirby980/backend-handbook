@@ -1035,6 +1035,26 @@ FROM pg_stat_archiver;
 
 ---
 
+## 参考答案
+
+1. **LSN → WAL 文件名**：WAL 段名是 `时间线(8位) + LSN高32位(8位) + LSN段内序号(8位)`。LSN `1/A2C3D4E5` 高位是 `1`、低 32 位是 `A2C3D4E5`；默认 16MB 段，段号 = `0xA2C3D4E5 / 0x1000000 = 0xA2`。时间线为 1 → 文件名 `0000000100000001000000A2`。可用 `pg_walfile_name('1/A2C3D4E5')` 验证。
+
+2. **全页写（FPW）**：磁盘以 512B/4KB 扇区写，PG 页是 8KB；崩溃时一个 8KB 页可能只写了一半（torn page，半新半旧）。`full_page_writes=off` 时 WAL 只记增量，无法修复半写页 → 数据损坏。FPW 机制：每个 checkpoint 后某页**首次修改**时，把整页镜像写进 WAL，崩溃恢复时用这份完整镜像覆盖损坏页，再重放后续增量，从而消除 torn page 风险。
+
+3. **slot 风险**：未被使用的复制槽会把 `restart_lsn` 永久钉住，主库**不敢删除/回收**该 LSN 之后的所有 WAL → `pg_wal/` 持续暴涨直到撑爆磁盘。紧急回收：`SELECT pg_drop_replication_slot('standby1_slot')`，删后 checkpoint 即可清理积压 WAL。预防：给槽设 `max_slot_wal_keep_size`（PG 13+，超限自动失效保护主库）、监控 `pg_replication_slots` 的 `active=false` 且 restart_lsn 落后告警。
+
+4. **同步语义差别**：`synchronous_commit=on` 要求备库把 WAL **fsync 落盘**后才返回 commit；`remote_write` 只要求备库把 WAL **写入 OS 缓存**（未必落盘）即返回。区别：`remote_write` 下若备库主机**操作系统崩溃**（断电），缓存中未落盘的 WAL 会丢；`on` 能抵御备库 OS 崩溃。两者都能抵御备库进程崩溃。
+
+5. **同步备库死机**：默认 `synchronous_standby_names` 指定单个同步备且 `synchronous_commit>=on` 时，该备库死机会导致主库 commit **无限期阻塞**（等不到同步确认，事务挂起、新写入卡住），但不报错也不丢数据。避免：用 `ANY 1 (sync_standby, async_standby)` 之类法定人数配置让任一备确认即可，或保证至少 2 个同步候选，使单备故障不阻塞。
+
+6. **PITR 配置与文件**：`wal_level=replica`（或更高）、`archive_mode=on` + `archive_command`/`archive_library`（归档 WAL）、一份基础备份（`pg_basebackup` 或 pgbackrest）。恢复时设 `restore_command`、`recovery_target_time='2026-05-15 14:30:00+00'`（或 `recovery_target_xid='1000000'`，配 `recovery_target_inclusive=off` 恢复到该事务之前）、`recovery_target_action='promote'`，并创建 `recovery.signal` 文件触发恢复模式。
+
+7. **增量备份**：PG 17 的 `walsummarizer` 后台进程持续扫描 WAL，生成 **WAL summary** 文件记录每段 WAL 改动了哪些块（block 级别），`pg_basebackup --incremental` 据此只备份自上次以来变动的块。增量链 full→inc1→inc2→inc3 是**依赖链**：恢复 inc3 需用 `pg_combinebackup` 把 full 与所有中间增量合并。**删了 inc1 就无法恢复到 inc3**，因为链断裂、inc2/inc3 依赖 inc1 的块基线。
+
+8. **Hot Standby 冲突**：主库 VACUUM 清理的老元组在备库可能仍被 30 分钟报表的快照需要，复制重放遇到冲突；`max_standby_streaming_delay=30s` 意味着重放最多让步 30 秒，超时后**取消备库上的报表查询**（报 `canceling statement due to conflict with recovery`）以保证复制不落后。平衡方案：调大 `max_standby_streaming_delay`（容忍更高复制延迟）、开 `hot_standby_feedback=on`（备库把最老快照反馈主库，主库 VACUUM 不清理备库仍需的版本，代价是主库轻微膨胀）、或把报表隔离到专用延迟副本。
+
+---
+
 ## 延伸阅读
 
 - 官方文档：[Chapter 30. High Availability, Load Balancing, and Replication](https://www.postgresql.org/docs/18/high-availability.html)

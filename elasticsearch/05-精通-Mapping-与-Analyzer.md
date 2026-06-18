@@ -835,4 +835,50 @@ flowchart TD
 
 ---
 
+## 参考答案
+
+1. 当同一字段既要全文检索又要精确匹配/排序/聚合时，用 multi-field（text 主字段 + keyword 子字段），如商品标题既要分词搜又要按精确值聚合。只要全文检索、不需要精确匹配/排序/聚合时，单建 text；只要精确匹配/聚合/排序、永不分词搜时，单建 keyword（如状态码、ID）。
+
+2. object（默认）会把对象数组 flatten 成并列数组（`people.name=[Alice,Bob]`、`people.age=[30,25]`），跨字段查询会 cross-pollution（误匹配 Alice+25）。nested 把每个子对象作为独立隐藏 lucene doc 索引，能正确做"同一对象内"的组合查询和聚合，但聚合要用 nested 聚合先关联父文档、写入慢、shard 膨胀。
+
+3. `ik_max_word` 切得细（覆盖更多组合）适合**索引时**，保证召回；`ik_smart` 切得粗（更准、token 少）适合**查询时**，避免查询被过度拆分降低精度。组合：`analyzer: ik_max_word` + `search_analyzer: ik_smart`。
+
+4. 好处：业务写入未定义字段直接报错，防止 mapping 字段爆炸、保证 schema 受控、问题早暴露。坏处：灵活性差，新增字段必须先改 mapping，探索性/快速迭代场景不便，上游加字段忘了同步 mapping 会导致写入失败。
+
+5. runtime field 在查询时按 script 实时计算（不索引、不占索引空间），代价是每次查询都重算、慢且不能用倒排加速。不该用：高频查询的字段（每次重算开销大）、需要在该字段上做高性能过滤/排序/聚合的场景——这些应该正式索引。
+
+6. mapping 字段从 100 涨到 10000：cluster state 急剧膨胀（master 推送给所有节点的延迟、内存、网络压力增大），每个 shard 的元数据开销增加，索引/查询变慢，严重时拖垮集群稳定性。常见根因是把动态 key 当字段用，应改 flattened/runtime/strict。
+
+7. flattened 把整个 object 当作一个字段，内部所有 key/value 都作为 keyword 平铺，不进 mapping——解决了"动态 key 导致字段爆炸"的问题。限制：所有值都按 keyword 处理（无类型推断、无全文分词、无数值范围语义、不能对内部字段单独配 analyzer），只能做精确匹配类查询。
+
+8. `ignore_above: 256` 表示超过 256 字节的字符串不被索引（仍存于 _source），避免超长 token 占用 keyword 倒排和内存。设 0 表示任何非空字符串都不索引（等于该 keyword 字段永远不可被 term 查询/聚合命中，只保留在 _source）。
+
+9. 索引时扩同义词：query 不用扩、检索快，但改同义词要 reindex；不灵活但查询性能好。查询时扩同义词：改同义词无需 reindex、灵活，但每次查询要扩展、稍慢，且大词典影响性能。常见取舍：稳定的核心同义词放索引时，频繁调整的放查询时。
+
+10. 商品搜索 mapping 示例：
+```json
+PUT products
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "title":     { "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart",
+                     "fields": { "en": { "type": "text", "analyzer": "english" },
+                                 "raw": { "type": "keyword", "ignore_above": 256 } } },
+      "brand":     { "type": "keyword" },
+      "price":     { "type": "scaled_float", "scaling_factor": 100 },
+      "tags":      { "type": "keyword" },
+      "specs":     { "type": "flattened" },
+      "on_shelf_at": { "type": "date" },
+      "embedding": { "type": "dense_vector", "dims": 768, "index": true,
+                     "similarity": "cosine",
+                     "index_options": { "type": "int8_hnsw", "m": 16, "ef_construction": 100 } }
+    }
+  }
+}
+```
+要点：title 中文 IK 分词 + english 子字段（英文）+ raw 精确；brand/tags 用 keyword 聚合过滤；price 用 scaled_float 省空间；specs 规格 JSON 用 flattened 避免字段爆炸；embedding 用 int8 量化 HNSW。
+
+---
+
 > 📁 下一篇：[E06 精通 Query DSL 与 Aggregation](./06-精通-Query-DSL.md)

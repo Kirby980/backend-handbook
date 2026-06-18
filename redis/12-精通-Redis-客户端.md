@@ -969,4 +969,28 @@ Tracking 开了之后客户端无限缓存 → OOM。
 
 ---
 
+## 参考答案
+
+1. 要点：用 `redis.NewClusterClient` 填全部 seed 节点（≥3），配连接池（`PoolSize`）、`DialTimeout 2-3s`、`ReadTimeout 200-500ms`、`MaxRetries` 显式设置；用 goroutine 并发跑 GET，统计 `PoolStats()`（Hits/Misses/Timeouts/TotalConns/IdleConns）与每条命令耗时直方图（P50/P99）。关键观察：池利用率接近上限说明池太小或有阻塞，RT 突增看是 Redis 慢还是池等待。
+
+2. `HELLO 3` 把连接从 RESP2 升到 RESP3。差别：RESP3 新增类型——Map（`%`，HGETALL/CONFIG GET 直接返回键值对而非扁平数组）、Set（`~`）、Double（`,`）、Boolean（`#`）、Big Number、Verbatim String、Push（`>`，用于 Pub/Sub 和 client tracking 的带外推送，可与普通响应共用一条连接）；RESP2 全部用数组/批量字符串模拟，客户端要自己拼成 map。用 `MONITOR` 或抓包能看到 `HELLO 3` 后服务端返回 server 信息 map，以及后续命令响应类型字节的变化。
+
+3. `CLUSTER FAILOVER` 在某 replica 上发起，让它与 master 协商做有序切换（master 暂停写、同步 offset、replica 升主、广播新拓扑）。go-redis 会收到 MOVED/拓扑变更后刷新 slot 映射并重路由。观察：切流耗时通常亚秒到几秒，期间少量命令可能 timeout/收到 MOVED 被自动重试；统计错误数应很少（有序 failover 比宕机切换平滑）。
+
+4. Lettuce 开 `CLIENT TRACKING ON`（RESP3）后：A 读 key 时服务端记录"A 关注了该 key"，B 改 key 后服务端通过 RESP3 push 帧给 A 发 `invalidate`，A 的本地缓存收到通知失效。延迟约等于一次网络单程 + 服务端处理（局域网通常亚毫秒到几毫秒），但属"最终一致"——push 传播期间 A 可能短暂读到旧本地值。
+
+5. 泄漏伪代码：每次请求 `r = redis.Redis(...)` 新建连接且不 close（或 borrow 连接后异常路径没归还池）。`CLIENT LIST | wc -l` 或 `INFO clients` 的 `connected_clients` 会随时间持续上涨（30 分钟内显著增长），最终触发 `maxclients` 拒绝新连接。改成全局连接池单例 / `with r.pipeline() as p` / try-finally 归还后，连接数稳定在池上限附近不再增长。
+
+6. 用 `tc qdisc add dev eth0 root netem delay 100ms` 注入延迟后，单次 GET RT 从 1ms 变成 ~101ms。若 `ReadTimeout` 配的是 500ms 不会误报；若配成 50ms 则每条命令都超时（误报）。结论：超时阈值必须留足 RTT + 服务端处理余量，跨较高延迟链路要相应放大 ReadTimeout，并区分普通命令与阻塞命令（BLPOP 等）的超时。
+
+7. `CLIENT PAUSE 5000` 让服务端暂停处理所有客户端命令 5 秒（模拟主线程卡顿/热备切换）。期间客户端命令阻塞，若 ReadTimeout < 5s 会陆续超时报错。观察应用降级路径：是否触发熔断/回退本地缓存/排队重试、用户侧是否被保护（而非雪崩）。验证超时 + 重试 + 降级三件套是否如预期生效。
+
+8. 标准模式：`script_load` 拿 SHA → `evalsha`；捕获 `NOSCRIPT`（NoScriptError）后回退到 `script_load` 重新加载再 `evalsha`（或直接 EVAL 全文）。故意 `SCRIPT FLUSH` 清空服务端脚本缓存后调用 EVALSHA，应观察到 SDK 抛 NOSCRIPT 并自动重新 LOAD 成功执行（如 go-redis 的 `Script.Run`、redis-py 的 Script 对象都内置该回退）。Functions（7.0+，持久化）可避免 failover/flush 后丢脚本的问题。
+
+9. RESP3 下 `HGETALL` 返回 Map 类型而非扁平数组。原本按"偶数索引是 field、奇数索引是 value"拼数组的代码，在 RESP3 下拿到的是 dict/map（或 SDK 把 push/map 解析成不同结构），会因类型不符而 KeyError/索引越界/拿到 None 而炸。修复：升级到按 map 直接取键值的写法，或在客户端统一用 SDK 的高层 API（`hgetall()` 返回 dict）而非手工解析原始响应；切 RESP3 前回归测试所有依赖响应结构的代码。
+
+10. 有效请求 = QPS × 每请求 Redis 次数 = 10000 × 5 = 50000 次/秒（GET ops/s）。单次 RT 1ms，即一条连接每秒最多串行处理 1000 次。最少连接数 = 50000 / 1000 = **50 个连接**（理论值，假设连接全程繁忙）。实际要留余量应对 RT 抖动、突发与排队，通常配 2-3 倍即 100-150，并据 `PoolStats` 的等待/超时指标微调；连接总数还要满足 所有实例×池大小 < maxclients。
+
+---
+
 > 🔁 反馈：客户端的"坑"基本都在线上才暴露。强烈建议做一次混沌演练（kill 连接 / 主备切换 / 网络抖动）压一遍 SDK 行为

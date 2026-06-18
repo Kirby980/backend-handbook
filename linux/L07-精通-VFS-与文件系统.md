@@ -710,3 +710,23 @@ pwrite(fd, buf, 4096, 0);             // 偏移与长度均须 4K 对齐
 7. **实战**：给定现象——业务 `df` 显示根分区还有 40 GB 空闲，但应用频繁报 `No space left on device`，新建任何小文件都失败。写出你的排查命令序列和最可能的根因。
 
 8. **排障**：一个 PostgreSQL 实例 commit 延迟 p99 从 1 ms 突然涨到 30 ms，CPU、内存、网络都正常。请设计一套用 `iostat -x`、`bpftrace`/`ext4dist`、`mount` 选项检查的排查流程，列出至少三个候选根因（提示：fsync 放大、journal 竞争、磁盘写缓存策略、是否误挂了机械盘）。
+
+---
+
+## 参考答案
+
+1. inode 号是文件系统内文件本体的唯一标识，硬链接是两个目录项指向同一个 inode，所以 inode 号相同必为硬链接（或就是同一文件名）。符号链接是独立 inode，其内容是一段目标路径字符串，inode 号与目标文件**不同**——`stat` 符号链接（不加 `-L`/对目标 stat）会显示它自己的 inode 号，与目标不同。
+
+2. 三级关系：fork 后子进程复制了 fd 表（fd 数组），但每个 `fd[i]` 仍指向父进程的同一个 `struct file`（`f_count++`），该 file 再指向同一个 inode。即父子的 fd 表是各自的，但底层共享同一个 struct file（含同一个 `f_pos` 偏移）和同一个 inode。`(echo a; echo b) > out` 中两条命令（子进程）继承同一个 struct file，共享偏移量：echo a 写后偏移前进到 2，echo b 从偏移 2 继续写，于是得到 `a\nb` 顺序追加而非相互从 0 覆盖。
+
+3. `ordered`（默认）：仅元数据进 journal，但保证数据先于元数据落盘。扩展文件后断电，要么元数据未提交（文件没变大）、要么数据已先落再提交元数据，绝不会出现"文件变大但新区域是旧垃圾"，最多读到"文件没变大"或正确的新数据。`writeback`：仅元数据进 journal，数据与元数据无序。扩展文件后断电，可能 inode 的 size（元数据）已经过日志恢复变大，但对应数据块还没落盘——于是新增区域读出磁盘上的旧内容/垃圾（可能是别人删除文件的残留，有信息泄露风险）。`ordered` 通过强制"数据先落、元数据后落"杜绝了这种垃圾暴露。
+
+4. `fsync` 刷该文件的数据 + 全部元数据（含 mtime/ctime 等）；`fdatasync` 刷数据 + 仅影响后续读取所必需的元数据（如文件变大时的 size），跳过纯时间戳变化的元数据。数据库 WAL 多用 `fdatasync` 是因为它能省掉仅为 mtime/ctime 变化而触发的额外 journal commit，减少一次 IO 和延迟，而 WAL 顺序追加只需保证数据和 size 落盘即可。必须用 `fsync` 而非 `fdatasync` 的场景：当文件的元数据本身就是你要持久化的关键信息时——例如刚 `chmod`/`chown` 改了权限、或依赖精确 mtime 做一致性/同步判断（如备份、rsync 增量、构建系统按 mtime 判断），必须 `fsync` 保证这些元数据落盘。
+
+5. copy-up：overlayfs 写一个只存在于 lower 只读层的文件时，会把该文件**整份**从 lower 复制到 upper 可写层，再在 upper 上修改。whiteout：删除 lower 里的文件时，在 upper 建一个特殊的字符设备（主次设备号 0/0）标记"此名已删"，使 merged 视图看不到它，但 lower 原文件不动。"改镜像大文件 1 字节导致占用增加约该文件大小"的原因：写入触发 copy-up，把整个大文件复制到 upper 层再改那一字节，于是 upper 多出一份完整副本，磁盘占用增加约等于文件大小（这就是 overlayfs 的写放大，也是数据要走 volume 而非容器层的原因）。
+
+6. `dirty_background_ratio`（默认约 10%）：脏页占比超过它时后台 writeback 线程开始**异步**刷盘，应用无感。`dirty_ratio`（默认约 20%）：脏页超过它时**写入进程被同步阻塞**（throttle）、被拉去帮忙刷盘直到降下来。256 GB 机上 20%/10% 意味着可堆积约 50 GB 脏页才触发同步限流，一旦写入突发触顶，所有写进程被集体 throttle、IO 脉冲式卡死，造成 p99 周期性毛刺。调法：改用绝对字节版 `vm.dirty_bytes`/`vm.dirty_background_bytes`（如 1GB/256MB），让回写尽早、平滑启动、上限受控，避免几十 GB 脏页决堤。
+
+7. 最可能根因：inode 耗尽（海量小文件用光了 mkfs 时固定的 inode 数）。排查命令序列：(1) `df -i /` 看 IUse%，若为 100% 即 inode 耗尽（与数据空间无关）；(2) `df -h /` 确认数据空间确实还有（40 GB 空闲）；(3) 定位哪个目录小文件多——`for d in /*; do echo "$(find $d -xdev | wc -l) $d"; done | sort -rn`（或用 `du --inodes`）找 inode 大户。次要可能：被进程占用的已删除文件（`lsof | grep deleted`）。根因确认为 inode 耗尽后，修法：清理无用小文件释放 inode，或备份后 `mkfs.ext4 -N` 提高 inode 数重建，或换 xfs（动态 inode）。
+
+8. 排查流程：(1) `iostat -x 1` 看该盘的 `w_await`/`await`（单次 IO 平均等待）、`%util`、`aqu-sz`——若 await 飙到几十毫秒且 %util 接近 100%，是磁盘层瓶颈（盘慢或排队）；(2) `bpftrace`/`ext4dist 1` 看 fsync/写操作的延迟直方图，确认是不是 fsync 本身变慢；(3) `mount | grep <pg数据盘>` 与 `tune2fs -l` 看 `data=` 模式、是否 SSD/NVMe、写缓存策略。至少三个候选根因：(a) fsync 放大 / journal 竞争——ext4 journal 全文件系统共享，同盘上别的高频写进程（或 PG 自身多后端）的元数据让 JBD2 commit 变慢，把你的 fsync 拖慢；(b) 磁盘易失写缓存策略变化——磁盘 write cache 被关闭或 FLUSH/FUA 屏障变慢（如固件/电池保护单元 BBU 失效后阵列改 write-through），fsync 必须等盘片，延迟陡增；(c) 误挂了机械盘或盘性能退化——数据/WAL 落在 HDD 或 SSD 磨损/掉速，单次 fsync 从亚毫秒变几十毫秒。缓解按根因：把 WAL 与数据隔离到独立盘/文件系统降低 journal 竞争、确认用 NVMe/SSD、检查 RAID 卡缓存与 BBU 状态、考虑 PG 自管 O_DIRECT。

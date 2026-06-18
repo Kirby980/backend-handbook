@@ -344,3 +344,27 @@ tcpretrans      # 实时打印重传(定位丢包/弱网)
 8. （⭐⭐⭐）用哪些 eBPF/bcc 工具可以无侵入地回答：谁在向我建连、每条连接活了多久、是否有重传？分别说明。
 9. （⭐⭐）Unix domain socket 相比 TCP 回环有何优势？`SCM_RIGHTS` 能做什么？abstract socket 与路径命名有何区别？
 10. （⭐⭐⭐）conntrack 表项为什么会「堆积」？established 超时与表满有什么关系？如何安全地加速回收？
+
+---
+
+## 参考答案
+
+1. `struct socket` 是 BSD socket 层，面向 VFS——关联 `struct file`/fd，持有 `proto_ops`（如 `inet_stream_ops`）和 `state`；`struct sock` 是网络协议层，保存真正的协议状态——收发队列（`sk_receive_queue`/`sk_write_queue`）、`sk_state`、内存计量、定时器（TCP 用 `tcp_sock` 扩展）。socket 能被 epoll 监听，是因为它的 `struct file` 有自己的 `file_operations`（`socket_file_ops`，体现"一切皆文件"），其 poll 实现由 socket 层提供：epoll 通过它把回调注册到 `sk->sk_wq` 等待队列，数据到达时 `sk_data_ready` 被调用并唤醒等待者，从而产生就绪通知。
+
+2. `SO_REUSEADDR`：主要允许 bind 处于 TIME_WAIT 的本地地址（服务重启不必等 2MSL，解决"Address already in use"），也允许多个 socket bind 到不同 IP 的相同端口。`SO_REUSEPORT`（3.9+）：允许多个 socket bind 到**完全相同的 IP:port**，内核建立 reuseport group、按四元组哈希把新连接投递给其中一个 socket，每个 worker 拥有独立 LISTEN socket 和独立 accept 队列，实现内核级负载均衡并消除惊群。区别：REUSEADDR 解决重启/绑定问题，REUSEPORT 解决多 worker 负载均衡与惊群。
+
+3. backlog 实际生效值 = `min(listen() 传入的 backlog, net.core.somaxconn)`——即便应用传 65535，也会被 `somaxconn` 截断，要扩大队列必须两者都调大。用 `ss -lnt` 观察：LISTEN 行的 `Send-Q` 列就是这个生效后的队列上限，`Recv-Q` 是当前积压（已完成握手未被 accept 的连接数）。
+
+4. 链路：client `connect()` 发 SYN → 经网卡/软中断/协议栈（L11）到达 server，server 创建 `request_sock` 放入**半连接队列（SYN queue）**，状态 SYN_RECV，回 SYN+ACK → client 回 ACK → server 收到 ACK，握手完成，连接从半连接队列移入**全连接队列（accept queue）**，状态 ESTABLISHED → server `accept()`（`inet_csk_accept`）从全连接队列摘下一个连接，新建并返回一个 fd → worker 把新 fd 设非阻塞、交给 epoll 进入读写循环。半连接队列在 SYN_RECV 阶段，全连接队列在握手完成等待 accept 阶段。
+
+5. `SO_REUSEPORT` 消除惊群是因为：它让每个 worker 拥有**自己独立的 LISTEN socket 和独立的 accept 队列**，新连接由内核按四元组哈希**只投递给其中一个 socket**，所以只有那一个 worker 被唤醒去 accept，从根本上不存在"唤醒一群只有一个成功"的惊群。`EPOLLEXCLUSIVE` 适用场景不同：它用于多个 epoll 实例**监听同一个共享 LISTEN fd** 的情况，让内核对一个事件只唤醒一个 epoll 实例来缓解惊群（仍共享同一队列、无负载均衡）；REUSEPORT 是各自独立 fd + 内核哈希分发，自带负载均衡，更彻底。
+
+6. 诊断：① `dmesg | grep conntrack` 确认 `nf_conntrack: table full, dropping packet`；② `cat /proc/sys/net/netfilter/nf_conntrack_count` 对比 `sysctl net.netfilter.nf_conntrack_max`，看是否逼近上限；③ `conntrack -S` 看 insert_failed/drop，`conntrack -L -p tcp --state ESTABLISHED | wc -l` 看堆积的 established 表项。缓解手段：调大 `nf_conntrack_max` 和相应的 `nf_conntrack_buckets`（注意每条目占数百字节内存）；缩短无用状态超时（如 `nf_conntrack_tcp_timeout_time_wait`）加速回收；对确实不需要跟踪的大流量（纯转发、LVS DR）用 iptables raw 表 `NOTRACK` 从源头跳过 conntrack。治本思路：用 eBPF（Cilium）或 IPVS 替代 kube-proxy 的 iptables 模式，减少 conntrack 压力。
+
+7. 定位思路：`ss -tanp` 找出大量 `CLOSE-WAIT` 的连接及其所属进程（`-p`），确认是哪个服务；CLOSE-WAIT 表示**对端已发 FIN、本端应用迟迟没调用 `close()`**，连接和 fd 因此泄漏、持续增长。这通常不是内核调参能解决的，因为它是**应用层 bug**——代码在某些路径（尤其异常/错误返回路径）忘了关闭连接/fd；内核已正确进入 CLOSE_WAIT 等应用 close，调任何 sysctl 都不会替应用去 close。修法是审查代码确保所有路径（含异常）都 close。
+
+8. `tcpaccept`：实时打印每个被 accept 的入向连接（谁在向我建连）；`tcplife`：每条连接的生命周期（起止、收发字节数、存活时长），回答"每条连接活了多久"；`tcpretrans`：实时打印重传事件，回答"是否有重传"（定位丢包/弱网）。（另：`tcpconnect` 打印出向新建连接。）这些都是 bcc/eBPF 工具，不改应用、不抓全量包、开销极低。
+
+9. Unix domain socket 优势：用于**同机进程间通信**，不走网络协议栈（无 IP/TCP 头、无校验和、无回环路由），比 TCP 回环更快、开销更低。`SCM_RIGHTS`：能通过 `sendmsg` 的辅助数据**把文件描述符传递给另一个进程**（fd passing），是 socket activation 与特权分离的关键能力。abstract socket 与路径命名的区别：路径命名的 Unix socket 在文件系统里落地一个 socket 文件（需清理、受文件权限控制）；abstract socket 的名字以 `\0` 开头、**不落地文件**，存在于抽象命名空间，随进程消亡而自动消失（无需手动清理）。
+
+10. conntrack 表项堆积的原因：每条经过 NAT/有状态防火墙/K8s Service 的流都占一个表项，且表项有状态超时——只有超时到了内核才回收。established TCP 的默认超时很长（天级），所以大量早已断开、但还没到超时被回收的连接会一直占着表项，造成堆积。established 超时与表满的关系：超时越长，已断连接的"僵尸"表项存活越久、累积越多，越容易把 `nf_conntrack_count` 顶到 `nf_conntrack_max` 导致表满丢包。安全加速回收：适当调小相关超时（如 `nf_conntrack_tcp_timeout_time_wait`，established 超时调整需谨慎评估，避免误删仍活跃的长连接），同时调大 `nf_conntrack_max`/`buckets` 兜底；对不需跟踪的流量用 NOTRACK 减负。

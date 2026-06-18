@@ -891,3 +891,39 @@ bpftrace -e 'tracepoint:signal:signal_generate /args->sig == 9 || args->sig == 1
 7. **排障题（容器优雅停机）**：一个 Go HTTP 服务容器化后，`kubectl delete pod` 总是要等满 30s 才消失，且期间有 502。已知代码里写了 `signal.NotifyContext(SIGTERM)` 和 `srv.Shutdown`。给出排查思路（至少检查：PID 1 是不是你的进程、preStop、graceperiod、endpoint 摘除时序），并说明每一项如何导致该现象。
 
 8. **排障题（神秘 SIGKILL）**：线上一个进程频繁被 SIGKILL，`dmesg` 里没有 OOM 记录。用 bpftrace 写一行追踪 `signal:signal_generate`，定位是「谁」发的 SIGKILL（可能是某个 watchdog / 父进程 / liveness probe 失败触发的 kill）。给出 bpftrace 命令并解释如何从输出读出发送者。
+
+---
+
+## 参考答案
+
+1. SIGUSR1 是标准信号、不排队：屏蔽期间连发 5 次，未决状态只用位图的一个 bit 表示，5 次被合并成一个，解除屏蔽后 handler **只被调用 1 次**。换成 SIGRTMIN（实时信号）会排队：内核为每个实例分配 sigqueue 挂链表，发 5 次排 5 个，解除屏蔽后按 FIFO 顺序投递，handler **被调用 5 次**。原因就是标准信号 pending 用位图（同号合并），实时信号用排队链表（每实例保留）。
+
+2. 能响应。纯用户态死循环虽然不主动进内核，但**周期性时钟中断**（每 1/HZ，或 tickless 内核下的定时器）会打断它、把 CPU 拉进内核处理中断；中断处理返回用户态前，内核在边界上检查 `pending & ~blocked`，发现 SIGINT 未决就投递、执行 handler。信号只在"内核态→用户态"边界被检查投递，时钟中断提供了这个边界。
+
+3. `read` 管道：设了 `SA_RESTART` 时被信号打断会自动重启，应用感知不到 EINTR；不设则返回 -1/EINTR。`epoll_wait`：无论是否设 `SA_RESTART` 都**永远返回 -1 且 errno=EINTR**——它属于内核明确规定"不自动重启"的一类调用（select/poll/epoll_wait、nanosleep、带超时的 socket 操作等）。原因：这类调用常带超时语义，自动重启会破坏超时的正确性（重启会重新计时、延长等待），所以内核选择把 EINTR 透出给应用，由应用决定是否重试。因此必须对 epoll_wait 写 EINTR 重试循环。
+
+4. 死锁复现思路：主程序在一个紧循环里高频 `malloc/free`（持有 glibc 堆分配器内部锁的时间占比高）；同时注册一个 SIGUSR1 handler，handler 内部也调用 `malloc`；另一个进程/线程高频 `kill` 发 SIGUSR1。当信号恰好在主程序持有堆锁、尚未释放时投递，handler 里的 malloc 想拿同一把（不可重入的）堆锁→自死锁。安全改写：
+   ```c
+   static volatile sig_atomic_t flag = 0;
+   void on_sig(int s) { flag = 1; }     // handler 只设 flag，不碰 malloc
+   // 主循环：
+   while (running) {
+       if (flag) { flag = 0; do_real_work(); }  // 真正工作放回正常上下文
+       /* ...其余逻辑... */
+   }
+   ```
+   handler 只写 `volatile sig_atomic_t`（被信号打断仍原子），所有需要 malloc/printf 的工作放回主循环的正常上下文执行。
+
+5. 程序骨架：先 `sigemptyset`+`sigaddset(SIGTERM/SIGINT)`，`sigprocmask(SIG_BLOCK, &mask, NULL)` 屏蔽，再 `int sfd = signalfd(-1, &mask, SFD_NONBLOCK|SFD_CLOEXEC)`；把监听 socket 的 fd 和 sfd 都 `epoll_ctl(ADD)`。事件循环里：监听 fd 可读→accept 新连接；sfd 可读→`read(sfd, &si, sizeof(struct signalfd_siginfo))`，从 `si.ssi_signo` 读信号、`si.ssi_pid` 读发送者 pid，打印后关闭监听 socket、drain 连接、退出。此处在正常上下文，可放心用 printf。验证：若**省略 `sigprocmask`**，信号会被默认处置路径抢先投递（SIGTERM 默认终止进程），sfd 永远不可读，程序还没处理就被默认终止——证明必须先屏蔽。
+
+6. 流程：`pid_t pid = fork()`（子进程 exec/工作），父进程 `int pidfd = pidfd_open(pid, 0)`（或用 clone3 的 `CLONE_PIDFD` 直接拿 pidfd），把 pidfd `epoll_ctl(ADD, EPOLLIN)`；子进程退出时 pidfd 变为**可读**，epoll_wait 醒来后 `waitid(P_PIDFD, pidfd, &info, WEXITED)` 回收退出状态并取得 exit code。相比 SIGCHLD+waitpid，pidfd 解决两个问题：① **pid 复用 race**——pidfd 永远指向创建时那个进程，进程死了也不会串到复用同号 pid 的新进程，发信号/回收不会发错对象；② **异步事件统一**——把"子进程退出"变成可 epoll 的 fd 事件，纳入单线程 reactor，避免 SIGCHLD 不排队（多个子进程同退只来一个信号、需 while-waitpid 循环）的别扭语义和异步信号安全限制。
+
+7. 排查思路：① **PID 1 是不是你的进程**——容器里若你的进程是 PID 1，内核对 PID 1 特殊对待，未注册 handler 的信号不执行默认处置；但即便注册了 handler，若用了某些基础镜像/启动脚本（shell 包一层），真正收到 SIGTERM 的是 shell 而非你的 Go 进程，SIGTERM 被"无视"，直到 30s 超时 SIGKILL 才消失。用 `ps` 或 `/proc/1/comm` 确认 PID 1 是你的 Go 二进制；不是则用 `tini`/`docker --init` 或 exec 形式启动转发信号。② **preStop**——SIGTERM 与"从 Service endpoint 摘除"是并发的，没有 preStop sleep 时，新流量仍在打进来而服务已开始关闭，造成 502；加 `preStop: sleep 5` 让流量先停。③ **graceperiod**——`terminationGracePeriodSeconds`（默认 30s）必须大于你的 drain 超时；若 `srv.Shutdown` 的超时设得≥30s 或 drain 慢于 30s，就会等满 30s 被 SIGKILL。④ **endpoint 摘除时序**——drain 期间仍是 Ready/在 endpoint 里就会持续收到新连接导致 502，需配合 preStop/readiness 让 endpoint 先摘除再 drain。每一项失配都会表现为"等满 30s + 期间 502"。
+
+8. bpftrace 命令：
+   ```bash
+   bpftrace -e 'tracepoint:signal:signal_generate /args->sig == 9/ {
+       printf("sender comm=%s pid=%d -> target pid=%d sig=%d\n", comm, pid, args->pid, args->sig);
+   }'
+   ```
+   从输出读发送者：`comm` 和 `pid` 是**触发该 tracepoint 时正在 CPU 上运行的进程**，即**发送方**（调用 kill/pidfd_send_signal 的进程）；`args->pid` 是被发信号的**目标**进程 pid，`args->sig` 是信号编号（9=SIGKILL）。所以 `comm/pid` 告诉你"谁发的"（如某 watchdog、父 supervisor、kubelet/容器运行时因 liveness probe 失败发起的 kill），`args->pid` 确认确实发给了你的进程。dmesg 无 OOM 记录即排除了 OOM killer，再结合发送者 comm 即可定位真正的杀手。

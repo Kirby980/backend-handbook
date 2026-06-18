@@ -893,6 +893,68 @@ CREATE SERVER ... OPTIONS (sslmode 'require', sslrootcert '/etc/ssl/ca.crt');
 
 ---
 
+## 参考答案
+
+1. **四步建模（以 sqlite_fdw 为例）**：OS 依赖：装 `sqlite_fdw` 扩展及 libsqlite3。SQL：
+   ```sql
+   CREATE EXTENSION sqlite_fdw;
+   CREATE SERVER sqlite_srv FOREIGN DATA WRAPPER sqlite_fdw OPTIONS (database '/data/app.db');
+   CREATE FOREIGN TABLE ext_users (id int, name text)
+     SERVER sqlite_srv OPTIONS (table 'users');
+   SELECT * FROM ext_users;
+   ```
+   通用四步：CREATE EXTENSION → CREATE SERVER（连接信息）→（需认证时）CREATE USER MAPPING →CREATE FOREIGN TABLE / IMPORT FOREIGN SCHEMA → SELECT。HTTP API 类用 Multicorn2/Wrappers 写 Python/Rust handler。
+
+2. **pushdown 验证**：
+   ```sql
+   EXPLAIN VERBOSE
+   SELECT a.*, b.* FROM remote_a a JOIN remote_b b ON a.id=b.a_id WHERE a.x=1;
+   ```
+   若两张外表在**同一 server**且 `use_remote_estimate`/版本支持，计划里会出现单个 `Foreign Scan`，其 `Remote SQL:` 行显示完整 `SELECT ... FROM a JOIN b ... WHERE ...`，说明 JOIN 真下推。若计划是两个独立 Foreign Scan + 本地 Hash/Nested Loop Join，则未下推。
+
+3. **use_remote_estimate 影响**：`off` 时本地 planner 用粗略默认估算（猜远端行数/代价），4 表 JOIN 容易选错 join 顺序、少下推、把大量行拉回本地再 join。`on` 时 postgres_fdw 对远端发 `EXPLAIN` 获取真实代价/基数，本地据此选更优计划、更多 join 下推到远端执行。差异根因：`on` 让本地拿到远端真实统计，估算准 → 计划更优，代价是规划期多几次远端往返。
+
+4. **决策矩阵**：
+   - PG↔PG（订单，只读副本）：**postgres_fdw**，原生 pushdown 最好。
+   - PG↔MySQL（商品，需实时查/JOIN）：mysql_fdw（小量实时）或对热点表用 **CDC（Debezium）落地到 PG** 做物化（量大/高频）。
+   - PG↔MongoDB（点击日志，半结构化、海量）：**CDC/批量 ETL** 进数据湖或落 JSONB 表，mongo_fdw 仅做偶发查询。
+   - PG↔S3 Parquet（历史归档，分析型大扫）：**pg_duckdb / parquet_fdw / 数据湖引擎**，列存扫描快。
+   报表每天跑 → 倾向把多源数据**物化/同步**到一个分析库，避免每次跨域实时拉取。
+
+5. **MV 刷新提速**：`REFRESH MATERIALIZED VIEW CONCURRENTLY` 全量刷 5 分钟。两种思路：(a) **增量刷新**——只拉远端变更（基于时间戳/版本列或 CDC 增量），写入本地基表/用 pg_ivm 等增量物化，避免全量重扫；(b) **分区 + 局部刷新**——按时间分区，仅刷最近变动的分区（或用 pg_cron 调度高频小批刷），把单次工作量从 100 万行降到当日增量。
+
+6. **file_fdw nginx 日志**：
+   ```sql
+   CREATE FOREIGN TABLE nginx_log (
+     ts timestamptz, ip text, method text, path text, status int, bytes int)
+   SERVER files OPTIONS (filename '/var/log/nginx/access.csv', format 'csv');
+
+   SELECT date_trunc('hour', ts) AS hr, path,
+          count(*) FILTER (WHERE status >= 400)::float / count(*) AS err_rate
+   FROM nginx_log
+   WHERE ts >= date_trunc('day', now()) - interval '1 day'
+     AND ts <  date_trunc('day', now())
+   GROUP BY hr, path
+   ORDER BY err_rate DESC
+   LIMIT 10;
+   ```
+
+7. **parquet_fdw vs pg_duckdb**：**pg_duckdb 更快**。底层原因：pg_duckdb 内嵌 DuckDB 的**向量化、列式、并行**执行引擎，GROUP BY/聚合在列存上批量处理；parquet_fdw 仅做 FDW 扫描把行喂回 PG 的行式执行器，聚合走 PG 单线程/有限并行，扫 100GB 时 IO 与执行都吃亏。
+
+8. **安全方案（隐藏远端密码）**：把连接信息放 SERVER（不含密码），密码放在**只有特权角色拥有**的 USER MAPPING 上，开发者用普通角色映射或公共映射但无权查看 mapping 选项：
+   ```sql
+   CREATE SERVER ro_replica FOREIGN DATA WRAPPER postgres_fdw
+     OPTIONS (host 'replica', dbname 'app', port '5432');
+   -- 仅 DBA 角色持有真实凭据的 mapping
+   CREATE USER MAPPING FOR app_ro SERVER ro_replica
+     OPTIONS (user 'ro_user', password '***');
+   GRANT USAGE ON FOREIGN SERVER ro_replica TO developer;  -- 仅用，不能改/看密码
+   GRANT SELECT ON foreign_table TO developer;
+   ```
+   非超级用户**无法读取** USER MAPPING 中的 password 选项（`pg_user_mappings` 对非属主隐藏敏感字段），开发者只能查询、看不到密码。
+
+---
+
 ## 延伸阅读
 
 - [PostgreSQL 官方手册 - postgres_fdw](https://www.postgresql.org/docs/18/postgres-fdw.html) / [file_fdw](https://www.postgresql.org/docs/18/file-fdw.html)

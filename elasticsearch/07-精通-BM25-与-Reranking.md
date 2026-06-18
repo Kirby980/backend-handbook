@@ -745,4 +745,59 @@ flowchart LR
 
 ---
 
+## 参考答案
+
+1. (1) TF 饱和：TF-IDF 的 TF 线性增长，词出现越多分越高、可被刷词作弊；BM25 用 `k1` 让 TF 增长到一定程度后饱和。(2) 文档长度归一化：TF-IDF 不归一化长度，长文档因词多而虚高分；BM25 用 `b` 按 `|d|/avgdl` 归一化，避免长文档自动占优。
+
+2. k1 控制 TF 影响多快饱和（越大 TF 影响越大，经验 1.2-2.0）；b 控制文档长度归一化强度（0=不归一化，1=完全归一化）。长内容差异大的场景（如文章正文），b 应接近 1（强归一化，避免长文得分虚高）；内容长度均匀（如标题），b 可接近 0。
+
+3. IDF 在每个 shard 内独立计算（基于本 shard 的 df 和 N），多 shard 时同一词在不同 shard 的 IDF 不同，导致同一 query 在不同 shard 上算分不一致。缓解：数据分布均匀时差异不显著、减少 shard 数、或用 `search_type=dfs_query_then_fetch`（先全局收集词频统计再算分，更准但慢）。
+
+4. boost_mode 决定 query 原始 _score 与 functions 总分如何结合（multiply/sum/min/max/replace），默认 `multiply`。score_mode 决定多个 function 之间如何合并（sum/multiply/avg/max/min/first），默认 `multiply`。前者管"query 分 vs 函数分"，后者管"函数分内部之间"。
+
+5. rank_feature 是为评分优化的专用字段类型：无 script 开销（性能比 function_score 好）、自动归一化（不用手调 modifier）、可直接放在 bool 的 should 子句里加分，且能在查询时高效跳过低分文档。适合 pagerank、新鲜度等业务信号。
+
+6. `RRF_score(d) = Σ_i 1/(k + rank_i(d))`，k 是 rank_constant（默认 60），rank_i(d) 是文档在第 i 个 retriever 的排名。适合 hybrid search：不同 retriever（BM25 vs 向量）的分数尺度天差地别无法直接相加，而 RRF 只用排名（1,2,3...）做融合，天然消除尺度差异，多个 retriever 都排前的文档总分高。
+
+7. cross-encoder 把 (query, doc) 一起喂 transformer 做 attention 交互，精度高但每对都要跑一次模型、慢；bi-encoder（向量检索常用）分别编码再算相似度，快但精度低（无交互）。配合方式：先用 bi-encoder/BM25 快速召回 top N（如 50-200），再用 cross-encoder 对这 N 个精排——兼顾速度与精度。
+
+8. position bias：用户更倾向点击排在前面的结果，所以高位结果的点击多并不完全代表它更相关——点击受展示位置影响。修正：用 click model（如 PBM 位置模型、DBN）从原始点击日志中分离出"位置倾向"和"真实相关性"，生成无偏的训练 label。
+
+9. NDCG@10 比 MRR 多了"分级相关度 + 位置折扣"信息：MRR 只看第一个相关结果的位置（二元相关）；NDCG 考虑前 10 个结果各自的相关度等级（如 0-3 分）并按位置做对数折扣再归一化，能反映整个结果列表的排序质量，而非只看第一个命中。
+
+10. DSL 示例（hybrid 召回 + function_score 融合业务信号 + cross-encoder 精排）：
+```json
+POST products/_search
+{
+  "retriever": {
+    "text_similarity_reranker": {
+      "retriever": {
+        "standard": {
+          "query": {
+            "function_score": {
+              "query": { "multi_match": { "query": "用户输入", "fields": ["title^3","description"] }},
+              "functions": [
+                { "field_value_factor": { "field": "sales", "modifier": "log1p", "factor": 0.1 }},
+                { "exp": { "publish_date": { "origin": "now", "scale": "30d", "decay": 0.5 }}},
+                { "filter": { "term": { "pref_category": "{{user_pref}}" }}, "weight": 1.5 }
+              ],
+              "boost_mode": "multiply",
+              "score_mode": "sum"
+            }
+          }
+        }
+      },
+      "field": "content",
+      "inference_id": "bge-reranker",
+      "inference_text": "用户输入",
+      "rank_window_size": 50
+    }
+  },
+  "size": 10
+}
+```
+要点：multi_match 出 BM25 基础分；function_score 叠加销量（field_value_factor + log1p）、新鲜度（exp 时间衰减）、用户偏好（filter+weight）；外层 text_similarity_reranker 对 top 50 用 cross-encoder 精排，返回 top 10。
+
+---
+
 > 📁 下一篇：[E08 精通向量检索与 Hybrid Search](./08-精通-向量检索.md)

@@ -409,3 +409,23 @@ nstat -az | grep -i retrans     # 全局重传计数
 6. （⭐⭐⭐）一条跨地域 TCP 带宽跑不满，给出从 BDP 估算到缓冲/窗口/拥塞算法的完整排查与调优步骤。
 7. （⭐⭐⭐）线上出现成片 40ms 延迟的 RPC，抓包该看什么特征？根因与修法是什么？
 8. （⭐⭐⭐）你接手一台机器，`/etc/sysctl.conf` 里有 `net.ipv4.tcp_tw_recycle=1`。在 6.x 内核上它会怎样？为什么必须删除？历史上它在 NAT 环境引发过什么问题？
+
+---
+
+## 参考答案
+
+1. 半连接队列（SYN queue）在收到对端 SYN、回 SYN+ACK 之后起作用——内核为该半开连接创建 `request_sock` 放入此队列，状态 SYN_RECV，等待对端 ACK；其上限由 `net.ipv4.tcp_max_syn_backlog` 控制（满时可由 `tcp_syncookies` 兜底）。全连接队列（accept queue）在收到对端 ACK、握手完成之后起作用——连接从半连接队列移入全连接队列，状态 ESTABLISHED，等应用 `accept()` 取走；其上限 = `min(listen() 的 backlog 参数, net.core.somaxconn)`。
+
+2. 主动关闭方在发出最后一个 ACK 后进入 TIME_WAIT，目的有二：① 保证最后的 ACK 能到达对端——若 ACK 丢失，对端会重传 FIN，本端还在 TIME_WAIT 才能再回 ACK；② 让本次连接的旧报文在网络中消亡，避免延迟到达的旧报文串进使用相同四元组的新连接。停留 2MSL，Linux 实现为固定约 60 秒（`TCP_TIMEWAIT_LEN` 编译期常量）。**不能用 `tcp_fin_timeout` 改**——`tcp_fin_timeout` 控制的是 FIN_WAIT_2 状态的超时，不是 TIME_WAIT，这是常见误解。
+
+3. 对 LISTEN socket：`Recv-Q` 是当前全连接队列中已完成握手但尚未被应用 accept 的连接数（当前积压），`Send-Q` 是全连接队列的上限。判断溢出：`Recv-Q` 持续逼近或等于 `Send-Q` 说明应用 accept 不过来、队列将满；更确切的确认是看计数器 `nstat -az | grep -i ListenOverflows`（或 netstat -s 里 "times the listen queue of a socket overflowed"），持续增长即全连接队列在溢出。
+
+4. 全连接队列满后新完成握手的连接的处理由 `tcp_abort_on_overflow` 决定：`=0`（默认）内核**丢弃对端的 ACK**、装作没收到，触发对端重传 ACK（给应用争取 accept 时间），客户端表现为**偶发延迟**（连接建立变慢但最终可能成功）；`=1` 内核直接发 **RST**，客户端立刻收到 **connection reset**。一般不建议设 1。
+
+5. cubic 是"基于丢包"的算法，假设丢包=拥塞，用三次函数控制 cwnd 增长，丢包时减小窗口。BBR 不靠丢包判断，而是主动探测**瓶颈带宽（Bottleneck Bandwidth）和最小 RTT** 来建模，据此调节发送速率。根本不同：cubic 以丢包为拥塞信号，BBR 以带宽+RTT 测量为信号。BBR 优势最明显的链路：**有随机丢包但带宽充足**的链路——跨地域、公网、CDN 回源、弱网、有 bufferbloat 的链路；这类链路上 cubic 会把随机丢包误判为拥塞而压低窗口，BBR 则能跑满带宽。
+
+6. 步骤：① 估算 BDP = 带宽 × RTT（如 1Gbps × 80ms ≈ 10MB），与当前缓冲对比；② 检查并放开缓冲上限——`net.core.rmem_max`/`wmem_max` 和 `net.ipv4.tcp_rmem`/`tcp_wmem` 的 max 要 ≥ BDP，让自动调整有空间（如 `tcp_rmem="4096 131072 16777216"`）；③ 确认 `net.ipv4.tcp_window_scaling=1`（长肥管道突破 64KB 窗口必需）；④ 不要用 `setsockopt(SO_RCVBUF)` 手动写死缓冲（会关闭自动调整且常设得偏小），交给内核自动调；⑤ 发送端切 BBR `sysctl -w net.ipv4.tcp_congestion_control=bbr`（跨地域弱网优于 cubic）；⑥ 复测单流吞吐，并用 `ss -ti` 看实际窗口/rtt/retrans 验证。
+
+7. 抓包特征：请求级偶发稳定 ~40ms 延迟，表现为"发完一个小请求后，要等约 40ms 才收到对端的 ACK 或响应"，发送方因有未确认的小包而不发下一个、接收方迟迟不回 ACK。根因：**Nagle 算法与 delayed ACK 互等**——一端开 Nagle（有未确认小包时攒着不发，等 ACK 或凑大包），另一端 delayed ACK（收到数据不立即回 ACK，最多等约 40ms 或等捎带），在"小请求→等响应"模式下互相等待，直到 delayed ACK 的 40ms 超时。修法：在交互式/RPC 连接上设 `setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, ...)` 关闭 Nagle（Redis/gRPC/数据库驱动等都应设）。
+
+8. 在 6.x 内核上，`net.ipv4.tcp_tw_recycle` 这个参数**已不存在**（4.12 起从内核移除），设置它会被忽略（`sysctl` 报该 key 不存在/无效），不起任何作用。必须删除是因为：它是过时且危险的配置，留着会误导后人以为还能用、并掩盖真正该用的手段（`tcp_tw_reuse`、连接池、让客户端主动关闭）。历史问题：`tcp_tw_recycle=1` 会基于源 IP 的 TCP timestamp 做 per-host 的"快速回收"判断，但在 **NAT 环境**下，NAT 后多个客户端共享同一公网 IP 而各自 timestamp 不同步/乱序，内核会把后到客户端的、timestamp"看似回退"的 SYN 当作旧报文丢弃，导致 NAT 后的部分客户端**随机连不上**——这是著名的坑。正确替代是用 `tcp_tw_reuse`（仅 outbound、依赖 timestamps、对 NAT 安全）。

@@ -4,7 +4,7 @@
 > 每篇约 10000-15000 字，含原理、模式、代码示例、生产实践、陷阱清单与练习题
 > 适合从"懂 RPC"到"能架构 50+ 服务平台"的中高级工程师 / 架构师 / SRE
 >
-> **📅 内容基准：2026 年 5 月** —— Istio Ambient / Cilium / gRPC / GraphQL Federation / OpenTelemetry / Kafka 4 / Saga / Outbox / Argo Rollouts / Feature Flags / Zero Trust + mTLS
+> **📅 内容基准：2026 年 6 月** —— Istio Ambient / Cilium / gRPC / GraphQL Federation / OpenTelemetry / Kafka 4 / Saga / Outbox / Argo Rollouts / Feature Flags / Zero Trust + mTLS
 
 ---
 

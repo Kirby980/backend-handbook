@@ -798,4 +798,61 @@ InnoDB 索引的核心：**B+ 树 + 聚簇 + 16KB 页**。本章关键点：
 
 ---
 
+## 参考答案
+
+**1.** 按"等值列 → 排序列 → 范围列"原则逐条设计：
+- 按用户查最近 20 单：`KEY idx_user_created (user_id, created_at)`，user_id 等值 + created_at 倒序范围，无 filesort。
+- 按订单号精确查：`order_no` 是天然唯一标识 → `UNIQUE KEY uk_order_no (order_no)`。
+- 按状态 + 时间范围统计金额：`KEY idx_status_created (status, created_at, amount)`，把 amount 放尾部做覆盖索引，免回表（SUM/COUNT 直接在索引上完成）。
+- 按时间区间导出全部订单：单列 `KEY idx_created (created_at)` 即可（若该查询低频且可接受全表，也可省）。
+
+**2.** 联合索引 `(a,b,c)` 是按 `(a,b,c)` 字典序排列的。`a=1` 定位到 a=1 的连续区段；该区段内按 b 有序，`b>2` 是范围，能继续用索引定位边界；但**一旦遇到范围列 b**，其后的 c 在索引里就不再全局有序（不同 b 值下 c 各自排序），所以 `c=3` 无法用索引定位，只能在已扫出的行上做过滤（ICP 可在引擎层过滤，但不缩小索引扫描范围）。故只用前两列 a、b。
+
+**3.** 1KB 行宽 → 一个 16KB 叶子页约放 16 行；主键 BIGINT 8B + 子节点指针 6B → 一个内部节点约 16384/14 ≈ 1170 个 key。10 亿行需要的叶子页 ≈ 10^9/16 ≈ 6250 万页。1170^2 ≈ 137 万 < 6250 万 < 1170^3 ≈ 16 亿 → **B+ 树高度 = 4 层**（root + 2 层内部 + 叶子）。单次主键查询最坏需读 4 个页；若 root 和上层内部节点常驻 Buffer Pool，**实际磁盘 I/O 约 1-2 次**。
+
+**4.**
+```sql
+-- ICP：idx_age_name(age, name)，LIKE '%x%' 无法定位但 name 在索引里可下推过滤
+EXPLAIN SELECT * FROM users WHERE age = 30 AND name LIKE '%Bob%';
+-- Extra: Using index condition
+
+-- MRR：二级索引范围扫，回表主键乱序，排序后顺序回表
+EXPLAIN SELECT * FROM users WHERE age BETWEEN 25 AND 35;
+-- Extra: Using index condition; Using MRR （需 mrr=on，且优化器认为划算）
+```
+
+**5.** UUID 做主键插入慢的数据层根因：
+1. **页分裂**：UUID 完全随机，每次插入落点随机，导致中间页频繁分裂、页利用率下降（约 50%）、产生大量随机写。
+2. **二级索引膨胀**：所有二级索引叶子都包含主键，UUID（36 字符 / 16 字节二进制）远比 BIGINT（8 字节）大，索引体积膨胀、Buffer Pool 缓存效率降低 → 命中率下降、回表更多磁盘 I/O。
+
+**6.** `Using filesort; Using temporary` 排查方向：
+1. 看 GROUP BY / DISTINCT / ORDER BY 列能否走索引——加合适联合索引让排序/分组用索引序（Loose index scan），消除 temporary 与 filesort。
+2. 检查临时表是否落盘：`Created_tmp_disk_tables` 增长，适当调大 `tmp_table_size` / `max_heap_table_size`，并减少返回列宽（尤其 BLOB/TEXT 会强制落盘）。
+3. 用 `EXPLAIN ANALYZE` 看实际行数，确认是否扫描行过多（索引选择性差或没命中索引），必要时改 SQL 减少排序/分组规模。
+
+**7.** 场景：`email VARCHAR(100)` 上建 `idx_email(email(8))`，但大量邮箱前 8 字符相同（如同公司域名前缀 `service.`、`noreply`）。量化判断标准——前缀选择性接近完整列选择性才合适：
+```sql
+SELECT COUNT(DISTINCT LEFT(email, 8)) / COUNT(*),   -- 前缀选择性
+       COUNT(DISTINCT email)        / COUNT(*)       -- 完整选择性
+FROM users;
+```
+前者明显低于后者（如 0.2 vs 0.98）就是选择性不足，应加长前缀长度。
+
+**8.** 性能差异主要来自**回表**。两者都用 `idx_name` 前缀范围扫定位 `foo%` 的 100 条；但 `SELECT id` 时 id 已在二级索引叶子里（覆盖索引，Extra: Using index），**完全不回表**；`SELECT *` 需要对每条命中记录回聚簇索引取完整行，**多 100 次 B+ 树查找 + 可能的随机 I/O**。命中页都在 Buffer Pool 时差异小，磁盘 miss 时可达数倍到一个数量级。
+
+**9.** `OR` 跨两个不同列：建两个单列索引 `idx_city(city)` 和 `idx_phone(phone)`，依赖优化器的 **index_merge union** 合并两个索引结果。若 index_merge 不生效或效率差，改写为 UNION：
+```sql
+SELECT * FROM t WHERE city='Beijing'
+UNION
+SELECT * FROM t WHERE phone='13...';
+```
+让两个分支各自走索引再去重。
+
+**10.** 100GB 表加二级索引：
+- **在线方案**（`ALGORITHM=INPLACE, LOCK=NONE` 或 gh-ost/pt-osc）：仅短暂 metadata 锁，读写不阻塞；耗时小时级；占大量磁盘 I/O 与临时空间，期间 redo 持续累积；gh-ost/pt-osc 失败可中途放弃删影子表，回滚干净、风险低。
+- **离线方案**（直接 ALTER 锁表 / 停服）：期间该表 DML 全部阻塞，业务中断；速度可能略快但不可接受；回滚就是不提交/恢复备份，风险高（中断窗口长）。
+- 生产首选 gh-ost / pt-online-schema-change，可控、可暂停、可回滚。
+
+---
+
 > 🔁 反馈：每个 EXPLAIN 字段都自己跑一遍才有体感

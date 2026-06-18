@@ -726,4 +726,58 @@ Performance Schema + sys schema + slow log 是 MySQL 的诊断三件套。关键
 
 ---
 
+## 参考答案
+
+**1.** top 5 慢 SQL（按总耗时）：
+```sql
+SELECT DIGEST_TEXT, COUNT_STAR, SUM_TIMER_WAIT/1e12 AS total_sec,
+       AVG_TIMER_WAIT/1e9 AS avg_ms
+FROM performance_schema.events_statements_summary_by_digest
+ORDER BY SUM_TIMER_WAIT DESC LIMIT 5;
+```
+按单次耗时则改 `ORDER BY AVG_TIMER_WAIT DESC`。
+
+**2.** 用扫描行/返回行比判断是否走错索引：
+```sql
+SELECT DIGEST_TEXT,
+       SUM_ROWS_EXAMINED / NULLIF(SUM_ROWS_SENT,0) AS rows_ratio,
+       SUM_NO_INDEX_USED
+FROM performance_schema.events_statements_summary_by_digest
+ORDER BY SUM_TIMER_WAIT DESC LIMIT 5;
+```
+`rows_ratio` 远大于 1（如扫 10 万返回 10）或 `SUM_NO_INDEX_USED > 0` → 大概率没走/走错索引，需 EXPLAIN 进一步确认。
+
+**3.** `SELECT * FROM sys.schema_unused_indexes` 列出运行期间 `count_star=0` 的索引。删除收益：减少每次 DML 维护该索引的写开销、节省索引磁盘与 Buffer Pool 空间。需注意：实例运行时间要足够长、覆盖完整业务周期（含月底报表等低频查询），避免误删。
+
+**4.** `wait/io/file/...` 是**文件 I/O 等待**（代表事件 `wait/io/file/innodb/innodb_data_file` 数据文件读写、`.../innodb_log_file` redo 写）；`wait/synch/mutex/...` 是**互斥锁等待**（代表 `wait/synch/mutex/innodb/buf_pool_mutex` buffer pool 锁、`wait/synch/rwlock/innodb/btr_search_latch` AHI 锁）。前者反映磁盘瓶颈，后者反映内部并发竞争。
+
+**5.** 判断瓶颈是 I/O 还是锁：
+```sql
+SELECT SUBSTRING_INDEX(EVENT_NAME,'/',3) AS category,
+       SUM(SUM_TIMER_WAIT)/1e12 AS total_sec
+FROM performance_schema.events_waits_summary_global_by_event_name
+WHERE EVENT_NAME!='idle'
+GROUP BY category ORDER BY total_sec DESC;
+```
+看 `wait/io/...` 类总耗时大 → I/O 瓶颈；`wait/synch/mutex|rwlock/...` 大 → 锁/互斥竞争瓶颈。
+
+**6.** slow log vs PS digest 差异：slow log 写文件、记录单条 SQL 全文 + 完整执行指标、可离线用 pt-query-digest 分析、能保留历史（归档后重启不丢）；PS digest 是内存中按模板聚合的实时排名、重启清零。**该用 slow log 不用 PS 的场景**：需要回溯历史（如分析昨天某次卡顿）、需要单条 SQL 的完整文本与上下文、或要用 pt-query-digest 做离线深度报告。
+
+**7.** `performance_schema_digests_size` 不够排查：查 `SHOW GLOBAL STATUS LIKE 'Performance_schema_digest_lost'`（或看 digest 表是否出现汇总到 `STATEMENT_DIGEST` 溢出行），若 lost 持续增长说明 digest 种类超上限。根因常是 SQL 未用 prepared statement、把字面值拼进 SQL 导致模板爆炸。修复：改用参数化/prepared statement，或调大 `performance_schema_digests_size`。
+
+**8.** prepared vs 非 prepared 的 digest 数量：用 prepared statement（`WHERE id=?`）时不同参数归并为**同一个 digest**；不用 prepared、把值拼进 SQL（`WHERE id=1`、`id=2`…）虽然 digest 归一化也会把字面值替换为 `?`，但若 SQL 文本结构因拼接产生差异（如 IN 列表长度不同、拼了不同表名/列名）则产生**大量不同 digest**，易撑爆 digest 表。参数化能稳定收敛 digest 数量。
+
+**9.** "内存涨而 buffer pool 不变"看 `performance_schema.memory_summary_global_by_event_name`（按 EVENT_NAME 找哪类内存增长，如 `memory/sql/...`、`memory/temptable/...`），再用 `sys.memory_by_thread_by_current_bytes` 看是不是某个连接/线程占用激增。常见元凶：临时表、用户变量、连接级缓冲、JS/UDF。
+
+**10.** 最近增长最快的 digest——PS 是累计值，需两次快照求差，或用 `LAST_SEEN`/`FIRST_SEEN` 近似：
+```sql
+SELECT DIGEST_TEXT, COUNT_STAR, SUM_TIMER_WAIT/1e12 AS total_sec
+FROM performance_schema.events_statements_summary_by_digest
+WHERE LAST_SEEN > NOW() - INTERVAL 1 HOUR
+ORDER BY COUNT_STAR DESC LIMIT 5;
+```
+更精确做法：定时把该表 COUNT_STAR / SUM_TIMER_WAIT 落到历史表，按时间窗口做差值排序，得到真正的"增长最快"。
+
+---
+
 > 🔁 反馈：把这章里的 SQL 全部跑一遍，挑出 3 条最有用的写到团队 wiki

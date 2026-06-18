@@ -670,3 +670,23 @@ $ cat /sys/kernel/sched_ext/state   # 查看当前是否有 BPF 调度器在管
 7. （实战）一个 Go 微服务在 K8s（CPU limit=2）里 P99 周期性飙高，`cpu.stat` 显示 `throttled_usec` 持续增长。给出你的诊断步骤与至少两种修复方案，说明 `GOMAXPROCS` 在其中的角色。
 
 8. （排障）一台 64 核机器，某延迟敏感服务和一批批处理任务混部，`runqlat` 显示该服务有几十毫秒的等待长尾，但整机 CPU 利用率仅 50%。给出可能原因（至少三个：throttle、绑核冲突、被批处理抢占/EEVDF 时间片设置），以及如何逐一验证与缓解。
+
+---
+
+## 参考答案
+
+1. 两个进程绑同一核争抢时，CPU 份额按权重比分配：nice 0 权重 1024、nice 5 权重约 335，比值约 3:1。`top` 中应看到 nice 0 进程约占 75%、nice 5 约 25%。注意只有它们真正抢同一个 CPU 时才体现这个比例；若不在同一核或核空闲，份额比不成立。这验证了 nice 是相对权重而非绝对配额。
+
+2. eligibility（lag≥0）解决"精确公平"问题：只有没有超额跑过（应得≥实拿）的任务才合格参与挑选，使任意时刻 lag 有界，比 CFS 的长期平均公平更强、超额者先歇。virtual deadline 解决"延迟"问题：在合格任务里挑虚拟截止时间最早的，请求时间片越短截止越早、越优先被选。EEVDF 解耦的原因：nice/权重仍只管 CPU 份额（决定 lag 涨速），而"请求时间片/latency_nice"独立决定 virtual deadline 的远近即调度紧迫度。于是可表达"少份额但要被快调度"。CFS 只有 nice 一个旋钮，份额和响应延迟被绑死，压低 nice 降延迟必然同时抢更多份额。
+
+3. 用 `sched_setaffinity(0, sizeof(set), &set)`，set 中 `CPU_SET(2,&set)`，然后忙循环。另一终端 `taskset -pc <pid>` 应显示亲和掩码为 `2`；`pidstat -t 1`（或 `top` 按 CPU 列、`ps -o psr`）观察该线程的 CPU 编号应稳定为 2。要点：绑定后任务不再参与跨核负载均衡迁移，始终在 CPU 2 上跑。
+
+4. SCHED_FIFO：固定优先级、同优先级先来先得，跑到自己阻塞或被更高优先级抢占才让出，无时间片轮转。SCHED_RR：同 FIFO 但同优先级任务按时间片轮转。SCHED_DEADLINE：不设固定优先级，按 (runtime, deadline, period) 三元组用 EDF 调度，优先级高于 FIFO/RR。DEADLINE 能给"保证"是因为：(1) 准入控制——所有 DEADLINE 任务带宽总和不得超过可用 CPU，超了 `sched_setattr` 直接拒绝；(2) CBS 带宽隔离——单个任务超额跑不会侵占别人的预留带宽。而 FIFO 只有静态优先级、无带宽核算，一个高优先级忙等任务能饿死所有人，给不了时间保证。
+
+5. 这对参数是实时任务的安全阀：每 1 秒周期内实时任务最多累计占 0.95 秒，强制留 0.05 秒给非实时任务，防止一个 bug 的 SCHED_FIFO 死循环把核完全占死、连内核 watchdog/ssh 都跑不了的灾难。把 runtime 设成等于 period（即 100%）就取消了这个护栏，实时任务可 100% 独占，一旦出现忙等的实时任务，普通任务（含关键内核线程、登录 shell）会被彻底饿死，机器可能假死，只能硬重启。
+
+6. `cpu.max = 50000 100000` 表示每 100ms 周期最多累计用 50ms CPU 时间（半个核）。`stress-ng --cpu 4` 起 4 个满负荷线程，在每个周期里 4 线程并行很快（约 12.5ms 墙钟）就把 50ms 配额烧光，随后整个 cgroup 被 throttle、4 线程全部强制下 CPU 干等到下个周期。线程越多，配额烧得越快、被 throttle 的时间占比越大，所以 4 线程比 1 线程更容易、更频繁触发 throttle。`cpu.stat` 的 `nr_throttled` 与 `throttled_usec` 会持续增长。
+
+7. 诊断步骤：(1) 看容器 `cpu.stat` 确认 `nr_throttled`/`throttled_usec` 在涨——证实是 CFS bandwidth throttling；(2) 查 `GOMAXPROCS` 实际值（`runtime.NumCPU()` 默认取宿主机核数如 64），开了远超 limit=2 的 P，瞬间并行烧光 200ms/100ms 的配额导致周期性被 throttle；(3) 对照 P99 毛刺周期与 throttle 窗口。修复方案：(a) 引入 `go.uber.org/automaxprocs` 或显式 `runtime.GOMAXPROCS(2)`，让并行度匹配 limit，配额不再被瞬间烧光；(b) 放宽或去掉 CPU limit（保留 requests→weight），靠 weight 在争抢时分配份额；(c) 较新内核启用 `cpu.max.burst` 允许积攒未用配额吸收突发。GOMAXPROCS 的角色：它决定 Go runtime 并行执行的 P 数即瞬时占核数，过大会在极短时间内烧光 quota 触发 throttle。
+
+8. 三类可能原因及验证/缓解：(1) CPU throttling——若服务在 cgroup 有 `cpu.max` 限制，验证看 `cpu.stat` 的 `nr_throttled`/`throttled_usec`，缓解为放宽/去 limit 或修线程数；(2) 绑核冲突/邻居干扰——延迟服务与批处理被调度到同核或同 SMT 兄弟/同 LLC，验证用 `pidstat -t`、`perf sched` 看 CPU 落点与抢占者，缓解用 cpuset partition 隔离专核 + 绑定；(3) 被批处理抢占 / EEVDF 时间片——批处理任务请求时间片长、与延迟服务同 nice 时延迟服务得不到优先调度，验证用 `runqlat`/`perf sched latency` 看等待来源与抢占者身份，缓解为给延迟服务设更短请求时间片（EEVDF 的"少而快"）或调高其权重、给批处理设更高 nice/更低 weight。整机利用率仅 50% 却有长尾，本质是"局部争抢/限流"而非总量不足，所以扩容无效。

@@ -646,4 +646,55 @@ InnoDB 事务 = undo + redo + MVCC + 锁。本章关键点：
 
 ---
 
+## 参考答案
+
+**1.** 让 history list 增长的代码：开事务（或仅一条 SELECT）后长时间不提交，旧版本无法 purge。
+```python
+conn.begin()
+cursor.execute("SELECT * FROM big_table")   # 持有 ReadView
+time.sleep(3600)                              # 一直不 commit → undo 不能 purge
+conn.commit()
+```
+健康对比：事务尽量短、用完即提交，autocommit 下单条读自动结束。
+```python
+cursor.execute("SELECT * FROM big_table WHERE id=?", (1,))
+conn.commit()   # 立即释放 ReadView
+```
+
+**2.** RR 下"半幻读"复现：
+```sql
+-- 事务 A（RR）
+BEGIN;
+SELECT * FROM t WHERE age > 20;       -- 0 行（建立 ReadView）
+-- 事务 B：INSERT INTO t(name,age) VALUES('Bob',25); COMMIT;
+SELECT * FROM t WHERE age > 20;       -- 仍 0 行（快照读，看不到 B）
+SELECT * FROM t WHERE age > 20 FOR UPDATE;  -- 1 行（当前读，看到 B 的新行）
+```
+快照读走 MVCC 看不到，当前读读最新可见 → 这就是"半幻读"。
+
+**3.** 一次 UPDATE 的日志写入顺序：① 生成 undo log（旧值，写 undo log buffer）→ ② 改 Buffer Pool 数据页（脏页）→ ③ 写 redo log buffer（物理改动）→ ④ COMMIT 时 redo 写 **PREPARE** 标记并 fsync → ⑤ Server 层写 **binlog** 并 fsync → ⑥ redo 写 **COMMIT** 标记。即 2PC：redo prepare → binlog → redo commit。
+
+**4.** crash 恢复时，事务 redo 处于 PREPARE 但 binlog 中**没有对应 XID** → 说明 binlog 未写成功（崩溃发生在写 binlog 之前）→ **回滚该事务**。反之 redo PREPARE 且 binlog 有该 XID → 提交。这保证主库与 binlog（从库）的一致性。
+
+**5.** RC 性能更好的场景：高并发 OLTP、写多、范围更新/删除多——因为 RC **不加 gap lock**，锁范围小、并发冲突少，且每次读都看最新已提交数据。**不能换的场景**：业务依赖"同一事务内多次读结果一致"（如先 SELECT 计算再基于该快照写、对账类逻辑），必须用 RR；以及依赖 RR + next-key lock 防幻读保证的唯一性校验逻辑。
+
+**6.** 普通 SELECT 是**快照读**，走 MVCC 读历史版本、不加锁；`SELECT ... FOR UPDATE` 是**当前读**，读最新已提交版本并对命中记录加 X 锁（RR 下还含 gap/next-key）。后者会阻塞别的事务的写，因为写也是当前读、需要拿同一行的 X 锁，而 X 锁互斥——避免两个事务基于旧值并发修改导致丢更新。
+
+**7.** 避免大事务批量更新 1000 万行 status：
+- 方法一：**分批 + 每批提交**，按主键区间循环 `UPDATE ... WHERE id BETWEEN ? AND ?` 每 1000-5000 行 commit 一次。
+- 方法二：**主键游标分页**，`UPDATE ... WHERE id > last_id ORDER BY id LIMIT 1000`，记录每批最后 id 继续，避免大 offset。
+两者都让 undo / redo / 锁持有时间短，避免一次性暴涨与复制延迟。
+
+**8.** 监控 history list length 的目的：反映**未 purge 的旧版本数量**，是长事务和 purge 跟不上的早期信号——它持续增长会导致 undo 膨胀、二级索引 delete 标记堆积、MVCC 版本链变长拖慢读。阈值：正常应 < 1000；持续上万即应告警，去 `innodb_trx` 按 `trx_started` 找最老事务处理。
+
+**9.** doublewrite 解决**页撕裂（torn page）**问题：InnoDB 16KB 页与 OS 4KB 块/磁盘扇区不一致，写到一半断电会得到半新半旧的损坏页，而 redo 重放依赖一个完整的初始页、救不回残缺页。doublewrite 先把页顺序写到集中区域并 fsync，再写原位置，崩溃时用它作恢复源。SSD 上**仍需要**——除非底层保证原子写（部分支持 atomic write 的 NVMe / 文件系统）才可考虑关闭，主库一般保持开启。
+
+**10.** "事务超时"诊断步骤：
+1. `SELECT * FROM information_schema.innodb_trx ORDER BY trx_started` 找最老/最大行锁/正在执行的 SQL，定位长事务或被阻塞事务。
+2. `SELECT * FROM performance_schema.data_lock_waits`（或 `sys.innodb_lock_waits`）看谁阻塞谁，拿到 blocking 与 waiting 的 trx/thread。
+3. `SHOW PROCESSLIST` 看阻塞源连接状态（Sleep 长 → 忘 commit；执行中 → 慢 SQL）。
+4. 确认后对阻塞源 `KILL <thread_id>`（注意大事务回滚耗时），并修复业务（缩短事务 / 加索引 / 调隔离级别）。
+
+---
+
 > 🔁 反馈：开两个 mysql client 并发跑 SELECT/UPDATE，亲自感受 RR 与 RC 的差别

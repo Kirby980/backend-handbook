@@ -324,3 +324,36 @@ Parca/Pyroscope 持续采样，eBPF `profile` 在每台机上低开销采栈，�
 8. （⭐⭐⭐）在高频路径（每个网络包）上挂 eBPF 有什么风险？列出至少三种降低开销的手段。
 9. （⭐⭐）tail call 与 BPF-to-BPF 调用各解决什么问题？为什么单个 eBPF 程序需要这两种拆分机制？
 10. （⭐⭐⭐）描述现代 libbpf + CO-RE 程序的「内核侧 .bpf.c + 用户侧 loader」结构，`SEC()` 宏与 GPL license 段各起什么作用？
+
+---
+
+## 参考答案
+
+1. cBPF（classic BPF）是 tcpdump 背后的极简包过滤虚拟机，只在内核里决定「包要不要给用户态」。eBPF（extended BPF，2014 起）把它扩展成通用的内核内虚拟机：更多 64 位寄存器与指令、可挂载几乎任何内核事件、通过 map 与用户态交换数据、通过 helper 调用内核能力。它是事件驱动的——程序不会自己运行，而是在挂载点（kprobe/tracepoint/XDP 等）的事件发生时被内核调用执行。
+
+2. map 是 eBPF 程序的「内存」，也是它与用户态通信的唯一正道（事件触发时写 map，用户态读 map 展示/聚合）。三种常见类型：`HASH`/`LRU_HASH`（键值存储，如 per-pid 统计，LRU 自动淘汰）、`PERCPU_ARRAY`（per-cpu 数组，高频计数免竞争）、`RINGBUF`（5.8+，高效事件流，取代 perf buffer）。（`STACK_TRACE` 保存调用栈是火焰图基础。）
+
+3. verifier 在加载时静态分析所有可能的执行路径（符号执行，跟踪每个寄存器的类型与取值范围），确保程序不崩内核、不死循环、不越界、helper 参数类型正确。三种会被拒的写法及修法：(1) 无法证明有界的循环（back-edge）→ 用 `#pragma unroll`、`bpf_loop()` 或可验证上界的循环；(2) 解引用指针前没判空/越界（invalid mem access）→ 先 NULL 检查并加边界判断、用 `bpf_probe_read_kernel`；(3) 读未初始化的栈/寄存器（R1 !read_ok）→ 先初始化变量；另外栈超 512 字节 → 大数据放 map。
+
+4. 因为 tracepoint 是内核维护的静态稳定埋点，跨内核版本参数稳定；而 kprobe 挂在具体内核函数上，函数一旦改名或被内联就失效。所以稳定性优先用 tracepoint。kprobe/uprobe 的适用场景是 tracepoint 没有覆盖到的内核/用户函数——需要跟踪任意函数入口/返回时才用，代价是版本耦合。
+
+5. 三样：BTF（内核把自己的类型信息——结构体布局、字段偏移——编译进 `vmlinux`，见 `/sys/kernel/btf/vmlinux`）、libbpf（加载时按目标内核 BTF 做字段重定位，自动修正偏移）、`vmlinux.h`（从 BTF 生成的全内核类型头，供开发引用）。BTF 的作用是提供「目标内核的真实类型布局」，libbpf 据此把编译时假设的字段偏移重定位到运行内核的实际偏移，从而一份 `.o` 能在不同内核版本上运行。
+
+6. 单行示例：
+
+   ```bash
+   bpftrace -e '
+     kprobe:vfs_read { @start[tid] = nsecs; }
+     kretprobe:vfs_read /@start[tid]/ {
+         @ns = hist(nsecs - @start[tid]); delete(@start[tid]); }'
+   ```
+
+   配对计时原理：kprobe 挂在函数入口，进入时以 `tid` 为键把当前 `nsecs`（纳秒时间戳）存进 map；kretprobe 挂在同一函数返回处，用 filter `/@start[tid]/` 确保有对应的入口记录，再用 `nsecs - @start[tid]` 算出本次调用耗时，喂给 `hist()` 形成 2 的幂直方图，并 `delete` 清掉该 tid 的起始时间。用 `tid` 作键是为了让并发调用的进入/返回正确配对。
+
+7. (1) 先用 `biolatency` 出块设备 I/O 延迟直方图，确认是否设备侧慢（延迟分布有没有长尾）；(2) 若确认慢，用 `biosnoop` 看逐个 I/O 的进程名、磁盘、扇区、延迟，定位是哪个进程、哪块盘、随机还是顺序（看扇区跳变）；(3) 必要时配合 `cachestat` 看是否 page cache 命中率低导致重复读盘。全程不改应用、不重启。
+
+8. 风险：每个包都触发 eBPF 程序，事件量巨大，即使单次开销小，累加也会显著拖慢收包路径、占用 CPU。降低开销的手段（至少三种）：用采样（只处理部分事件）；用 per-cpu map 聚合避免跨核锁竞争，在内核内先聚合再上报而非每事件推一条；用 raw_tracepoint（开销低于 kprobe）并尽量缩小过滤范围（早返回）；用 RINGBUF 高效上报、避免 `bpf_printk`。
+
+9. 单个 eBPF 程序受指令数上限和 512 字节栈限制，复杂逻辑放不下。BPF-to-BPF 调用让一个程序内可像普通函数那样调用另一个 eBPF 函数（verifier 分别校验各函数），用于代码复用、控制单函数复杂度；tail call 经 `PROG_ARRAY` 跳到另一个程序且不返回（类似 goto），用于状态机式分阶段处理（如 XDP 多阶段包处理），突破单程序的复杂度上限。两者分别解决「函数级拆分复用」和「程序级阶段切换」。
+
+10. 现代结构分两半：内核侧 `.bpf.c` 用 clang 编译成 BTF-enabled 的 `.o`，里面用 `SEC()` 声明挂载点的程序（如 `SEC("tracepoint/syscalls/sys_enter_execve")`）、定义 map、读内核数据（`BPF_CORE_READ` 等）；用户侧 loader 用 `bpftool gen skeleton` 生成骨架头，再 `open → load → attach → 读 ringbuf` 把程序加载进内核并消费数据（可用 C 或 Go 的 cilium/ebpf）。`SEC()` 宏告诉 libbpf 这段程序/map 属于哪个 ELF 段、该挂到哪个事件；GPL license 段（`char LICENSE[] SEC("license") = "GPL";`）声明许可证，是调用众多 GPL-only helper 的前提，否则加载会报 GPL 相关错误。

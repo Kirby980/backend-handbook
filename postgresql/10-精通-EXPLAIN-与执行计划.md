@@ -1149,6 +1149,41 @@ pgbadger -j 4 -f stderr /var/log/postgresql/postgresql-*.log -o report.html
 
 ---
 
+## 参考答案
+
+1. **三种 plan 形态**：
+   - **Seq Scan + Sort + Limit**：表小、或 `user_id=42` 选择度低（占比大）、无合适索引时，全扫再排序最划算。
+   - **Index Scan**（用 `(user_id, created_at DESC)` 复合索引）：索引已按 user_id 定位、按 created_at 有序，直接读前 10 条即停，最优；适合 user_id 选择度高、且有匹配排序的索引。
+   - **Bitmap Heap Scan**（用 `user_id` 与 `status` 两个单列索引做 BitmapAnd）：匹配行中等数量、分散在多页时，位图合并多个索引再回堆；但需额外 Sort 满足 ORDER BY。
+   最优方案是建 `(user_id, status, created_at DESC)` 走 Index Scan 免排序。
+
+2. **loops 总耗时**：`actual time` 是**单次循环**的耗时，总耗时 ≈ `(0.030..0.080 的结束值 0.080) × loops 10000 = 800 ms`，且共返回 `3×10000=3 万`行。这是 **Nested Loop 内层**被驱动 1 万次的典型表征——内层每次很快但被反复执行。修复：给内层加索引、或换 Hash Join、或用 Memoize 缓存内层结果。
+
+3. **external merge Disk 修复**（按影响从小到大）：(a) 给单条会话 `SET LOCAL work_mem='1GB'` 让排序在内存完成（影响最小，仅本查询）；(b) 建匹配 ORDER BY 的索引让排序消失（影响小，仅多一个索引维护）；(c) 全局调高 `work_mem`（影响大，每个排序/哈希节点×并发都吃这么多内存，可能 OOM）。
+
+4. **三种扫描节点对比**：定义 `CREATE INDEX idx ON orders(user_id) INCLUDE (amount)`。
+   - **Index Scan**：`SELECT * FROM orders WHERE user_id=42`——需要回堆取其他列。
+   - **Index Only Scan**：`SELECT user_id, amount FROM orders WHERE user_id=42`——查询列全被索引覆盖（含 INCLUDE），且页在 visibility map 全可见时免回堆。
+   - **Bitmap Heap Scan**：`WHERE user_id=42`匹配几千行且分散时，先建位图再按物理顺序批量回堆，减少随机 IO。
+
+5. **BUFFERS hit/read 含义**：首次 `read=10000` 是从磁盘/OS 读了 1 万个块（冷缓存），`hit=500` 命中 shared_buffers；二次 `hit=10500 read=0` 说明数据已全在 shared_buffers，全部命中。利用：报表查询前用 `pg_prewarm` 预热相关表/索引到缓存，或安排报表在缓存仍热时连续跑，避免每次冷启动的随机 IO。
+
+6. **Memoize（PG 14+）**：Nested Loop 内层对**重复的参数值**缓存其结果集，下次同参数直接读缓存而非重新执行内层。当外层有大量重复 join key（如外层 1 万行但只有 50 个不同 user_id）时，把内层执行从 1 万次降到 50 次。例：`SELECT * FROM orders o JOIN users u ON o.user_id=u.id`，orders 中 user_id 高度重复时 Memoize 把灾难性的逐行查 users 变优秀。
+
+7. **auto_explain 配置**：
+   ```
+   shared_preload_libraries = 'auto_explain'
+   auto_explain.log_min_duration = 200ms
+   auto_explain.log_analyze = on
+   auto_explain.log_timing = off
+   auto_explain.sample_rate = 0.5
+   auto_explain.log_nested_statements = on
+   ```
+
+8. **Workers Planned=4 但 Launched=1**：planner 规划了 4 个并行 worker，但运行时只起来 1 个。原因：(a) `max_worker_processes` / `max_parallel_workers` / `max_parallel_workers_per_gather` 全局额度被其他并发查询占满；(b) 当前系统并行 worker 槽位耗尽；(c) 实例并发高，worker 池不够分。排查：查 `max_parallel_workers(_per_gather)` 和 `max_worker_processes` 配置，看 `pg_stat_activity` 中并行 worker 占用，评估并发期间 worker 是否不够，必要时调高额度或降低单查询 worker 需求。
+
+---
+
 ## 延伸阅读
 
 - 官方文档：[Using EXPLAIN](https://www.postgresql.org/docs/18/using-explain.html)、[Planner Cost Constants](https://www.postgresql.org/docs/18/runtime-config-query.html)

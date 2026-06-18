@@ -634,4 +634,58 @@ InnoDB 锁体系：MDL + 行锁 + gap + 意向锁 + 自增锁。关键点：
 
 ---
 
+## 参考答案
+
+**1.** RR + 非唯一索引 idx_age 上 `WHERE age=20 FOR UPDATE`：默认 next-key 锁。锁住所有 age=20 的索引记录（record lock）+ 这些记录前后的间隙（gap），并对**下一个不满足的记录**（如 age=21 的第一条）加 gap lock，即覆盖到下一条记录。同时命中行回表后在聚簇索引上加 record lock。整体形如 next-key(…,20] + gap(20, 下一个值)，防止再插入 age=20 的新行（防幻读）。
+
+**2.** 改 RC 后执行同样 SQL：**不加 gap lock**，只对当前命中的 age=20 的记录加 record lock（且无命中前后间隙锁）。并发更好，但允许其他事务插入新的 age=20 → 有幻读。
+
+**3.** 制造死锁：
+```sql
+-- T1                         -- T2
+BEGIN;                        BEGIN;
+UPDATE t SET v=1 WHERE id=1;
+                              UPDATE t SET v=1 WHERE id=2;
+UPDATE t SET v=1 WHERE id=2;  -- 等 T2
+                              UPDATE t SET v=1 WHERE id=1;  -- 等 T1 → 死锁
+```
+随后 `SHOW ENGINE INNODB STATUS\G` 看 `LATEST DETECTED DEADLOCK` 段，能看到两个事务各 holds/waits 哪个锁，以及 `WE ROLL BACK TRANSACTION (n)` 选了哪个 victim。
+
+**4.** 等待图：
+```
+T1 (SELECT, 持 MDL_SHARED_READ)  ←—— T2 (ALTER, 等 MDL_EXCLUSIVE)
+                                          ↑
+                              T3, T4...(SELECT, 等 MDL_SHARED_READ)
+```
+T2 等 T1 释放共享 MDL；MDL 申请是 FIFO 队列，T2 排在队首未拿到锁，导致其后的 T3、T4 即使只是读也排在 T2 之后等待 → 整表读写挂起，直到 T1 结束、T2 拿到并释放排他 MDL。
+
+**5.** `INSERT ... ON DUPLICATE KEY UPDATE` 并发性能更好。它在引擎内一次完成"判重 + 插入或更新"，是单条原子语句，减少了"先 SELECT 判断、冲突时再处理"的多语句往返与中间持有的判重 S 锁交叉；后者多个事务并发插同一唯一值时易因 S 锁互等引发死锁。
+
+**6.** `LOCK_MODE = X,GAP` 表示**只锁间隙、不锁记录本身**（gap lock，仅阻止往该间隙插入，不阻止读/改端点记录）；`X,REC_NOT_GAP` 表示**只锁记录、不锁间隙**（record lock，等值唯一命中时的降级形态）。两者都不带 gap+record 时就是纯 next-key（显示为 `X`）。
+
+**7.** 关闭 `innodb_deadlock_detect` 的利弊：
+- 利：高并发热点行场景下，省去每次等锁都跑 wait-for graph 检测的 CPU 开销，避免检测本身成为瓶颈。
+- 弊：真发生死锁时不会被立即检测回滚，只能靠 `innodb_lock_wait_timeout` 超时（默认较长）才报错，期间事务一直挂着。
+- 该关的场景：单机 QPS 极高（几十万级）、热点行竞争激烈、CPU 被死锁检测吃满时，关检测 + 调短 `innodb_lock_wait_timeout`（如 5s）。
+
+**8.** 找当前持锁最久的事务：
+```sql
+SELECT trx_id, trx_mysql_thread_id, trx_started,
+       TIMESTAMPDIFF(SECOND, trx_started, NOW()) AS held_sec,
+       trx_rows_locked, trx_query
+FROM information_schema.innodb_trx
+ORDER BY trx_started ASC
+LIMIT 1;
+```
+`trx_started` 最早即持锁/运行最久者（结合 `data_lock_waits` 确认它是否在阻塞别人）。
+
+**9.**（题号对应原题 9：找当前持有最长锁的事务）同上 `information_schema.innodb_trx` 按 `trx_started ASC` 取最早事务；要看它具体持哪些锁，再 `SELECT * FROM performance_schema.data_locks WHERE ENGINE_TRANSACTION_ID = <trx_id>`。
+
+**10.** 走 idx_status 的 `UPDATE ... WHERE status='paid'` 命中 10 万行：在 RR 下会对这 10 万条二级索引记录 + 间隙 + 回表的聚簇记录全部加 X / next-key 锁，**整个事务期间一直持有，直到 COMMIT**——锁住时间 = 该 UPDATE 执行 + 事务提交全过程，期间这些行/间隙的写全被阻塞，极易引发大面积等待和复制延迟。改法：
+1. **分批**：`UPDATE ... WHERE status='paid' AND id BETWEEN ? AND ? LIMIT 1000`，每批 commit，缩短单次持锁。
+2. status 选择性低（paid 占比大）时索引意义不大，考虑配合主键游标分批，避免一次性锁海量行。
+3. 可在 RC 下执行减少 gap lock 范围。
+
+---
+
 > 🔁 反馈：拿两个 mysql client 同时跑 SELECT FOR UPDATE，亲自看到 next-key 锁住 gap

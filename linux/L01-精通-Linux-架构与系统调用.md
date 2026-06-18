@@ -687,3 +687,23 @@ seccomp 与本篇的关联很深：它就工作在第二章那个 `do_syscall_64
 7. **排障**：一台云上虚拟机，某 Go 服务 CPU 利用率异常偏高，pprof 显示大量时间花在 `time.Now()` 相关路径上。请给出你的排查思路与命令序列，并解释根因最可能是什么、怎么修。
 
 8. **实战**：你怀疑一个在线服务偶发 `Too many open files` 报错但不确定是哪类 fd 泄漏。请设计一套既能定位、又不至于拖垮服务的观测方案，说明为什么不直接长时间 `strace -f` 它，以及你会用什么替代（提示：`/proc/[pid]/fd`、`perf trace`、bpftrace、`ss`、`lsof`）。
+
+---
+
+## 参考答案
+
+1. `write` 这个名字是 glibc 提供的封装函数符号，由 C 库在编译/链接期绑定；系统调用号 1 是内核 ABI 的一部分，由内核的 `syscall_64.tbl` 在内核编译期分配、glibc 把它写进 `rax`；`__x64_sys_write` 是内核中真正的实现函数，由内核入口在运行时以 `rax` 为下标查 `sys_call_table` 动态绑定调用。即：名字在用户态链接期定，号在 ABI 中固定，函数在每次陷入时查表绑定。
+
+2. 因为 `syscall` 指令在硬件层面会用 `rcx` 保存返回地址（陷入前的用户态 RIP），用 `r11` 保存 `RFLAGS`。`rcx` 被指令本身征用了，无法再用来传第 4 个参数，所以 syscall ABI 把第 4 参数改放 `r10`。这是 syscall ABI 与普通 System V 函数 ABI 的唯一显著差异。
+
+3. 内核约定失败返回 `-errno`（如 `-2` = `-ENOENT`）。glibc wrapper 拿到原始返回值后，判断其落在 errno 区间（`-4095..-1`），就把 `errno` 置为取反后的正值（`ENOENT`=2），并对外统一返回 -1。`strace` 直接读的是 tracee 寄存器 `rax` 里的内核原始返回值，没经过 glibc 转换，所以显示 `-1 ENOENT` 是 strace 把原始负值 `-2` 解析成 `-1` 形式并附上 errno 名（strace 展示的是它解读后的内核返回，本质对应原始 `-2`）。
+
+4. `clock_gettime` 属于纯只读、无副作用操作，内核通过 vDSO 把实现代码和时钟数据映射进每个进程地址空间，调用在纯用户态完成、不陷入内核，因此 strace（基于 ptrace 拦内核入口）看不到。`[vdso]`（r-xp）是内核提供的可执行代码段，导出 `__vdso_clock_gettime` 等函数；`[vvar]`（r--p）是内核持续更新的只读时钟数据页（基准时刻、TSC 换算系数）。vDSO 代码读 TSC 寄存器配合 vvar 系数算出时间。当时钟源不是稳定 TSC（虚拟机里被设为 hpet/acpi_pm 或 paravirt clock 回退）时，vDSO 快速路径失效，回退为真正的 syscall 陷入。
+
+5. LKM 加载后跑在 ring 0、与内核共享同一地址空间，一个 bug 即可 panic 整机；它依赖内核内部 API/结构体布局，内核内部 ABI 不稳定，所以换内核版本要重编（vermagic/符号校验）。eBPF 程序则先过 verifier 静态校验（禁止越界访问、保证有限循环/可终止），跑在受限的内核内虚拟机里，无法随意访问内核内存或导致崩溃；借助 CO-RE + BTF 可一次编译跨内核运行。正因为有校验器约束 + 受限执行环境 + 可移植，eBPF 被称为"安全的内核扩展"。
+
+6. 中断（interrupt）由外部硬件异步触发；异常（exception/fault）由 CPU 执行指令同步出错触发；陷阱（trap）由程序主动同步触发。`syscall` 是陷阱，网卡收包是中断，访问被换出页的缺页是异常（fault）。返回行为：陷阱（syscall）返回到下一条指令；中断（收包）返回到被打断的那条指令（继续原指令流）；缺页异常在内核把页换入/建好映射后重试触发故障的那条指令本身。
+
+7. 排查思路：这是典型的 vDSO 退化导致 `time.Now()`（底层 `clock_gettime`）每次都真陷入内核。命令序列：(1) `cat /sys/devices/system/cpu/clocksource/clocksource0/current_clocksource`（或 `.../clocksource/current_clocksource`）看时钟源，理想是 `tsc`；(2) `strace -c -p <pid>` 看是否出现大量 `clock_gettime` 系统调用（正常应几乎为 0）；(3) `cat /sys/devices/system/clocksource/clocksource0/available_clocksource` 看可选项。根因最可能是虚拟机时钟源被设为 `hpet`/`acpi_pm` 或 paravirt clock，vDSO 快速路径失效退化为真陷入。修法：在 CPU 具备 constant/nonstop TSC 的前提下把 current_clocksource 切回 `tsc`，并排查 hypervisor 的时钟配置。
+
+8. 定位 fd 泄漏的低开销方案：(1) 先静态盘点——周期性 `ls /proc/<pid>/fd | wc -l` 看 fd 总数趋势，`ls -l /proc/<pid>/fd` 看每个 fd 指向（socket/文件/pipe/eventfd），快速判断泄漏的是哪类；socket 用 `ss -p` 关联进程统计连接，文件类用 `lsof -p <pid>` 抽样；(2) 看上限 `cat /proc/<pid>/limits` 里的 Max open files；(3) 追"谁在开不关"——用 `perf trace -p <pid> -e open*,socket,accept*,close` 或 bpftrace 统计 open/close 配对（如 `bpftrace -e 'tracepoint:syscalls:sys_enter_openat { @[comm]=count(); }'`）。不直接长时间 `strace -f` 的原因：strace 基于 ptrace，每个 syscall 让 tracee 停两次并切到 tracer，对高 QPS 在线服务会拖慢几十倍甚至导致雪崩。替代用 perf trace / bpftrace（tracepoint/eBPF，内核内聚合、不停进程，开销低），配合 `/proc/<pid>/fd`、`ss`、`lsof` 做快照式定位。

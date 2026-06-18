@@ -512,3 +512,67 @@ io_uring（见 L09）正是冲着这两点来的：它是真正的**异步完成
 7. **实战**：写一个最小的 epoll TCP echo server（C 或 Go 伪代码均可），监听 socket 用 LT、连接 fd 用 ET，正确处理 accept 接尽、读到 EAGAIN、对端关闭。
 
 8. **排障**：某服务 CPU 跑满 100% 但 QPS 很低，`strace` 显示 `epoll_wait` 几乎不阻塞、立刻返回且返回的多是同一批 fd 的"可写"事件。请定位根因并给出修法。
+
+---
+
+## 参考答案
+
+1. 一次 IO 概念上分两阶段：① 等数据就绪（等网卡收包、数据进 socket 接收缓冲）；② 拷贝数据（内核 buffer → 用户 buffer）。区分同步/异步的关键是**阶段②的数据拷贝由谁完成**。epoll 只负责阶段①的"就绪通知"——它告诉你"可以读了"，阶段②的 `read` 拷贝仍由发起线程自己同步执行（线程会卡在那次拷贝上），所以 epoll 是**同步** IO。io_uring 则是"完成模型"：你提交"读 fd 到缓冲区"的请求，内核把阶段①和阶段②（含数据拷贝）全做完，再把结果放进完成队列通知你，线程拿到通知时数据已在用户缓冲区，阶段②由内核完成，故为**异步** IO。
+
+2. select 三大限制：①fd 上限 1024（`fd_set` 是 `FD_SETSIZE` 固定大小位图）；②每次调用全量拷贝三个 `fd_set` 进/出内核（O(n) 拷贝）；③返回后只知就绪个数不知是哪些，要 O(n) 遍历 `FD_ISSET` 找就绪。poll 用 `struct pollfd` 数组替代位图，**解决了第①个**（去掉 1024 上限），但**没解决②③**（仍全量拷贝数组、仍 O(n) 扫描）。"无状态"指 select/poll 内核不记得上次关心哪些 fd，每次调用都要重新把全部 fd 告诉内核、检查完又要全部扫一遍；"有状态"指 epoll 把"关心哪些 fd"持久化为内核对象（`struct eventpoll`），fd 注册一次常驻红黑树，wait 时既不重传 fd 列表也不返回全部 fd。
+
+3. 结构：`struct eventpoll` 内含红黑树 `rbr`（挂所有注册 fd 对应的 `epitem`，按 fd 有序，插/删/查 O(log n)）与就绪链表 `rdllist`（只挂已就绪的 epitem）。注册 fd 时 epoll 在该 fd 的等待队列上挂回调 `ep_poll_callback`；当 fd 变就绪（如 socket 收到数据，协议栈唤醒其等待队列）时，回调被触发，把对应 `epitem` 挂入就绪链表 `rdllist`，并唤醒阻塞在 `epoll_wait` 上的进程。于是 `epoll_wait` 醒来只需把 `rdllist` 里的 epitem 拷给用户，无需遍历红黑树里全部 fd——开销只与就绪 fd 数成正比，与注册总数无关。
+
+4. 语义差别：LT（水平触发，默认）只要 fd 处于就绪状态（缓冲里还有数据没读完），每次 `epoll_wait` 都持续报告；ET（边缘触发，`EPOLLET`）只在状态发生变化的那一刻（无数据→有数据）报告一次，没读完也不会因"还有剩"再报，必须等新数据到达才再触发。ET 读循环要点：
+   ```c
+   while (1) {
+       ssize_t n = read(fd, buf, sizeof(buf));
+       if (n > 0) { process(buf, n); continue; }      // 还可能有数据，继续读
+       else if (n == 0) { close(fd); break; }          // 对端关闭
+       else { // n < 0
+           if (errno == EAGAIN || errno == EWOULDBLOCK) break; // 读空，正常退出
+           else if (errno == EINTR) continue;          // 被信号打断，重试
+           else { close(fd); break; }                  // 真错误
+       }
+   }
+   ```
+   ET 必须配非阻塞：ET 下要循环读到 EAGAIN 才知道缓冲读空；若用阻塞 fd，循环到没数据时 `read` 会阻塞睡死，整个事件循环卡死。
+
+5. 惊群：多个进程/线程在同一监听 socket（或多个 epoll 监控同一 fd）上等待，一个连接到来时内核唤醒所有等待者，但只有一个能 accept 成功，其余白白醒来又睡回去，浪费 CPU、加剧调度抖动。`EPOLLEXCLUSIVE`（4.5+）：注册时加此标志，内核保证一个事件只唤醒一个（或少数）等待者，缓解多个 epoll 共享同一 fd 的惊群，但仍是共享同一监听 fd、不做负载均衡。`SO_REUSEPORT`（3.9+）：多个 socket bind 到同一 IP:Port，每个 socket 有独立 accept 队列，内核用哈希把新连接负载均衡地分发到其中一个，每个 worker 拥有独立监听 fd + 独立 epoll。关键区别：EPOLLEXCLUSIVE 共享 fd、无负载均衡；SO_REUSEPORT 每进程独立 fd、**内核哈希分发自带负载均衡**，且更利于优雅重启，是现代主流选择。
+
+6. Go 把 epoll（ET 模式）藏在 runtime 的 netpoller 里。你写 `conn.Read()` 是同步阻塞风格，但当 socket 无数据时，runtime 不会阻塞底层 OS 线程，而是把当前 goroutine 挂起、将该 fd 注册到 netpoller，然后让 M 去调度运行别的 goroutine；fd 就绪时 netpoller 唤醒对应 goroutine 重新入调度队列继续执行。所以一个 goroutine 在 Read 上"阻塞"时，承载它的 OS 线程（M）并没有阻塞，而是被释放去跑队列里其他可运行的 goroutine——这就是"同步代码、异步性能"。
+
+7. 最小 epoll echo server 要点（C 伪代码）：
+   ```c
+   listen_fd = socket(); set_nonblocking(listen_fd);
+   setsockopt(SO_REUSEPORT); bind(); listen(listen_fd, backlog);
+   epfd = epoll_create1(0);
+   ev = {.events = EPOLLIN, .data.fd = listen_fd};       // 监听用 LT（默认，不加 EPOLLET）
+   epoll_ctl(epfd, EPOLL_CTL_ADD, listen_fd, &ev);
+   while (1) {
+       n = epoll_wait(epfd, events, MAX, -1);
+       for (i = 0; i < n; i++) {
+           if (events[i].data.fd == listen_fd) {
+               while ((cfd = accept(listen_fd, ...)) >= 0) {   // accept 接尽
+                   set_nonblocking(cfd);
+                   cev = {.events = EPOLLIN | EPOLLET, .data.fd = cfd}; // 连接用 ET
+                   epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &cev);
+               }
+               // accept 返回 <0 且 EAGAIN 时退出循环
+           } else {
+               int fd = events[i].data.fd;
+               while (1) {                                  // ET：循环读到 EAGAIN
+                   ssize_t r = read(fd, buf, sizeof(buf));
+                   if (r > 0) write(fd, buf, r);            // echo 回写
+                   else if (r == 0) { epoll_ctl(DEL); close(fd); break; } // 对端关闭
+                   else { if (errno==EAGAIN) break;
+                          else if (errno==EINTR) continue;
+                          else { close(fd); break; } }
+               }
+           }
+       }
+   }
+   ```
+   要点：监听 fd 用 LT、连接 fd 用 ET、accept 与 read 都循环到 EAGAIN、对端关闭（read 返回 0）时 DEL 并 close。
+
+8. 根因：典型的 **EPOLLOUT 空转**。发送缓冲在大多数时候都是可写的，若把 `EPOLLOUT` 常驻注册在连接 fd 上，每轮 `epoll_wait` 都会立刻报告这些 fd"可写"，导致 `epoll_wait` 几乎不阻塞、立即返回同一批 fd 的可写事件，CPU 被空循环占满而真实业务 QPS 没增长。修法：不要常驻注册 `EPOLLOUT`——只在"有数据待发且上一次 `write` 遇到 EAGAIN（发送缓冲满）"时才用 `EPOLL_CTL_MOD` 挂上 `EPOLLOUT`，把待发数据写完后立即用 `EPOLL_CTL_MOD` 摘掉 `EPOLLOUT`。

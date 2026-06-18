@@ -661,4 +661,44 @@ binlog 与复制：
 
 ---
 
+## 参考答案
+
+**1.** STATEMENT 不安全场景：① 非确定性函数 `UPDATE t SET col=NOW()`/`UUID()`/`RAND()` 主从执行结果不同；② `UPDATE/DELETE ... LIMIT n` 无 ORDER BY 时主从命中的行可能不同。ROW 记录行前后镜像、绝对一致但 binlog 大。MIXED 默认 STATEMENT、检测到不安全语句自动切 ROW。8.0 默认 ROW。
+
+**2.** `Executed_Gtid_Set` 表示该从库**已经执行过的所有 GTID 集合**（如 `uuid:1-1000`），故障切换时新主据此把缺失的 GTID 补发。跳过单个坏事务：注入一个空事务占住那个 GTID：
+```sql
+STOP REPLICA;
+SET GTID_NEXT='<server-uuid>:42';
+BEGIN; COMMIT;
+SET GTID_NEXT=AUTOMATIC;
+START REPLICA;
+```
+跳过后必须用 pt-table-checksum 校验一致性。
+
+**3.** 半同步退化为异步的条件：master 等 replica ACK 超过 `rpl_semi_sync_source_timeout`（默认 10s）仍未收到（如 replica 宕机或网络抖动），master 退化为异步继续提交。业务**通常感知不到**（语义上仍正常返回），但此时已失去"不丢已提交事务"的保证——这是半同步的隐患，需监控降级事件并告警。
+
+**4.** 100w 行 UPDATE 在 master 跑 10 秒，binlog 是**一个大事务**，从库 SQL 线程即便支持并行复制也不能拆分单个事务，**至少串行回放 10 秒**，期间产生延迟。优化：① 应用层拆成多个小批事务（每批数千行），让并行复制（WRITESET）能分发到多个 worker；② 8.0 启用 `replica_parallel_type=LOGICAL_CLOCK` + WRITESET 依赖跟踪；③ 控制单 event 大小。
+
+**5.** `pt-heartbeat` 更准的原因：`Seconds_Behind_Source` 衡量的是"replica 当前执行的 event 时间 vs master 当前时间"，当 replica **完全收不到新 binlog**（如 IO 线程断）时它显示 0，掩盖真实延迟；而 pt-heartbeat 在 master 周期性写入带时间戳的心跳行，replica 读到该行后用本地 NOW() 减去时间戳算真实端到端延迟，不受"是否收到 binlog"影响。
+
+**6.** 跨 3 机房 + 1 主 6 从拓扑示例：
+```
+机房A（主）：Master ──半同步── Replica1（同机房热备）
+                       ├─异步─ Replica2（机房B，本地读+灾备）
+                       ├─异步─ Replica3（机房B）
+                       ├─异步─ Replica4（机房C，本地读）
+                       └─异步─ Replica5/6（机房C/A，只读扩展）
+```
+同机房一个半同步热备保证"不丢已提交事务"；跨机房用异步避免高 RTT 拖慢主库写；各机房本地从库分担读流量。
+
+**7.** ROW 模式误删 1000 行的反向恢复：① 在 binlog 里定位包含该 DELETE 的事件位置（`mysqlbinlog --start-datetime ... --base64-output=DECODE-ROWS -vv` 找到）；② 因 ROW 的 DELETE 事件含完整 before image，用 `binlog2sql` / `my2sql` 等工具把 DELETE 反转成 INSERT 生成回滚 SQL；③ 校验后在库上重放这些 INSERT 恢复数据。前提：`binlog_row_image=FULL` 且 binlog 未过期清理。
+
+**8.** master crash 时：**半同步**——保证至少一个 replica 已收到 binlog（未超时退化的前提下），故已 ACK 的已提交事务不丢，但若刚好处于退化期或多机房网络差仍可能丢；**MGR**——写事务需多数派节点确认才提交，master 挂后多数派中已提交的事务不丢，提供更强的不丢保证（强一致）。
+
+**9.** 在线 DDL 加列在 master 上即使是 INSTANT/INPLACE 不阻塞主库，但该 DDL 写入 binlog 后，从库 SQL 线程会**串行回放这条 ALTER**，期间从库对该表的读被 MDL 阻塞、产生延迟（大表更明显）。用 gh-ost 避免：它用影子表 + 解析 binlog 增量同步，逐步拷贝数据，最后 atomic rename 切换，主从都不长时间持锁，且可限速、可暂停、可回滚。
+
+**10.** binlog 占盘 80% 处理流程：① `SHOW BINARY LOGS` 看文件数量与总大小，确认是否 binlog 撑爆；② 检查 `binlog_expire_logs_seconds` 是否过长或未设；③ **确认所有从库已消费**到的位点（不能删未被从库读取的 binlog）后，`PURGE BINARY LOGS BEFORE '...'` 或 `TO 'binlog.NNNNNN'` 清理旧文件；④ 长期：设合理过期时间、binlog 用独立盘、对高写入考虑 `binlog_row_image=MINIMAL`（注意 CDC 影响）或开启 binlog 压缩。
+
+---
+
 > 🔁 反馈：本地起 master+replica 双节点，故意制造一次复制错误，亲手修复一次

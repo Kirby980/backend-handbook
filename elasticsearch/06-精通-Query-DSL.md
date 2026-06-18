@@ -812,4 +812,48 @@ flowchart TD
 
 ---
 
+## 参考答案
+
+1. 因为 text 字段被 analyzer 分词后存的是 token（如小写、切词后的词），而 `term` 不分词、做精确匹配。用整句或大小写不一致的原文去 term 匹配会对不上任何 token。修复：用 `match`（让查询也分词），或查 keyword 子字段（如 `title.raw`）。
+
+2. query context 参与相关度评分（计算 _score），无法被缓存且有评分开销；filter context 只判断 yes/no 不算分，结果会被 node-level query cache 缓存。凡是"是否匹配"够用的条件放 filter，省评分开销并享受缓存。
+
+3. must=必须匹配且参与评分；should=可选匹配且参与评分（命中越多分越高）；filter=必须匹配但不评分、可缓存；must_not=必须不匹配、不评分。特殊行为：当 bool 中没有 must/filter、只有 should 时，默认 `minimum_should_match=1`（至少命中一个 should）；若存在 must/filter，则 should 默认不强制命中（仅加分）。
+
+4. best_fields：每个字段独立打分取最高分，适合"同一概念主要出现在某一个字段里"（如标题或正文其一最相关）。cross_fields：把多个字段当成一个虚拟大字段、按词项跨字段匹配，适合"信息分散在多个字段"（如 first_name + last_name 组成全名）的场景。
+
+5. 来自分布式聚合的近似性：每个 shard 只返回自己的 top shard_size 个桶，coordinator 合并时，某个全局 top 词在某 shard 上可能因没进该 shard 的局部 top 而被漏算，`doc_count_error_upper_bound` 是这种误差的上界。减小：调大 `shard_size`（默认约 size×1.5+10），或减少 shard 数。
+
+6. 因为 `from+size` 分页要求每个 shard 都返回 from+size 条结果给 coordinator 再归并，from 越大、归并的数据量越大、内存与 CPU 开销越高，默认上限 10000 防止深翻页打挂集群。`search_after` 用上一页最后一条的排序值作为游标续查（无需跳过前面所有数据），配合唯一排序键（加 _id tiebreaker）可稳定高效翻页。
+
+7. cardinality 用 HyperLogLog++ 做近似去重计数（不是精确）。`precision_threshold` 控制精度：在该阈值以下结果接近精确，越高越准但占用内存越大（默认 3000，最大 40000）。权衡：精度 vs 内存——大基数高精度需更多内存。
+
+8. ESQL 是管道式类 SQL 语言，比嵌套 JSON DSL 简洁、对复杂分析（多步聚合/转换）更友好、有重新设计的向量化执行引擎。仍不能取代 DSL 的场景：完整的相关度评分（BM25 细粒度控制）、nested/parent-child、部分高级查询特性、以及对极致手工调优的搜索查询——这些仍需传统 DSL。
+
+9. LOOKUP JOIN 解决"查询时关联查找表"的问题（如把 user_id 关联到 user_profiles 拿国家），不必提前在写入时 enrich。没有它之前要用 ingest 阶段的 enrich processor 预先把关联数据写进文档，或在应用层做二次查询拼接，灵活性差、改字典要 reindex。
+
+10. DSL 示例：
+```json
+POST products/_search
+{
+  "size": 10,
+  "query": {
+    "bool": {
+      "must":   [{ "match": { "title": "机器学习" }}],
+      "filter": [
+        { "range": { "price": { "gte": 50, "lte": 200 }}},
+        { "term":  { "status": "published" }}
+      ]
+    }
+  },
+  "sort": ["_score"],
+  "aggs": {
+    "top_categories": { "terms": { "field": "category", "size": 5 }}
+  }
+}
+```
+要点：title 用 match（参与 BM25 评分）；price/status 放 filter（不评分、可缓存）；按 _score 降序即 BM25 排序；category 用 keyword 字段做 terms 聚合取 Top 5。
+
+---
+
 > 📁 下一篇：[E07 精通评分 BM25 与 Reranking](./07-精通-BM25-与-Reranking.md)

@@ -653,6 +653,28 @@ graph TD
 
 > 答案见 [QUIZ.md](./QUIZ.md)
 
+## 参考答案
+
+1. 核心动机是阻止云厂商（特别是 AWS）把开源 ES 包装成托管 SaaS 服务转售而不回馈。选 SSPL 而非 GPL：SSPL 专门要求"如果你把软件作为服务提供，必须开源整个服务栈"，正好卡住云托管商业模式；GPL/AGPL 的 copyleft 对"作为服务提供"的约束不如 SSPL 直接、且 GPL 主要约束分发而非 SaaS。
+
+2. ELv2 下能做：公司内部用 ES 跑自己业务、SaaS 公司用 ES 存自己数据、产品里嵌 ES 做搜索但卖的是产品不是 ES 服务、把搜索功能开放给客户用。不能做：把 ES 本身作为托管服务/SaaS 转售给别人（即提供"ES 即服务"），也不能去掉/规避许可证保护。内部企业搜索完全合规。
+
+3. 因为 ES 8 客户端默认校验响应 header 中的 `X-Elastic-Product: Elasticsearch`，OpenSearch 不返回该 header，握手即被拒绝。两个补救：(1) 降级使用 ES 7.x 客户端（不强制校验）；(2) 改用 OpenSearch 官方客户端（opensearch-py/opensearch-java，fork 自 ES 7.x）。
+
+4. 一致：核心生命周期概念（hot/warm/cold、rollover、shrink、forcemerge、delete 等阶段动作）和思路基本相同。不一致：API 路径不同（ES `_ilm/policy` vs OS `_plugins/_ism/policies`）、命名为 ISM（Index State Management）、policy 的 JSON 结构与状态机模型有差异、部分动作/触发条件实现不同，迁移要改 API 调用和 policy 定义。
+
+5. semantic_text 字段类型解决"语义搜索一键化"：写入时自动调 inference 模型 embed、查询时自动 embed + 检索，省去手动配 ingest pipeline、手动建 dense_vector/管理向量。OS 上没有等价的一键字段，需要自行配置 ingest pipeline（inference processor）生成向量 + 用 knn/neural search 插件检索。
+
+6. 跨集群 reindex（reindex from remote）前置配置：在目标集群的 elasticsearch.yml/opensearch.yml 配 `reindex.remote.whitelist: source-host:9200`（白名单源主机）；source 里填 remote host + 认证（username/password 或 API key）；大索引分批（调 size 1000-5000）；目标端先手动建好 mapping（尤其向量、semantic_text 等特殊字段在两边不兼容）。
+
+7. 至少 3 个差异：(1) 向量字段——ES 用 `dense_vector` + Lucene HNSW，OS 用 `knn_vector` + 可选 Lucene/FAISS/NMSLIB 引擎，参数与元数据命名不同；(2) `semantic_text`/ELSER（稀疏向量、text_expansion）是 ES 专有，OS 用 Neural Search/Neural Sparse 插件且模型不同；(3) `rule_query`（rule-based query）ES 有、OS 没有；另 ESQL（ES `_query`）对应 OS 的 PPL（`_plugins/_ppl`）。
+
+8. 一般不用担心。SSPL/ELv2 只约束"把 ES 本身作为托管服务转售"。SaaS 公司用 ES 做产品内嵌搜索、卖的是自己的产品/功能而非"ES 即服务"，属于允许范围（99% 公司不受影响）。只有当你对外提供的就是"托管 ES 服务"（像云厂商那样）才受限。注意若选 AGPLv3 选项则网络服务也要开源，那需另行评估。
+
+9. 相同点：都不是 OSI 传统意义的宽松开源、都有针对"作为网络服务/SaaS 提供"的 copyleft 约束、都对云厂商转售不友好。不同点：AGPLv3 是 OSI 认证的开源协议（可标"open source"）、要求提供网络服务时开源你的修改/服务栈；SSPL 未被 OSI 认证为开源、约束更宽泛（"提供该软件即服务就要开源整个服务管理栈"）。ES 提供 SSPL/ELv2/AGPLv3 三选一。
+
+10. 评估：倾向**不迁，留在 OpenSearch**。理由：(1) 已在 AWS 跑 5 年，AWS OpenSearch Service 原生集成、托管、SLA，迁移成本（客户端改造、仪表盘、监控、双写灰度）远大于收益；(2) 电商搜索的通用能力（BM25、向量 HNSW、聚合）两边性能差距不大；(3) 协议无忧。值得迁 ES 的前提：强需求 ELSER/semantic_text 一键语义搜索或 ESQL/TSDB 等 ES 独有且 OS 短期无替代的功能，且 A/B 验证收益显著——否则不动是合理选择。
+
 ---
 
 > 🔁 反馈：搭一台 ES 9 + 一台 OS 3，用同一份数据跑同一组 query，看差异在哪

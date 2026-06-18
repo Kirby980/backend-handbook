@@ -345,3 +345,38 @@ namespace 提供隔离，但**它不是安全边界的全部**。生产加固要
 9. （⭐⭐）uts / ipc / cgroup namespace 各隔离什么？为什么 cgroup namespace 对避免信息泄漏重要？
 10. （⭐⭐⭐）rootless 容器为什么需要 `newuidmap`/`newgidmap` 和 slirp4netns/pasta？它们分别解决什么问题？
 11. （⭐⭐⭐）为什么说「namespace 不是安全边界的全部」？容器安全还需叠加哪些机制？`--privileged` 为何危险？
+
+---
+
+## 参考答案
+
+1. 8 种：mnt（挂载点/文件系统视图）、uts（hostname/domainname）、ipc（System V IPC、POSIX 消息队列、`/dev/shm`）、pid（进程号空间）、net（网络栈：网卡/路由/端口/iptables）、user（UID/GID 映射、capabilities）、cgroup（cgroup 根视图）、time（CLOCK_MONOTONIC/BOOTTIME 偏移）。判断共享：看 `/proc/[pid]/ns/<type>` 软链接方括号里的 inode 号，两个进程同一类型的 inode 相同即共享该 namespace（如 `net` inode 相同则共享网络栈）。
+
+2. `clone(flags)` 创建新进程的同时把它放进新建的 namespace；`unshare(flags)` 让当前进程脱离原 namespace 进入新建的（不创建新进程）；`setns(fd, type)` 把当前进程加入一个已存在的 namespace（fd 指向 `/proc/[pid]/ns/xxx`）。`nsenter` 对应 `setns`。
+
+3. 新建 PID namespace 后第一个进程成为该 ns 的 PID 1，承担 init 职责。两个经典问题：(1) PID 1 默认忽略没有 handler 的信号（如 SIGTERM），导致容器无法优雅退出、`docker stop` 要等超时被 SIGKILL；(2) PID 1 不自动 reap 子进程，导致僵尸堆积。解决：应用自己 handle SIGTERM 并 reap，或用 tini/dumb-init 这样的轻量 init 当 PID 1。
+
+4. 新建 net ns 只有 `lo`，无路由无 iptables。容器联网靠 veth pair（一对虚拟网卡）：`ip link add veth0 type veth peer name veth1` 建一对，`ip link set veth1 netns ctr1` 把一端塞进容器 ns 并在内配 IP、置 up；另一端 veth0 留在宿主接到 bridge（br0），宿主侧配网桥 IP、开 `ip_forward`、加 MASQUERADE NAT，容器默认路由指向网桥，即可出网。这就是 Docker 默认 bridge 网络的本质。
+
+5. user ns 通过 `uid_map`/`gid_map` 把容器内 UID/GID 映射到宿主上不同的 UID/GID（如内部 0~65535 → 外部 100000~165535）。容器内的 root（uid 0）只在该 user ns 内拥有 capabilities（能管自己新建的其它 ns），映射到宿主是一个非特权 subuid，碰宿主资源按真实 uid 鉴权，毫无特权。对 rootless 意味着：普通用户无需 sudo 即可跑容器，即便容器内 root 逃逸，对宿主也只是个普通用户，逃逸风险大幅降低。
+
+6. `pivot_root` 要求新 root 必须是一个挂载点，普通目录不行，所以先 `mount --bind` 新 rootfs 到自身把它变成挂载点。把 `/` 设为 `private`（`MS_REC | MS_PRIVATE`）是为了切断挂载传播：否则容器内后续的 bind/pivot_root 等挂载事件会通过 shared 传播泄漏到宿主，污染宿主挂载视图。两步配合才能干净地切根而不影响宿主。
+
+7. 先找到容器主进程在宿主上的 pid（如 `docker inspect` 取 Pid，或 `ps`），然后从宿主钻进它的 net ns：
+
+   ```bash
+   nsenter -t <pid> -n ss -tanp        # 看连接/监听
+   nsenter -t <pid> -n ip addr         # 看容器内网卡/IP
+   nsenter -t <pid> -n ip route        # 看路由
+   nsenter -t <pid> -n tcpdump -i any -nn   # 在容器网络栈里抓包
+   ```
+
+   好处是用宿主上的工具，容器内无需安装任何东西。
+
+8. 加 `CLONE_NEWUSER` 后还需：(1) 写映射——通过 `newuidmap`/`newgidmap`（或直接写 `/proc/<pid>/uid_map`、`gid_map`），按 `/etc/subuid`/`/etc/subgid` 分配的段把容器内 uid/gid（如 0）映射到宿主的 subuid 段；普通用户自己不能随意写多段映射，需借助这两个受控的 setuid 小工具。(2) capabilities——`CLONE_NEWUSER` 要先于其它 namespace 建立，使新进程在新建的其它 ns 内拥有特权，从而能 `sethostname`、挂 proc、建网络等；这些是 user ns 内的 cap，对宿主无效。(3) 网络上无法建 veth/bridge，需改用 slirp4netns/pasta 用户态网络。
+
+9. uts 隔离 hostname/domainname（容器有独立主机名）；ipc 隔离 System V IPC、POSIX 消息队列、`/dev/shm`（容器间 IPC 互不可见）；cgroup 隔离 cgroup 根视图（容器内 `/proc/self/cgroup` 看到的是相对自己根的路径）。cgroup namespace 重要在于：没有它，容器内能看到宿主完整的 cgroup 层级路径，造成信息泄漏；有了它，容器以为自己的 cgroup 子树就是根，不泄漏宿主层级。
+
+10. rootless 下普通用户无权随意写多段 UID/GID 映射，也无权建 veth/bridge。`newuidmap`/`newgidmap` 是受控的 setuid 辅助程序，按 `/etc/subuid`/`/etc/subgid` 把分配给该用户的 subordinate UID/GID 段安全地写进 user ns 的 `uid_map`/`gid_map`，解决「非 root 如何获得合法 UID 映射」。slirp4netns/pasta 是用户态网络栈，在用户态转发容器流量，解决「无权建内核 veth/bridge 时容器如何联网」。
+
+11. namespace 只提供「视图隔离」，所有容器仍共享同一个宿主内核——一个内核漏洞就可能击穿所有容器，且 `/proc`、`/sys` 暴露等也是风险面，所以它不是完整的安全边界。需要叠加纵深防御：user namespace（最强逃逸缓解）、seccomp（过滤危险系统调用）、capabilities 按需 drop、LSM（AppArmor/SELinux/Landlock）做强制访问控制。`--privileged` 危险在于它拆掉了 cap drop、seccomp 等隔离，容器几乎等于以宿主 root 运行，可直接操作宿主设备和内核，近乎无隔离。

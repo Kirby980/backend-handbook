@@ -641,4 +641,32 @@ mysql -u root -p -e "SELECT VERSION();"
 
 ---
 
+## 参考答案
+
+**1.** MySQL 9 VECTOR 相比 Milvus 等专业向量库最大局限：**没有 ANN（近似最近邻）索引（HNSW/IVF/PQ）**，开源版只能存向量、且距离函数（DISTANCE/VECTOR_DISTANCE）仅 HeatWave/MySQL AI 才有，社区版连暴力检索都得在应用层算。即便在 HeatWave 上做暴力扫描，10 万条 384 维约 200-500ms，而专业库 HNSW 仅 1-5ms，差几个数量级。
+
+**2.** 小规模 RAG 可用 MySQL VECTOR：数据量小（< 10 万）时暴力扫描延迟可接受，且能与业务数据**共用一个事务、强一致**、省去额外向量库的运维与数据同步成本。大规模不推荐：没有 ANN 索引，向量数随规模线性增长导致暴力扫描延迟不可接受，必须用带 HNSW 的专业向量库。
+
+**3.** `EXPLAIN INTO @v` 与传统 EXPLAIN 的最大差异：传统 EXPLAIN 把计划**输出到客户端结果集**，难以程序化处理；`EXPLAIN ... INTO @var FOR ...` 把（JSON）执行计划**存入变量**，可在存储过程/脚本里用 JSON 函数解析判断。应用场景：CI 流程自动检测计划退化（如是否退化为全表扫）、SQL 性能基线对比、过程化 SQL 内做计划检查并 SIGNAL 报警。
+
+**4.** 2026 启动、生命周期 7 年的项目应选 **8.4 LTS**。8.4 支持到 2032（覆盖整个生命周期）、生态/工具/资料成熟、稳定。9.x 是 Innovation 版，每版本仅约 3 个月支持期、需频繁升级、兼容性风险大，不适合长生命周期生产。后续可在 10 LTS 发布后评估直跳。
+
+**5.** JS 存储函数 vs SQL/PSM 的性能差异源自**运行时**：JS 运行在内嵌 GraalVM 多语言运行时，每次调用创建轻量上下文，存在跨运行时调用与上下文开销；字符串/正则等复杂处理因 JS 生态强可能更快，但数值计算和高频逐行调用比 SQL 内置函数慢（内置函数是原生 C++ 实现、无运行时切换）。
+
+**6.** `mysql_native_password` 在 8.4 默认弃用/禁用对旧应用迁移的影响：使用老认证插件或旧 driver（PHP5、老 JDBC）的客户端会**连接失败**（不支持 caching_sha2_password）。迁移影响：需升级客户端 driver 到支持 caching_sha2_password，或临时 `--mysql-native-password=ON` 启用过渡；从 5.7 迁移的老用户密码 hash 可能需 `ALTER USER ... IDENTIFIED BY` 重新生成。
+
+**7.** MariaDB 与 MySQL 的兼容边界：5.5 之前基本兼容，10.0 起 MariaDB 停止合并上游、走独立路线——**GTID 实现不同、复制/集群（Galera vs MGR）不同、部分语法/函数/系统表不同、JSON 实现不同、有 ColumnStore 等独有引擎**。必须区分的场景：复制（主从不能跨 MySQL/MariaDB 混用）、依赖 GTID/特定系统表的运维工具、用到各自独有特性时。不建议混用。
+
+**8.** Innovation 模型对生产升级策略的变化：9.x 每 3 个月一发、单版本支持期短，意味着跟随 Innovation 线就要**频繁滚动升级**、每次都要回归测试与兼容性验证，运维负担大、风险高；多数企业应**只用 LTS（8.4）做生产**，把 Innovation 版用于测试/尝鲜、为下一个 LTS（10）提前评估特性，等特性沉淀进 LTS 再上生产。
+
+**9.** ClusterSet 相比传统跨地域异步主从新增的能力：把多个**完整的 InnoDB Cluster（每个内部 MGR 强一致）**通过异步复制串成主备集群，提供 AdminAPI 原生管理——一键创建 replica cluster、**受控的跨集群故障切换（`setPrimaryCluster`）**、跨 cluster 的 GTID 一致性检查、与 Router 集成的自动路由切换。传统主从只是单实例间异步复制，无集群级编排与一键灾备切换。
+
+**10.** 金融业务（强一致 + 灾备 + 向量化营销推荐）架构：
+- **核心交易库**：用 **InnoDB Cluster（MGR 单主，3 或 5 节点同城多机房）** 保证强一致与自动故障转移；`innodb_flush_log_at_trx_commit=1` + `sync_binlog=1` 双 1；防脑裂参数齐全。
+- **灾备**：用 **ClusterSet** 把核心 cluster 异步复制到异地 DR 机房（DR 内部也是 MGR），灾难时 `setPrimaryCluster` 切换；配合定期物理备份（XtraBackup/Clone）+ binlog 做 PITR。
+- **向量化营销推荐**：**不放在核心交易库**——用专业向量库（Milvus/专用 HeatWave）做大规模 ANN 检索，或营销数据量小且需与业务事务一致时用 8.4 + 专业向量库旁路；推荐计算与交易解耦，避免向量大查询冲击核心库 Buffer Pool。
+- **版本**：核心库用 **8.4 LTS**（金融求稳），向量能力外置而非依赖 9.x VECTOR。
+
+---
+
 > 📁 下一篇：[M12 精通分库分表与中间件](./12-精通-MySQL-分库分表.md)

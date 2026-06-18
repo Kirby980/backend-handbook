@@ -879,4 +879,63 @@ InnoDB 的所有"调优"，其实是在这张图上**调每条箭头的速度**�
 
 ---
 
+## 参考答案
+
+**1.** 32GB 内存专用 MySQL，Buffer Pool 建议 **20-22GB（约 60-70%）**，而非 80%。原因：除 Buffer Pool 外还要留内存给——InnoDB 元数据/字典、redo/log buffer、每连接的 sort/join/read buffer（高并发时累加可观）、binlog cache、临时表、操作系统页缓存与文件描述符。直接 80% 容易在高并发或大查询时 OOM 或触发 swap，反而抖动。
+
+**2.** 4GB Buffer Pool 设 16 实例**不合理**。每个实例应 ≥ 1GB 才有意义，16 实例时每个仅 256MB，链表碎片化、单实例缓存命中率下降，得不偿失。4GB 时设 4 实例（每个 1GB）较合适；实际 8.0 在 size>1GiB 时也会自动按公式收敛实例数。
+
+**3.** SSD 上 `innodb_flush_neighbors=0`：刷一个脏页时不顺带刷相邻页。SSD 随机写与顺序写性能差异小，"顺带刷邻页"只会多刷不必要的页、增加写放大。HDD 时代默认 1，是因为机械盘顺序写远快于随机写，把同 extent 的脏页合并成一次顺序写能显著省寻道时间。
+
+**4.** P99 周期性抖动 30s/间隔 10min 的三种可能 + 验证：① **checkpoint 风暴**——redo log 太小，写满时强制刷脏，看 `SHOW ENGINE INNODB STATUS` 的 LOG 段 `(LSN - checkpoint)` 是否接近 redo 容量、`Pending flushes buffer pool` 是否飙升；② **Buffer Pool dump/load 或某定时任务**（如 cron 跑大查询/备份）——查定时任务与时间点是否吻合；③ **脏页比例触顶**——看 `Modified db pages / Database pages` 是否周期性逼近 `max_dirty_pages_pct`。修复方向：调大 redo capacity、提高 io_capacity、降低 lwm。
+
+**5.** `=2` 在 commit 时只把 redo write 到 OS page cache、由后台每秒 fsync；`=1` 每次 commit 都 fsync 到磁盘。区别：`=1` 任何崩溃都不丢已提交事务（最安全、最慢）；`=2` 进程崩溃不丢（OS cache 还在），但**整机断电/OS 崩**会丢最近约 1 秒已提交事务。能接受 2 的场景：日志/埋点/缓存类、可容忍丢 1 秒、追求更高 TPS 的业务。
+
+**6.** Change Buffer 对唯一索引无效：插入/更新唯一索引时必须**立即判重**（检查是否已存在相同值），这要求把目标索引页**当场从磁盘读进来**——而 Change Buffer 的价值正是"延迟读页、暂存修改",对必须现场读页的唯一索引无从优化。非唯一二级索引无需判重，才能把修改缓存起来等页被读时再 merge。
+
+**7.** 1 聚簇 + 3 二级索引、Buffer Pool 命中 100%、不算 redo 的最少磁盘写：**0 次（同步）**。WAL 下提交时只需 redo 落盘保证持久化，4 个被修改的数据/索引页都是 Buffer Pool 中的脏页，由后台 page cleaner **异步**刷盘，不在事务关键路径上同步写。（若题意问"这些脏页最终落盘"则是 4 次异步写，但提交时的同步磁盘写为 0，除题目排除的 redo 外。）
+
+**8.** `innodb_redo_log_capacity=16GB` 的副作用：占更多磁盘空间；更重要的是**崩溃恢复时间变长**——恢复需重放 checkpoint 到末尾之间的 redo，redo 越大、未刷脏页越多，重放量越大、恢复越久。好处是减少 checkpoint 频率、刷脏更平滑（写重场景值得）。需在"恢复时长"与"运行平滑"间权衡。
+
+**9.** `RW-shared spins` 集中在 `btr0sea.c` → 是 **Adaptive Hash Index（AHI）锁**竞争。处理：增大 `innodb_adaptive_hash_index_parts`（分区减少锁争用），或在高并发写 OLTP 上直接 `innodb_adaptive_hash_index = OFF` 关闭 AHI。（若集中在 `buf0buf.c` 则是 Buffer Pool 锁，应增大 `innodb_buffer_pool_instances`。）
+
+**10.** 写极重 OLTP（100k QPS，写 60%）`[mysqld]` 模板（假设 NVMe、约 128GB 内存）：
+```ini
+[mysqld]
+# Buffer Pool
+innodb_buffer_pool_size = 80G
+innodb_buffer_pool_instances = 16
+innodb_old_blocks_time = 1000
+
+# Redo（写极重，调大避免 checkpoint 风暴）
+innodb_redo_log_capacity = 32G
+innodb_flush_log_at_trx_commit = 1      # 金融/订单；可容忍丢1s则 2
+innodb_log_buffer_size = 128M
+
+# Flush（NVMe）
+innodb_io_capacity = 8000
+innodb_io_capacity_max = 20000
+innodb_flush_method = O_DIRECT
+innodb_flush_neighbors = 0
+innodb_max_dirty_pages_pct = 90
+innodb_max_dirty_pages_pct_lwm = 5      # 提前平滑刷脏
+
+# Doublewrite（主库必开）
+innodb_doublewrite = ON
+
+# Change Buffer / AHI（写重）
+innodb_change_buffering = all
+innodb_adaptive_hash_index = OFF        # 高并发写常关，减锁竞争
+
+# 复制 / 持久化
+sync_binlog = 1
+binlog_format = ROW
+innodb_purge_threads = 8                # 写重场景上调
+innodb_page_cleaners = 8
+innodb_thread_concurrency = 0
+```
+配合 OS：`vm.swappiness=1`、关闭 THP、NVMe 调度器 none。
+
+---
+
 > 📁 下一篇：[M09 精通 MySQL 高可用架构](./09-精通-MySQL-高可用.md)

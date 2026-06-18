@@ -707,4 +707,45 @@ ANALYZE：实际跑 + 估算 vs 实际行数对比
 
 ---
 
+## 参考答案
+
+**1.** type 性能从好到差：`const/system`（主键或唯一索引等值，至多 1 行）→ `eq_ref`（join 被驱动表唯一索引等值）→ `ref`（非唯一索引等值）→ `range`（索引范围扫）→ `index`（全索引扫，不回表但遍历整棵二级索引）→ `ALL`（全表扫，几乎都要修）。越靠前扫描的行数越少。
+
+**2.** `Using filesort; Using temporary` 三个排查方向：① 给 ORDER BY / GROUP BY / DISTINCT 列建合适联合索引，让其走索引序消除排序与临时表；② 看临时表是否落盘（`Created_tmp_disk_tables`），调大 `tmp_table_size`/`max_heap_table_size` 并减少返回列宽（BLOB/TEXT 强制落盘）；③ 改 SQL 减少排序/分组规模（先过滤再聚合、用覆盖索引）。
+
+**3.** status='paid' 占 90% 的优化器误判修复全步骤：① `ANALYZE TABLE orders UPDATE HISTOGRAM ON status WITH 100 BUCKETS` 建直方图，让优化器知道 status 高度倾斜、用 idx_status 几乎要扫全表；② 优化器据此改选选择性更高的索引（如 idx_user）；③ 验证 `EXPLAIN` 是否改走目标索引；④ 更优解：建联合索引 `(user_id, status)` 从根本上解决；⑤ 实在不行用 hint `/*+ INDEX(orders idx_user) */` 兜底。
+
+**4.** Hash Join 复杂度 O(N+M)，BNL 是 O(N×M)，无索引大表 join 时 Hash Join 可快几个数量级。**退回 BNL 的场景**：被驱动表上有可用索引时优化器会优先 Index Nested Loop；以及 `optimizer_switch='hash_join=off'` 关闭、或 join 条件非等值（hash join 只支持等值条件）时退回 BNL。
+
+**5.** optimizer trace 看"为什么没选我建的索引"：
+```sql
+SET optimizer_trace='enabled=on';
+SELECT ... ;   -- 跑目标 SQL
+SELECT * FROM information_schema.OPTIMIZER_TRACE\G
+SET optimizer_trace='enabled=off';
+```
+在输出 JSON 的 `rows_estimation` / `considered_execution_plans` 段看每个候选索引的 cost 与估算行数，对比为何目标索引 cost 反而更高（通常是 cardinality 估算失准或没覆盖、回表成本高）。
+
+**6.** SSD 上 `io_block_read_cost` 合理值：把磁盘随机读成本调到接近内存读（`memory_block_read_cost=0.25`），常设 **0.5～1.0**（默认 1.0 是 HDD 假设）。下调后优化器更愿意走索引大量回表。改完 `FLUSH OPTIMIZER_COSTS`，并在代表性查询上验证，不要盲调。
+
+**7.** 让 LIMIT 提前优化失效（实际扫全表）的场景：
+```sql
+-- col1='x' 的行极其稀疏，但优化器为利用 ORDER BY id 走主键顺序扫提前结束
+SELECT * FROM big WHERE col1='x' ORDER BY id LIMIT 10;
+```
+若 col1='x' 只在表尾才出现，主键顺序扫要扫遍几乎全表才凑齐 10 条。修复：`USE INDEX(idx_col1)` 或建 `(col1, id)` 联合索引。
+
+**8.** `IN (SELECT ...)` vs `JOIN`：**没有哪个一定更快**。多数情况优化器能把 IN 子查询改写成 semi-join，两者等价；但当子查询结果集大、或优化器误判物化 vs semi-join 时，显式 JOIN 可能更优（尤其旧版本）。需 EXPLAIN 对比，看是 `Using semijoin` 还是被物化。
+
+**9.** 触发 derived merge（派生表合并内联）的 SQL：派生表无聚合/DISTINCT/LIMIT/窗口函数等阻止合并的因素时，8.0 优化器会把它内联到外查询：
+```sql
+SELECT * FROM (SELECT id, name FROM users WHERE status=1) t WHERE t.id > 100;
+-- derived merge 后等价于 SELECT id,name FROM users WHERE status=1 AND id>100
+```
+`EXPLAIN` 不再出现 `DERIVED` 行即合并成功。
+
+**10.** 稳定 SQL 突然变慢的根因：① 统计信息过期/重新采样后优化器选错索引（数据量增长、直方图过期）；② 数据分布变化导致命中行数剧增；③ 新增/删除索引或表结构变更改变了计划；④ Buffer Pool 命中率下降（内存竞争、被其他大查询冲刷）；⑤ 锁等待 / 长事务阻塞；⑥ 参数变更（如 optimizer_switch、sort_buffer）；⑦ 数据量越过某阈值使原本走索引变成全表。排查：`EXPLAIN`/`EXPLAIN ANALYZE` 对比计划，看估算 vs 实际行数差异，必要时 `ANALYZE TABLE` 或加 hint。
+
+---
+
 > 🔁 反馈：每条疑似慢 SQL 都跑一次 EXPLAIN ANALYZE，对比估算与实际

@@ -470,3 +470,29 @@ kubepods.slice/
 9. （⭐⭐）`memory.min`/`low`/`high`/`max` 四个阈值构成怎样的「保护—限流—击杀」梯度？哪些用于保护、哪些用于限制？
 10. （⭐⭐⭐）解释 cgroup v2 相对 v1 在「脏页回写计费」上的关键改进，以及它为何让 `io.max` 对写负载真正有效（结合 [L05](./L05-精通-物理内存管理与回收.md)/[L10](./L10-精通-块设备与IO调度.md)）。
 11. （⭐⭐⭐）`cgroup.freeze` 与 `cgroup.kill` 各自的用途？为什么 `cgroup.kill` 比逐个进程发 SIGKILL 更可靠？
+
+---
+
+## 参考答案
+
+1. namespace 负责「隔离视图」（让进程以为自己独占系统：PID、网络、挂载等），cgroup 负责「限制资源」（CPU、内存、I/O、进程数）。容器既要让进程看不到彼此（隔离），又要防止一个容器吃光宿主资源（限额），所以二者缺一不可——只有 namespace 没限额会被资源耗尽拖垮，只有 cgroup 没隔离则进程互相可见、不成其为容器。
+
+2. v1 每个 controller 是一棵独立层级树（同一进程在不同 controller 里可处于不同位置），v2 只有一棵统一层级树、所有 controller 作用于同一层级、进程归属全局唯一。判断：`stat -fc %T /sys/fs/cgroup/`，返回 `cgroup2fs` 即 v2，`tmpfs` 即 v1（或混合）；也可看 `/proc/$$/cgroup` 是否只有一行 `0::<path>`。
+
+3. `cpu.max` 的两个数字是 `"$quota $period"`（微秒）。`"50000 100000"` 表示每 100ms 周期内最多用 50ms CPU 时间 = 0.5 个 CPU。`max` 表示不限。
+
+4. `memory.max` 是硬上限：超过且回收不回来就在该 cgroup 内触发 OOM kill（容器 OOMKilled）。`memory.high` 是软上限：超过不直接杀，而是节流分配 + 积极回收，把内存压回 high 以下（进程变慢但不死）。一句话：max 是越过就杀的红线，high 是越过就限速的减速带。
+
+5. no internal process 规则：启用了 controller 的非根 cgroup，进程只能待在叶子节点，不能既有子 cgroup 又直接挂进程。这样设计是因为否则资源在「该节点直接挂的进程」与「子 cgroup」之间如何分配会产生歧义；强制进程只在叶子消除歧义。根 cgroup 是唯一例外。
+
+6. 排查根治步骤：(1) 看 `cpu.stat` 的 `nr_throttled`、`throttled_usec` 是否持续增长，确认是 CPU throttling；(2) 根因是 `cpu.max` 底层用 CFS bandwidth——每个 period 补满 quota 额度，多线程应用（如 Go 默认 `GOMAXPROCS`=宿主核数、JVM 按宿主核数起线程池）在 period 前段并行把 quota 瞬间烧光，后段全员被冻结到下个 period，造成延迟毛刺，即使平均用量没到 limit；(3) 根治：让运行时感知 limit——Go 用 automaxprocs 或显式设 `GOMAXPROCS` 匹配 limit 核数，JVM 用 `-XX:ActiveProcessorCount`；并可适当调大 limit、用 `cpu.max.burst` 允许突发、或对延迟敏感服务用 static CPU manager。关系：`cpu.max` 就是 CFS bandwidth 控制，GOMAXPROCS 过大会让线程数远超 quota 对应的核数，加剧瞬时打满。
+
+7. 用 `cat memory.events` 看 `oom_kill` 是否增长——若增长说明是该 cgroup 内触发的 OOM（而非全局），再对比 `memory.current` 接近/触达 `memory.max`、`memory.events` 的 `max` 计数增长即可确认是 cgroup 内 OOM（宿主内存仍充足）。处置：调大 `memory.max`，或设 `memory.high` 给软上限提前限流回收（拖慢而非杀），并查 `memory.stat` 看内存去向（anon/file/sock/slab）。
+
+8. 因为 systemd 是其管理 cgroup 的「唯一写者」——直接 `echo` 改 `/sys/fs/cgroup` 下的文件，systemd 会在重载/重启/下次同步时按 unit 配置覆盖你的改动，导致失效。正确方式：用 `systemctl set-property <unit> MemoryMax=1G`（运行时生效），或改 unit 文件的 `[Service]` 段（如 `CPUQuota=`/`MemoryMax=`）再 `daemon-reload`。
+
+9. 梯度从低到高：`memory.min`（硬保护，绝不回收到该值以下，即便全局吃紧）→ `memory.low`（软保护，全局回收时尽量不动）→ 正常区 → `memory.high`（软上限，超过则节流分配 + 积极回收）→ `memory.max`（硬上限，超过且回收不动则 cgroup OOM kill）。其中 min/low 用于保护关键 cgroup 不被回收饿死（如保住数据库 page cache），high/max 用于限制用量。
+
+10. v1 里异步脏页回写（writeback）发生在 flusher 线程上下文，无法归属到产生脏页的 cgroup，所以 `io.max` 对「写完即返回、内核慢慢刷盘」的负载无效（限不住真正的刷盘 I/O）。v2 因 memory 与 io 在同一统一层级，能把回写 I/O 计入发起脏页的 cgroup，于是 `io.max`/`io.weight` 对这类延迟写负载才真正生效。这正是 v2 相对 v1 的核心优势之一（呼应 L05 脏页回写、L10 blk-mq）。
+
+11. `cgroup.freeze` 写 1 冻结整组进程（类似对全组 SIGSTOP 但更彻底、进程无法绕过），写 0 解冻，`docker pause` 即用它。`cgroup.kill`（5.14+）写 1 可靠杀死组内全部进程。`cgroup.kill` 比逐个发 SIGKILL 可靠在于：它是内核对整组的原子操作，连「拒绝/屏蔽信号或在你遍历期间新 fork 出来」的进程也一并杀掉，不存在「边杀边 fork 逃逸」的竞态；而逐个遍历 `cgroup.procs` 发 SIGKILL 可能漏掉遍历期间新产生的子进程。

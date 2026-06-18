@@ -472,3 +472,33 @@ PSI 的 `io.pressure` 是判断"这个 cgroup 是否被 IO 拖累"的金标准�
 7. **实战**：写一组命令，用 udev 规则让系统对所有 NVMe 设备自动设 `none` 调度器、对机械盘自动设 `mq-deadline`，并给某容器 cgroup 限制对 `nvme0n1` 的写带宽为 100MB/s。
 
 8. **排障**：某 PostgreSQL 实例查询偶发延迟毛刺，`iostat` 显示 `nvme0n1` 的 `%util` 长期 100% 但 `aqu-sz` 只有 0.3、`r/s+w/s` 远低于盘的额定 IOPS。请判断这是不是磁盘瓶颈，并给出用 biolatency / biosnoop / blktrace 进一步定位毛刺根因的完整排查流程。
+
+---
+
+## 参考答案
+
+1. 机械盘是单队列、一次只能处理一个 IO，盘忙到没空闲时 `%util` 才接近 100%，与饱和强相关，故可信。NVMe 有几十上百个硬件队列、能同时处理成百上千并发 IO，只要任意时刻有一个 IO 在跑 `%util` 就是 100%，哪怕真实利用率才 5%，所以它会"骗人"。判断 NVMe 是否真饱和要看：`aqu-sz`（平均队列深度，远小于设备并行能力说明没满）、`r_await`/`w_await`（IO 平均耗时，飙高才是慢）、以及实际 `r/s+w/s` 和 `rkB/s+wkB/s` 与设备额定 IOPS/带宽的比值——逼近额定值才是真饱和。
+
+2. 老单队列把所有 CPU 提交的 IO 都塞进一个全局 `request_queue`，由一把队列锁保护；NVMe 几十万 IOPS 下多核同时提交，这把全局锁成了热点，锁竞争烧光 CPU，IOPS 上不去。blk-mq 用两级队列消除：每个 CPU 一个**软件队列（per-CPU ctx）**，IO 先进本地软件队列，避免跨核抢锁；软件队列再映射到**硬件队列（hctx）**，NVMe 每核一对 SQ/CQ，软硬件队列接近 1:1，几乎全程无锁，并充分利用 NVMe 的多队列并行能力。单队列 legacy 被删是因为它无法发挥 SSD/NVMe 的硬件并行，是性能瓶颈，blk-mq 已能覆盖所有设备（包括机械盘只用 1 个硬件队列），保留双路径徒增维护负担，故 5.0 移除。
+
+3. none：不调度、FIFO 直通硬件，开销最低，适合 NVMe/高速 SSD（设备自己够快够并行、内部有 FTL 调度、无寻道，软件再排序纯属添乱）。mq-deadline：给每个 IO 设截止期、读优先防饿死、主体按 LBA 排序合并，开销低，适合 SATA SSD/机械盘/通用。kyber：按目标延迟自适应限流、轻量自调，适合高速多队列设备。bfq：按进程/cgroup 公平分配带宽+权重并优化交互延迟，CPU 开销高，适合桌面/交互式/机械盘。NVMe 服务器不该用 bfq：bfq 算法复杂、每 IO 的 CPU 开销显著，在高 IOPS 下 CPU 被调度器吃掉反成瓶颈。桌面推荐 bfq：它让后台大文件复制时前台仍流畅、交互应用立刻响应，体验极佳，桌面 IOPS 不高故 CPU 代价可接受。
+
+4. 读多是同步阻塞的——进程要等到数据才能继续（处于 D 状态），读延迟直接转化为用户/应用可感知的卡顿。写多是异步回写（writeback，呼应 L07），脏页由内核后台刷盘，提交写的进程通常不等待。所以 mq-deadline 给读设更短的截止期（如 500ms）、写更长（如 5s），让读优先插队，避免大量异步写把同步读无限推迟（写饿读），从而显著改善交互/查询延迟。
+
+5. plug（蓄流）：进程提交 IO 时块层先把请求暂存在进程本地的 plug 列表里而不立即下发，给"合并"创造时间窗口；等攒够一批、或进程要睡眠/显式 flush 时 unplug，一次性把合并好的请求批量下发给调度器/硬件。它配合 IO 合并：相邻 bio（扇区首尾相接）在 plug 阶段被前向/后向合并成更大的 request，减少下发硬件的请求数、一次传输更多数据。对 io_uring 批量提交特别友好：一批 SQE 转成的多个 bio 在同一个 plug 窗口内提交，容易合并成大请求，提升合并率、降低下发次数。
+
+6. `io.max`：绝对限流，给某 cgroup 限定对某设备的 IOPS/带宽硬上限（如 `wbps`/`wiops`），超过即节流，**任何调度器下都生效**。`io.weight`：相对权重，按权重比例分配带宽，但**依赖支持权重的调度器（bfq）**。`io.latency`：给某 cgroup 设 IO 延迟目标，超标则限制其他 cgroup 让路。`io.pressure`（PSI）：反映该 cgroup 因等 IO 而停滞的时间占比，是判断"是否被 IO 拖累"的金标准。NVMe + none 环境下 `io.weight` 不生效（none 不支持权重调度），所以 IO 隔离要用与调度器无关的 `io.max` 做绝对限流。
+
+7. udev 规则（按 rotational 自动设调度器）：
+   ```bash
+   # /etc/udev/rules.d/60-ioscheduler.rules
+   ACTION=="add|change", KERNEL=="nvme*", ATTR{queue/scheduler}="none"
+   ACTION=="add|change", KERNEL=="sd*", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="mq-deadline"
+   ```
+   重载并触发：`udevadm control --reload && udevadm trigger`。临时验证：`echo none > /sys/block/nvme0n1/queue/scheduler`。给容器 cgroup 限写带宽 100MB/s（先查设备号）：
+   ```bash
+   lsblk -o NAME,MAJ:MIN          # 假设 nvme0n1 是 259:0
+   echo "259:0 wbps=104857600" > /sys/fs/cgroup/<容器cgroup>/io.max
+   ```
+
+8. 这**不是磁盘瓶颈**：`%util` 100% 在 NVMe 上是常态噪声，而 `aqu-sz` 只有 0.3（队列几乎空着）、IOPS 远低于额定，三者一致说明盘其实很闲，毛刺另有原因（很可能是少量长尾 IO，如 fsync/FLUSH、后台 checkpoint、邻居 cgroup 抢占等）。排查流程：① `biolatency 10 1` 看块 IO 延迟直方图——若主峰正常但有少量落在高延迟桶，确认是**长尾**毛刺而非整体慢；② `biosnoop` 逐条抓 IO，看哪些 IO 延迟高（LAT 列）、属于哪个进程（COMM/PID，区分是 postgres 自身还是 kworker 回写）、是读还是写、扇区/大小（识别是否 FLUSH/FUA 小 IO）；③ `blktrace -d /dev/nvme0n1 | blkparse` 配合 `btt` 拆分各阶段延迟——`D2C`（dispatched→completed）高说明卡在设备本身，`Q2D`（queued→dispatched）高说明卡在软件排队/调度/限流；④ 结合 `cat /sys/fs/cgroup/.../io.pressure`（PSI）确认该实例是否真因等 IO 停滞，并检查是否有 noisy neighbor 或 `io.max` 限流。综合定位毛刺根因（常见为 fsync/FLUSH 风暴或后台 checkpoint 的长尾写，呼应 L07）。

@@ -779,3 +779,23 @@ $ cat memory.max memory.peak     # peak (6.x 提供) 是历史峰值
 7. （排障）某 Pod 反复 `OOMKilled`（Exit 137），但 `kubectl top pod` 看内存只到 limit 的 70%。给出你的诊断假设（提示：top 的采样间隔 vs 瞬时峰值、page cache、tmpfs），以及用 `memory.events`/`memory.stat`/`memory.peak` 验证的步骤。
 
 8. （排障）整机 `MemAvailable` 持续下降、最终全局 OOM，但 `top`/`ps` 按 RSS 排序的所有进程加起来远不到物理内存。`slabtop` 显示 `dentry` 缓存有 8 GB。解释这是不是泄漏、`dentry` 为何会涨这么大、`SReclaimable` 是否意味着它会被自动回收、你会怎么进一步定位和缓解。
+
+---
+
+## 参考答案
+
+1. 逐字节写满 200 MB 会触发 demand paging 把约 200 MB 匿名页兑现成物理内存，进程 RSS 涨到约 200 MB，`oom_score` 随之上升（基础分≈RSS+swap+页表，归一化到 0~1000）。把 `oom_score_adj` 设为 `-1000` 后，`oom_score` 被压到下界（0），OOM killer 会绕过它——adj 按 `total_pages` 比例叠加到分数上，`-1000` 相当于减去全部内存的等效分，使其"免死"。这说明 adj 是人为偏移 oom_score 的旋钮，可保护（负）或牺牲（正）特定进程。
+
+2. 这台机器其实不紧张。`MemFree` 只有 800 MB 是因为内核把空闲内存几乎全拿去做 page cache（闲着才是浪费）。`MemAvailable` 的 16 GB 来自：`MemFree` 减去 low 水位保留，加上可回收的 page cache（`Cached` 中可回收的大部分，活跃文件页留一部分），加上可回收 slab（`SReclaimable` 的大部分，同样扣掉水位保留）。即 16 GB ≈ free + 大部分 Cached + 大部分 SReclaimable。监控应基于 `MemAvailable` 判断，结论是健康。
+
+3. RSS 之和：每个进程都把 50 MB 共享库全算上，再加各自 10 MB 私有堆，100 进程 = 100×(50+10) = 6000 MB（严重高估，库实际只占 50 MB）。PSS 之和：共享库按进程数均摊，每进程算 50/100=0.5 MB + 10 MB 私有 = 10.5 MB，100 进程 = 1050 MB，正好等于真实物理占用（50 MB 库 + 100×10 MB 私有 = 1050 MB）。单进程 USS：只算独占部分 = 10 MB（不含共享库）。监控应用 PSS 之和的原因：RSS 相加会把共享库重复计算成 100 倍、严重高估，而 PSS 把共享部分均摊，相加恰好等于真实物理占用，是最诚实的总量单值。
+
+4. 接入：导入 `net/http/pprof` 并起一个 HTTP server 暴露 `/debug/pprof/`。制造泄漏：起大量 goroutine 阻塞在 `<-ch`（无人写入的 channel），它们永不退出。定位：(1) 访问 `/debug/pprof/goroutine?debug=1` 看 goroutine 数量随时间单调增长，栈顶都停在同一个 channel 接收处即泄漏点；(2) 在两个时间点各抓一次 heap（`go tool pprof http://.../debug/pprof/heap` 保存），用 `go tool pprof -base heap_t1 heap_t2` 看增量，差值集中在那些 goroutine 持有/引用的对象分配栈。两者共同指向阻塞的 channel 接收代码行。
+
+5. `memory.high` 是软限流：用量超过它时进程申请内存被人为延迟（throttle）并触发激进回收，进程变慢但不被杀。`memory.max` 是硬上限：用量超过它且回收无效时，cgroup OOM killer 杀掉 cgroup 内进程（SIGKILL）。超过 high：进程经历变慢 + 激进回收（软着陆）；超过 max：进程被直接杀。生产建议 `high < max`（如 max 下方约 10%）的原因：让系统在撞硬墙前先"踩刹车"——给监控反应时间、给扩容窗口，把"突然被 SIGKILL"变成"先变慢可观测"，避免硬杀。
+
+6. systemd-oomd：用户态、依据 PSI 内存压力 + swap 使用率、粒度是整个 cgroup、出手最早（"还没真满但很卡"）——适合保护交互/系统会话，防一个失控进程让整机假死到 ssh 都进不去。cgroup OOM：内核态、依据 `memory.max` 触顶、粒度是 cgroup 内单进程、容器超限时出手——适合容器资源边界，限定单容器超额的影响范围。全局 OOM：内核态、依据整机水位击穿、粒度是全机进程打分、最后兜底——适合物理机内存真正耗尽时的最终安全网，不应被指望但必须保留。
+
+7. 诊断假设：(1) `kubectl top` 是周期采样（如 15~30s 间隔），抓不到两次采样之间的瞬时内存峰值，进程可能短时冲到 limit 被杀而 top 只显示 70%；(2) cgroup 内存账本含 page cache 和 tmpfs，进程往 `/dev/shm` 写或读大文件填满缓存，把容器顶到 max，而这些不计入进程 RSS（top 的内存）；(3) 真实增长发生在采样间隙。验证步骤：`cat memory.events` 看 `oom_kill` 是否 > 0（确认 cgroup OOM）；`cat memory.peak` 看历史峰值是否顶到 max（证实瞬时峰值超限）；`cat memory.stat` 区分 `anon`/`file`/`shmem`——若 shmem/file 大则是缓存/tmpfs 撑爆，若 anon 大且接近 max 则是堆增长/瞬时峰值。据此决定调大 limit、限制 `/dev/shm`、或抓堆 profiler。
+
+8. 这通常不是传统意义的应用泄漏，而是内核可回收缓存膨胀（dentry 是目录项缓存）。`dentry` 涨到 8 GB 的原因：某进程在疯狂 `open`/`stat`/遍历海量文件（如扫描大目录树、负缓存大量不存在路径），内核为每个路径项缓存 dentry。`SReclaimable` 表示这部分 slab 在内存紧张时**可以被回收**——理论上内存压力下内核会收缩它，不应直接导致 OOM。但若同时存在大量匿名内存增长、或回收速度跟不上分配速度、或这些 dentry 被引用（pinned）无法回收，仍可能走到 OOM。进一步定位：`slabtop -s c` 确认是 dentry/inode；用 `bpftrace`/`opensnoop` 抓哪个进程在狂 open/stat 文件；查 `vm.vfs_cache_pressure`（调高使内核更积极回收 dentry/inode）。缓解：定位并修复狂扫文件的进程行为；临时可 `echo 2 > /proc/sys/vm/drop_caches` 回收（生产慎用）；调高 `vm.vfs_cache_pressure`；若是不可回收增长则查内核模块/驱动。

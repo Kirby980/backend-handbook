@@ -356,3 +356,29 @@ systemd-analyze plot > boot.svg       # 可视化时间线
 9. （⭐⭐）socket activation 的工作流程是什么？相比常驻服务有哪些好处？
 10. （⭐⭐）模板单元 `name@.service` 与 drop-in 覆盖各解决什么问题？
 11. （⭐⭐⭐）要把一个普通服务「沙箱化」，列举至少 4 个 systemd 安全加固指令及作用，并说明它们与 namespace/seccomp 的关系。
+
+---
+
+## 参考答案
+
+1. 阶段：上电 → UEFI/BIOS 固件自检并从 ESP 加载 bootloader → bootloader（GRUB2/systemd-boot）选内核、把 vmlinuz + initramfs 加载到内存并传 cmdline → 内核解压初始化 → initramfs（内存中临时根）加载访问真正 rootfs 所需驱动、挂载 rootfs 并 `switch_root` → 执行 `/sbin/init`（即 systemd，PID 1）→ 解析 default.target 并按依赖并行拉起 unit → 到达 default.target，login。initramfs 解决的鸡生蛋问题：内核要挂载根文件系统，但根可能在需要驱动才能访问的设备上（NVMe/LVM/LUKS/iSCSI/NFS），而驱动又在根里；initramfs 打包这些驱动先把真正的 rootfs 挂起来再切过去。
+
+2. `multi-user.target` 对应 runlevel 3（多用户文本），`graphical.target` 对应 runlevel 5（图形）。查看默认 target：`systemctl get-default`；修改：`systemctl set-default multi-user.target`（或用 `systemctl isolate <target>` 立即切换当前运行的 target）。
+
+3. `Wants=` 是弱依赖：尝试一起启动，被依赖目标失败不影响自己（最常用）；`Requires=` 是强依赖：依赖失败则自己也失败/停止；`After=` 仅定义启动顺序（排在某 unit 之后），不产生任何依赖、不会主动拉起对方。`After=network.target` 不能保证网络可用，是因为它只管「如果网络要启动，我排在它之后」，且 `network.target` 本身只代表网络栈配置阶段、不代表网络真正连通；要确保网络就绪须用 `Wants=network-online.target` + `After=network-online.target`。
+
+4. 就绪判定语义：`simple`——ExecStart 拉起的进程即主进程，fork/exec 成功即视为启动完成（默认）；`forking`——进程会 fork 出后台守护并退出父进程，需配 `PIDFile=` 让 systemd 跟踪真正的主进程；`notify`——进程初始化完成后主动调 `sd_notify()` 通知 systemd，systemd 收到才认为启动完成（最可靠）；`oneshot`——跑完即退出，常配 `RemainAfterExit=yes`。当服务有明确的「我已就绪可服务」时点、且希望依赖它的服务等到它真正可用时，应用 `notify`。
+
+5. systemd 是 cgroup 的唯一合法写者：每个 service 自动获得一个 cgroup，用 slice 组织成层级（`-.slice` → `system.slice`/`user.slice`/`machine.slice` → 具体 `.service`）。`MemoryMax`/`CPUQuota`/`IOWeight`/`TasksMax` 等指令直接落到对应 cgroup 文件。运行时调整内存上限的正确命令：`systemctl set-property nginx.service MemoryMax=1G`（不要手改 `/sys/fs/cgroup`，systemd 会覆盖）。
+
+6. 流程：(1) `systemctl status myapp.service` —— 看 `Active:` 状态、`Main PID:` 的退出码/信号和最近几行日志，初判是崩溃、配置错还是依赖未满足；(2) `journalctl -u myapp -b --no-pager` —— 看本次启动该服务的完整日志，定位具体报错（ExecStart 路径错、权限、端口占用、依赖服务未起等）；(3) `systemctl cat myapp.service` —— 看最终生效的 unit 文件（含 drop-in 覆盖），确认配置是否如预期。改配置用 `systemctl edit` 生成 drop-in，改完 `systemctl daemon-reload` 再 restart。
+
+7. `systemd-analyze blame` 按耗时降序列出各 unit 的启动时间，`systemd-analyze critical-chain` 显示串行依赖链（关键路径）上的耗时。配合用法：先看 critical-chain 找出真正在串行关键路径上的 unit，再到 blame 里看它的耗时去优化。不能只看 blame，是因为 blame 里耗时长的服务若是并行启动的，优化它并不会缩短总启动时间——只有关键路径上的串行瓶颈才决定总耗时。
+
+8. fstab 改坏导致某挂载失败会阻塞启动卡在 emergency。修复：在 GRUB 编辑启动项，在内核 cmdline 临时加 `systemd.unit=emergency.target`（或 `rescue.target`），进入最小环境；或加 `init=/bin/bash` 直接拿 shell。此时根常为只读，先 `mount -o remount,rw /` 改为可写，再编辑 `/etc/fstab` 修正错误条目，`systemctl daemon-reload && mount -a` 验证无误后重启。平时改 fstab 后应先 `mount -a` 验证再重启。
+
+9. socket activation 流程：先 `enable --now` 一个 `.socket` unit，systemd 自己监听该 socket（如 `ListenStream=8080`）；首个连接到来时 systemd 才拉起配对的 `.service`，并通过 `sd_listen_fds()` 把已建立的 socket fd 传给服务进程。相比常驻服务的好处：开机更快（不必等服务真正起来即可「就绪」）、空闲时不占资源（按需拉起）、平滑重启（socket 一直由 systemd 持有，重启服务时已排队/在途的连接不丢）。
+
+10. 模板单元 `name@.service` 解决「一份配置起多个实例」——`@` 后的实例名作为 `%i` 传入，`systemctl start worker@1 worker@2` 即用同一模板起多个实例（如 `getty@tty1`）。drop-in 覆盖（`systemctl edit` 生成 `xxx.service.d/override.conf`）解决「只改个别字段而不动原 unit 文件」——包升级覆盖原 unit 时自定义改动不丢失。
+
+11. 至少四个加固指令：`ProtectSystem=strict`（把系统目录设为只读，防服务篡改系统文件）、`PrivateTmp=yes`（给服务独立的 /tmp，隔离临时文件）、`NoNewPrivileges=yes`（禁止通过 setuid 等提权）、`ProtectHome=yes`（隐藏/只读用户家目录）、`CapabilityBoundingSet=`（限制可保留的 Linux capabilities）、`SystemCallFilter=`（seccomp 系统调用过滤）。它们与 namespace/seccomp 的关系：systemd 在底层正是用 Linux namespace（mount/user 等，见 L16）实现 `PrivateTmp`/`ProtectSystem`/`ProtectHome` 这类文件系统/视图隔离，用 capabilities drop（`CapabilityBoundingSet`）和 seccomp（`SystemCallFilter` 即 seccomp-bpf 过滤危险系统调用）收紧权限——本质是把容器级的隔离手段（namespace + capabilities + seccomp）以声明式指令带给普通服务。可用 `systemd-analyze security <unit>` 给暴露面打分指导加固。

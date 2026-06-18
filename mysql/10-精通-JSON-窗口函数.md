@@ -870,4 +870,88 @@ flowchart TD
 
 ---
 
+## 参考答案
+
+**1.** 并列全部保留 → 用 `RANK()` 或 `DENSE_RANK()`（而非 ROW_NUMBER，后者不保留并列）：
+```sql
+SELECT dept, name, salary FROM (
+  SELECT dept, name, salary,
+         DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS rk
+  FROM emp
+) t WHERE rk <= 3;
+```
+DENSE_RANK 让并列同薪占同一名次且不跳号，Top 3 可能返回多于 3 人。
+
+**2.** 会话切分（间隔 < 30 分钟算同一会话）——用 LAG 比较与上一次访问的时间差，标记新会话起点并累计分组：
+```sql
+SELECT user_id, MIN(visit_time) AS session_start
+FROM (
+  SELECT user_id, visit_time,
+         SUM(is_new) OVER (PARTITION BY user_id ORDER BY visit_time) AS session_id
+  FROM (
+    SELECT user_id, visit_time,
+           CASE WHEN TIMESTAMPDIFF(MINUTE,
+                  LAG(visit_time) OVER (PARTITION BY user_id ORDER BY visit_time),
+                  visit_time) >= 30
+                OR LAG(visit_time) OVER (PARTITION BY user_id ORDER BY visit_time) IS NULL
+                THEN 1 ELSE 0 END AS is_new
+    FROM visits
+  ) a
+) b
+GROUP BY user_id, session_id;
+```
+
+**3.** 普通 CTE 与 FROM 子查询（派生表）的执行差异：语义上等价，都产生中间结果集。MySQL 8.0 前 CTE 总是被**物化为临时表**；8.0+ 优化器对两者都可能做 derived merge 内联，但 CTE 在被多次引用时倾向物化一次复用、派生表则每次出现独立处理。性能差异取决于是否物化——若 CTE 被多次引用且物化，可避免重复计算；若只引用一次，内联通常更快。
+
+**4.** 生成 2026 全年日期并标周末：
+```sql
+WITH RECURSIVE dates(d) AS (
+  SELECT DATE '2026-01-01'
+  UNION ALL
+  SELECT d + INTERVAL 1 DAY FROM dates WHERE d < '2026-12-31'
+)
+SELECT d,
+       CASE WHEN DAYOFWEEK(d) IN (1,7) THEN 1 ELSE 0 END AS is_weekend
+FROM dates;
+```
+（DAYOFWEEK 中 1=周日、7=周六。）
+
+**5.** 高效查询 JSON 数组 tags 含 'hot' 的商品 → 用**多值索引（8.0.17+）**：
+```sql
+ALTER TABLE products ADD INDEX idx_tags ((CAST(attrs->'$.tags' AS CHAR(20) ARRAY)));
+SELECT * FROM products WHERE 'hot' MEMBER OF (attrs->'$.tags');
+-- 或 JSON_CONTAINS(attrs->'$.tags', '"hot"')
+```
+多值索引为数组每个元素建索引项，`MEMBER OF` / `JSON_CONTAINS` / `JSON_OVERLAPS` 能命中。
+
+**6.** STORED 把生成列值**物化到行里**，占行空间、写入/更新 JSON 时需重算并写盘，但读取快、可被覆盖索引直接用；VIRTUAL **不存储**，读时计算、不占行空间，但在其上建索引时索引项仍被物化。场景：高频读、列值稳定、需覆盖索引 → STORED；频繁更新底层 JSON、不想增大行 → VIRTUAL（配索引仍能加速查询）。
+
+**7.** JSON_TABLE 相比 `JSON_EXTRACT` 解决的问题：JSON_EXTRACT 只能从一个 JSON 文档里**取出单个/少量标量值**，无法把**数组炸开成多行**。JSON_TABLE 把 JSON 数组的每个元素（含嵌套对象的多个字段）展开成关系型的**多行多列**，从而可以像普通表一样做 WHERE / JOIN / 聚合，处理"一行 JSON 内含数组"的场景。
+
+**8.** 用 LATERAL 取每个用户最近一次订单金额（无订单为 NULL）→ LATERAL + LEFT JOIN：
+```sql
+SELECT u.id, u.name, o.amount
+FROM users u
+LEFT JOIN LATERAL (
+  SELECT amount FROM orders
+  WHERE user_id = u.id
+  ORDER BY created_at DESC LIMIT 1
+) o ON TRUE;
+```
+LATERAL 让子查询引用左表 u.id，LEFT JOIN 保证无订单用户也保留（amount 为 NULL）。需 orders(user_id, created_at) 索引避免嵌套循环爆炸。
+
+**9.** MySQL 不支持 QUALIFY：QUALIFY 是 Snowflake/BigQuery 等的扩展、非 SQL 标准，MySQL（和 PostgreSQL）都未实现，无法直接在窗口函数结果上过滤。变通：把窗口函数放到子查询/CTE，在外层 WHERE 过滤：
+```sql
+SELECT * FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) AS rn FROM emp
+) t WHERE rn <= 3;
+```
+
+**10.** 用户标签 JSON 数组列 vs `user_tags` 关系表评估：
+- **JSON 数组列**：优点——读写整组标签简单、无需 JOIN、schema 灵活、适合标签随用户整体读取的场景；缺点——单标签的高效查询需多值索引、标签去重/统计/聚合（如"打了某标签的用户数"）困难、原子更新单个标签需重写 JSON。
+- **`user_tags` 关系表**（user_id, tag）：优点——按 tag 反查用户、统计、JOIN 高效（建 `(tag, user_id)` 索引），单标签增删是普通 INSERT/DELETE、易做多对多；缺点——读取某用户全部标签需聚合、表行数大。
+- **选择**：标签主要随用户整体读、很少按标签反查/统计 → JSON 列；需要按标签检索用户、做标签维度统计/分析、标签关系复杂 → 关系表。多数有"按标签找人"需求的业务选关系表。
+
+---
+
 > 📁 下一篇：[M11 精通 MySQL 9 新特性](./11-精通-MySQL-9-新特性.md)
