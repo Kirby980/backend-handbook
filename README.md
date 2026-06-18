@@ -1,6 +1,6 @@
 # 后端工程师深度课程 · 中文知识库
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **13 大专题、225 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **14 大专题、254 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
 > **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
 
@@ -12,6 +12,7 @@
 |---|---|---|---|---|
 | 🟦 **Backend 通用** | 25 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 所有后端工程师 | [backend/](./backend/INDEX.md) |
 | 🐹 **Go 语言** | 30 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Go 中高级工程师 | [golang/](./golang/INDEX.md) |
+| ☕ **Java 后端** | 29 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Java 中高级 / 面试备战 | [java/](./java/INDEX.md) |
 | 🐬 **MySQL** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用开发 | [mysql/](./mysql/INDEX.md) |
 | 🐘 **PostgreSQL** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用 / 平台 / AI | [postgresql/](./postgresql/INDEX.md) |
 | 🟥 **Redis** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐ | 缓存 / 高并发场景 | [redis/](./redis/INDEX.md) |
@@ -148,6 +149,7 @@ linux/ L18–L20（性能诊断 / eBPF / systemd）+ cloud-native/ C03 网络、
 .
 ├── backend/         # 通用后端 25 篇（网络/API/数据库/架构/安全/运维）
 ├── golang/          # Go 30 篇（语言/并发/工程化/性能/生态）
+├── java/            # Java 后端 29 篇（集合/并发/JVM/Spring/MyBatis/IO/版本演进）
 ├── mysql/           # MySQL 12 篇（InnoDB/MVCC/复制/调优/9.x 新特性）
 ├── postgresql/      # PostgreSQL 22 篇（架构/MVCC/索引/pgvector/复制/PostGIS/调优/PG 18）
 ├── redis/           # Redis 12 篇（数据结构/集群/Streams/Redis 8 / Valkey）
