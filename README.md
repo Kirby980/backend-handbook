@@ -1,6 +1,6 @@
 # 后端工程师深度课程 · 中文知识库
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **12 大专题、210 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **13 大专题、225 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
 > **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
 
@@ -22,6 +22,7 @@
 | ☸️ **云原生 / K8s** | 16 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 平台 / SRE / 应用上云 | [cloud-native/](./cloud-native/INDEX.md) |
 | 🕸️ **微服务架构** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 架构师 / 后端 / SRE | [microservices/](./microservices/INDEX.md) |
 | 🐧 **Linux / 操作系统** | 20 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 后端 / SRE / 平台 | [linux/](./linux/INDEX.md) |
+| 🏛️ **系统设计** | 15 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 面试备战 / 后端 / 架构师 | [system-design/](./system-design/INDEX.md) |
 
 - `INDEX.md` —— 总目录、模块划分、学习路径
 - `ROADMAP.md` —— Mermaid 可视化路线图
@@ -156,7 +157,8 @@ linux/ L18–L20（性能诊断 / eBPF / systemd）+ cloud-native/ C03 网络、
 ├── ai-backend/      # AI/LLM 16 篇（Claude/OpenAI/RAG/Agent/MCP/Gateway/安全）
 ├── cloud-native/    # 云原生 16 篇（Docker/K8s/Gateway API/Service Mesh/Operator/GitOps/Serverless/多集群）
 ├── microservices/   # 微服务 22 篇（DDD/通信/服务发现/分布式事务/韧性/网格/可观测/安全/反模式）
-└── linux/           # Linux/OS 20 篇（架构/进程/调度/内存/I/O/网络/IPC/同步/容器/eBPF/systemd）
+├── linux/           # Linux/OS 20 篇（架构/进程/调度/内存/I/O/网络/IPC/同步/容器/eBPF/systemd）
+└── system-design/   # 系统设计 15 篇（方法论/估算/接入/数据层/缓存/秒杀/Feed/IM/网盘/搜索/附近/延迟队列/支付）
 ```
 
 ---
