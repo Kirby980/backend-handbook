@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块一 API 基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：70 分钟
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 
 ---
 
@@ -267,7 +267,7 @@ func selectExamples(input string, pool []Example, k int) []Example {
 排序 2: [正面, 中性, 负面] → 输入 → 模型倾向输出 "负面"
 ```
 
-这种偏差在 GPT-3.5 时代特别严重，2026 年的旗舰模型（Opus 4.7、GPT-5、Gemini 2.5 Pro）已大幅减弱但**未消失**。
+这种偏差在 GPT-3.5 时代特别严重，2026 年的旗舰模型（Opus 4.8、GPT-5、Gemini 3 Pro）已大幅减弱但**未消失**。
 
 应对：
 
@@ -1342,7 +1342,7 @@ func judge(ctx context.Context, q, ref, cand string) (*JudgeResult, error) {
 
 LLM-as-Judge 的注意事项：
 
-- **裁判模型 ≥ 被评模型**——用 Opus 4.7 评 Haiku 4.5 输出，不要反过来
+- **裁判模型 ≥ 被评模型**——用 Opus 4.8 评 Haiku 4.5 输出，不要反过来
 - **位置偏差**——把候选答案 A、B 互换位置，结果可能不同；要做对称采样
 - **冗长偏差**——LLM judge 倾向给"长答案"高分；prompt 里要明确"长短不影响评分"
 - **格式偏差**——LLM judge 偏好 markdown 格式好的答案
@@ -2312,7 +2312,7 @@ func detectInjection(input string) InjectionResult {
 - **BLEU / chrF**：自动指标，作为快速回归
 - **BERTScore / COMET**：语义级指标，比 BLEU 更接近人类判断
 - **人工 5 分制**：在 50-100 条 hold-out 上人工评分（准确性、流畅性、风格）
-- **LLM-judge**：用 Opus 4.7 给每条评分，作为 CI 自动指标
+- **LLM-judge**：用 Opus 4.8 给每条评分，作为 CI 自动指标
 - **A/B 用户偏好**：上线后做真实用户偏好测试
 
 人工 vs LLM-judge：

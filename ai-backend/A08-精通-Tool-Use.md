@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块二 模型能力
 > 难度：⭐⭐⭐⭐⭐
 > 预计阅读时间：80 分钟
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 
 ---
 
@@ -1853,12 +1853,12 @@ tool 实现里用 `http.DefaultClient.Get(url)`——没 ctx。上游 cancel 时
 
 | 模型 | tool use 准确率 | 并行 | 推荐场景 |
 |---|---|---|---|
-| Claude Opus 4.7 | 业界顶尖 | 是 | Agent / 复杂工具链 |
+| Claude Opus 4.8 | 业界顶尖 | 是 | Agent / 复杂工具链 |
 | Claude Sonnet 4.6 | 优秀 | 是 | 默认主力 |
 | Claude Haiku 4.5 | 良好 | 是（弱） | 简单 router / 单 tool |
 | GPT-5 / GPT-5-mini | 优秀 | 是 | OpenAI 生态绑定 |
 | GPT-5-thinking | 强（推理类 tool） | 是 | 需要 reasoning 的 Agent |
-| Gemini 2.5 Pro / Flash | 优秀 | 是 | 长 context Agent |
+| Gemini 3 Pro / Flash | 优秀 | 是 | 长 context Agent |
 
 2026 年所有主力 LLM 都把 tool use 当一等公民。准确率差异已经不大——选型更多取决于：context 长度、价格、生态（MCP 是否成熟、SDK 是否好用）。
 

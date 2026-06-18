@@ -4,7 +4,7 @@
 > 每篇约 10000-15000 字，含底层原理、Go 代码示例、生产实践、陷阱清单与练习题
 > 适合从"会写 Dockerfile"到"运维生产级 K8s 平台"的进阶
 >
-> **📅 内容基准：2026 年 5 月**——Kubernetes 1.36（2026-04 release，1.34/1.35 仍广泛在用）、Gateway API GA、Istio Ambient GA、Cilium 1.16+ eBPF、Helm 3.x、ArgoCD 3.x、Containerd 2.x、OCI Image Spec v1.1、KEDA 2.x。
+> **📅 内容基准：2026 年 6 月**——Kubernetes 1.36（2026-04 release，1.34/1.35 仍广泛在用）、Gateway API GA、Istio Ambient GA、Cilium 1.16+ eBPF、Helm 3.x、ArgoCD 3.x、Containerd 2.x、OCI Image Spec v1.1、KEDA 2.x。
 
 ---
 

@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块三 资源与存储
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：80 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.35 / 1.34 仍在支持 / KEDA 2.x / VPA 1.x / Karpenter 1.x）
+> 内容基准：2026 年 6 月（Kubernetes 1.35 / 1.34 仍在支持 / KEDA 2.x / VPA 1.x / Karpenter 1.x）
 
 ---
 

@@ -1,7 +1,7 @@
 # A13 精通 LLM 可观测性
 
 > 适用读者：中高级 Go 工程师、AI 平台架构师、LLM 应用运维负责人
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 > 配套阅读：A01《精通 Claude API 工程化》、A12《精通 RAG 评测》、B24《精通可观测性》
 
 ---
@@ -114,8 +114,8 @@ LLM 延迟比传统 API 复杂得多：
 
 | 指标 | p50 参考 | p99 参考 |
 |------|---------|---------|
-| TTFT (Claude Sonnet 4.5) | 400ms | 1500ms |
-| TPS (Claude Sonnet 4.5) | 70 t/s | - |
+| TTFT (Claude Sonnet 4.6) | 400ms | 1500ms |
+| TPS (Claude Sonnet 4.6) | 70 t/s | - |
 | TTFT (Claude Haiku 4) | 200ms | 800ms |
 | TPS (Claude Haiku 4) | 120 t/s | - |
 | TTFT (GPT-5) | 350ms | 1200ms |
@@ -804,7 +804,7 @@ type Price struct {
 
 // 2026-05 参考价格（实际以官方为准）
 var Table = map[string]Price{
-    "claude-opus-4-7":    {5, 25, 0.50, 6.25},
+    "claude-opus-4-8":    {5, 25, 0.50, 6.25},
     "claude-sonnet-4-6":  {3, 15, 0.30, 3.75},
     "claude-haiku-4-5":   {1.00, 5.00, 0.10, 1.25},
     "gpt-5":              {1.25, 10, 0.125, 1.25},

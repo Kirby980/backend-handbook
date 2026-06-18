@@ -2,7 +2,7 @@
 
 > 配合 [INDEX.md](./INDEX.md) 与 [ROADMAP.md](./ROADMAP.md) 使用
 >
-> **📅 内容基准：2026 年 5 月**——Kubernetes 1.36（2026-04，1.34/1.35 仍广泛在用）、Gateway API v1.x GA、Istio Ambient GA、Cilium 1.16+ eBPF、Helm 3.x、ArgoCD 3.x、Containerd 2.x。
+> **📅 内容基准：2026 年 6 月**——Kubernetes 1.36（2026-04，1.34/1.35 仍广泛在用）、Gateway API v1.x GA、Istio Ambient GA、Cilium 1.16+ eBPF、Helm 3.x、ArgoCD 3.x、Containerd 2.x。
 
 ---
 

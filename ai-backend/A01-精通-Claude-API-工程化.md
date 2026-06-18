@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块一 API 基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：60 分钟
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 
 ---
 
@@ -315,7 +315,7 @@ req 4: [A][B][C][E]       ← 前 [A][B][C] 命中
 **最小缓存长度**：
 
 - Sonnet 4.x：≥ 1024 tokens
-- Opus 4.5/4.6/4.7 与 Haiku 4.5：≥ 4096 tokens
+- Opus 4.5/4.6/4.7/4.8 与 Haiku 4.5：≥ 4096 tokens
 
 （旧的 1024 / 2048 阈值仅适用于 Claude 3.x / 早期 4 代模型。）低于阈值的 prefix 不会被缓存（哪怕你打了 cache_control 也无效）。
 
@@ -1136,7 +1136,7 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 ### 13.1 模型版图
 
 ```
-顶配:        Opus 4.8         （15/75 USD per M tokens；Opus 4.7 为其前一版本）
+顶配:        Opus 4.8         （15/75 USD per M tokens；Opus 4.8 为其前一版本）
 通用:        Sonnet 4.6       （3/15；1M ctx 区段 6/22.5）
 快速:        Haiku 4.5        （1/5；2025-10-01 release 起 ID 含日期）
 ```
@@ -1147,9 +1147,9 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 
 **何时选 Haiku**：分类、抽取、轻 RAG（top-k 后回答）、agent 中"工具调度员"角色、批量任务。
 
-### 13.2 对比 GPT-5 / Gemini 2.5
+### 13.2 对比 GPT-5 / Gemini 3
 
-| 维度 | Claude 4.x | GPT-5 | Gemini 2.5 |
+| 维度 | Claude 4.x | GPT-5 | Gemini 3 |
 |---|---|---|---|
 | 长上下文 | Sonnet 1M | 400k（GPT-5 main） | 1M Pro / 1M Flash（2M 在 Gemini 3.1 Pro） |
 | 思考链 | extended thinking（可见 / 加密） | reasoning model（o3-mini）独立产品线 | thinking mode |
@@ -1157,7 +1157,7 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 | 多模态 | vision（不含音频生成） | vision + audio + voice | vision + audio + 视频原生 |
 | Prompt caching | ephemeral 5m/1h（成熟） | 自动 prompt caching（透明） | implicit + explicit |
 | Batch | 50% | 50%（24h） | 50% |
-| 代码能力 | Opus 4.8 业界顶尖（SWE-bench 高分） | GPT-5 强 | Gemini 2.5 Pro 强 |
+| 代码能力 | Opus 4.8 业界顶尖（SWE-bench 高分） | GPT-5 强 | Gemini 3 Pro 强 |
 | Agent loop | Anthropic agent SDK + Claude Code | OpenAI agents SDK | Google ADK |
 
 **2026 年 5 月的真实选型经验**：
@@ -1165,7 +1165,7 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 - 复杂 Agent / 高准代码 → Opus 4.8
 - 默认主力 → Sonnet 4.6（性价比之王）
 - 高吞吐分类 → Haiku 4.5 或 Gemini Flash
-- 超长 context（书本 / 代码库） → Gemini 2.5 Pro（1M，需 2M 用 Gemini 3.1 Pro）或 Sonnet 4.6（1M）
+- 超长 context（书本 / 代码库） → Gemini 3 Pro（1M，需 2M 用 Gemini 3.1 Pro）或 Sonnet 4.6（1M）
 - 需要 OpenAI 生态绑定（Whisper、TTS、Realtime API） → GPT-5 系列
 
 ### 13.3 MCP 与 Agent SDK

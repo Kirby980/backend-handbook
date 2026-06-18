@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块六 生产化
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：80 分钟
-> 内容基准：2026 年 5 月（ArgoCD 3.x、Flux v2.4+、Argo Rollouts 1.8+、Flagger 1.40+）
+> 内容基准：2026 年 6 月（ArgoCD 3.x、Flux v2.4+、Argo Rollouts 1.8+、Flagger 1.40+）
 
 ---
 

@@ -2,7 +2,7 @@
 
 > 配合 [INDEX.md](./INDEX.md) 与 [QUIZ.md](./QUIZ.md) 使用
 >
-> **📅 内容基准：2026 年 5 月**——HTTP/3 主流、TLS 1.3 + post-quantum (X25519MLKEM768)、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Istio Ambient GA、K8s Gateway API GA、Passkeys、OAuth 2.1 + DPoP、OTel、Prometheus 3。
+> **📅 内容基准：2026 年 6 月**——HTTP/3 主流、TLS 1.3 + post-quantum (X25519MLKEM768)、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Istio Ambient GA、K8s Gateway API GA、Passkeys、OAuth 2.1 + DPoP、OTel、Prometheus 3。
 
 ---
 

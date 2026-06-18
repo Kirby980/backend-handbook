@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块四 安全与合规
 > 难度：⭐⭐⭐⭐⭐
 > 预计阅读时间：90 分钟
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 
 ---
 
@@ -331,7 +331,7 @@ prompt := fmt.Sprintf("<user_input>%s</user_input>", userText)
 2026 年 5 月，主流模型对 prompt injection 的鲁棒性排序（基于 Lakera / promptfoo 公开榜单的大致顺序）：
 
 ```
-更鲁棒  ← Claude Opus 4.7 ≈ GPT-5 > Claude Sonnet 4.6 > Gemini 2.5 Pro >
+更鲁棒  ← Claude Opus 4.8 ≈ GPT-5 > Claude Sonnet 4.6 > Gemini 3 Pro >
         Claude Haiku 4.5 ≈ GPT-5 mini > Llama-3.3 70B > Mistral Large >
         更易被攻破  开源小模型
 ```
@@ -1959,7 +1959,7 @@ flowchart TD
 ```
 P0 关键 (金融 / 医疗 / 法律):
   ├── 输入: 限长 4K + Llama Guard 3 + 中文分类器 + PII redact
-  ├── 模型: Opus 4.7 + extended thinking
+  ├── 模型: Opus 4.8 + extended thinking
   ├── 输出: structured output + JSON schema + OpenAI Moderation + PII redact
   ├── Tool: 全部 high-risk 二次确认 + 沙箱
   ├── 限流: 5 RPS / user, 10K tokens / hr / user

@@ -4,7 +4,7 @@
 > 路线图来源：云原生 / Kubernetes 系列 · 模块二 流量入口与配置
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：65 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.32-1.36、Gateway API v1.3、Istio 1.24+、Envoy Gateway 1.3+、Cilium 1.17+、Kong Gateway 3.x、Traefik v3、Contour v1.30）
+> 内容基准：2026 年 6 月（Kubernetes 1.32-1.36、Gateway API v1.3、Istio 1.24+、Envoy Gateway 1.3+、Cilium 1.17+、Kong Gateway 3.x、Traefik v3、Contour v1.30）
 
 ---
 

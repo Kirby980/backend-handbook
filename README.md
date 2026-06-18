@@ -2,7 +2,7 @@
 
 > 一套面向**中级到高级**后端工程师的系统进阶课程，共 **12 大专题、210 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
-> **📅 内容基准：2026 年 5 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
+> **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
 
 ---
 
@@ -172,7 +172,7 @@ linux/ L18–L20（性能诊断 / eBPF / systemd）+ cloud-native/ C03 网络、
 
 ## 🔄 内容版本
 
-- **最近一次内容基准对齐**：2026-05
+- **最近一次内容基准对齐**：2026-06
 - **更新原则**：跟随主流技术栈每 6–12 个月迭代一次，重大变更（如 Kafka 5、Go 1.27、PostgreSQL 19）随版本号同步
 
 ---

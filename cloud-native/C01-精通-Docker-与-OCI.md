@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块一 容器与编排基础
 > 难度：⭐⭐⭐
 > 预计阅读时间：60 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.32/1.33、Containerd 2.x、OCI Image Spec v1.1、BuildKit 默认）
+> 内容基准：2026 年 6 月（Kubernetes 1.32/1.33、Containerd 2.x、OCI Image Spec v1.1、BuildKit 默认）
 
 ---
 

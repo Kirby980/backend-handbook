@@ -4,7 +4,7 @@
 > 路线图来源：云原生 / Kubernetes 工程 · 模块一 容器与编排基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：75 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.32 / 1.33 · EndpointSlice 默认 · Topology Aware Routing 1.33 GA · Gateway API v1 · Cilium 1.16+）
+> 内容基准：2026 年 6 月（Kubernetes 1.32 / 1.33 · EndpointSlice 默认 · Topology Aware Routing 1.33 GA · Gateway API v1 · Cilium 1.16+）
 
 ---
 

@@ -4,7 +4,7 @@
 > 每篇约 10000-15000 字，含底层原理、Go 代码示例、生产实践、陷阱清单与练习题
 > 适合从"会调 OpenAI API"到"构建生产级 LLM 系统"的进阶
 >
-> **📅 内容基准：2026 年 5 月**——Claude Opus 4.7 / Sonnet 4.6 / Haiku 4.5、GPT-5 系列、Gemini 2.5、MCP 主流化、prompt caching 普及、structured output / tool use 稳定、Langfuse / Arize Phoenix 可观测性事实标准、Pinecone / pgvector / Milvus 三足鼎立。
+> **📅 内容基准：2026 年 6 月**——Claude Opus 4.8 / Sonnet 4.6 / Haiku 4.5、GPT-5.5、Gemini 3、MCP 主流化、prompt caching 普及、structured output / tool use 稳定、Langfuse / Arize Phoenix 可观测性事实标准、Pinecone / pgvector / Milvus 三足鼎立。
 
 ---
 
@@ -176,7 +176,7 @@
 
 | 章节 | 2026 必知 |
 |---|---|
-| **A01 Claude** | Claude 4.7 Opus / 4.6 Sonnet / 4.5 Haiku；Sonnet 4.6 支持 1M context；prompt caching 5min/1h；extended thinking GA；citations、files、batch、memory tool 等多个工具就绪 |
+| **A01 Claude** | Claude 4.8 Opus / 4.6 Sonnet / 4.5 Haiku；Sonnet 4.6 支持 1M context；prompt caching 5min/1h；extended thinking GA；citations、files、batch、memory tool 等多个工具就绪 |
 | **A02 OpenAI** | GPT-5 系列发布；Responses API 替代 Chat Completions 成主推；Assistants v2 → 待并入 Responses |
 | **A03 Token** | 主流模型上下文：Claude 1M / Gemini 1M / GPT-5 400k；prompt caching 让长上下文经济性可控 |
 | **A07 RAG** | hybrid retrieval 成标配；late interaction（ColBERT/ColPali）兴起；BBQ 量化（ES 8.18 GA）让大库可负担 |

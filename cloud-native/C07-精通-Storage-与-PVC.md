@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块三 资源与存储
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：90 分钟
-> 内容基准：2026 年 5 月（Kubernetes 1.34/1.35、CSI spec v1.10、Velero 1.15+、Rook 1.15、Longhorn 1.7、OpenEBS 4.x）
+> 内容基准：2026 年 6 月（Kubernetes 1.34/1.35、CSI spec v1.10、Velero 1.15+、Rook 1.15、Longhorn 1.7、OpenEBS 4.x）
 
 ---
 

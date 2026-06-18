@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块五 生产化
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：65 分钟
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 
 ---
 
@@ -277,7 +277,7 @@ for result in client.messages.batches.results(batch.id):
   │
   ├──► 简单 (闲聊 / FAQ)        → Haiku 4.5  ($5/M out)
   ├──► 中等 (摘要 / 通用 QA)     → Sonnet 4.6 ($15/M out)
-  └──► 复杂 (推理 / 代码 / 长链路) → Opus 4.7  ($25/M out)
+  └──► 复杂 (推理 / 代码 / 长链路) → Opus 4.8  ($25/M out)
 ```
 
 **省钱效应**：如果 60% 走 Haiku、30% Sonnet、10% Opus，平均成本只有"全用 Sonnet"的 30%。
@@ -289,7 +289,7 @@ for result in client.messages.batches.results(batch.id):
 ```python
 def route(query: str, history: list) -> str:
     if len(history) > 10 or "推理" in query or "对比" in query:
-        return "claude-opus-4-7"
+        return "claude-opus-4-8"
     if len(query) < 50 and is_smalltalk(query):
         return "claude-haiku-4-5"
     return "claude-sonnet-4-6"

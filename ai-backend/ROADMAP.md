@@ -2,7 +2,7 @@
 
 > 配合 [INDEX.md](./INDEX.md) 与 [QUIZ.md](./QUIZ.md) 使用
 >
-> **📅 内容基准：2026 年 5 月**——Claude 4.x / GPT-5 / Gemini 2.5、MCP 主流化、prompt caching 普及、Langfuse / Phoenix 事实标准、pgvector / Pinecone / Milvus 三足鼎立。
+> **📅 内容基准：2026 年 6 月**——Claude 4.x / GPT-5 / Gemini 3、MCP 主流化、prompt caching 普及、Langfuse / Phoenix 事实标准、pgvector / Pinecone / Milvus 三足鼎立。
 
 ---
 
@@ -74,7 +74,7 @@ flowchart TD
     Start[新建 LLM 应用] --> Need{首要需求?}
     Need -->|超长上下文 + 推理| Claude["Claude Sonnet/Opus<br>1M context"]
     Need -->|低延迟低成本| Haiku["Claude Haiku / GPT-5-mini"]
-    Need -->|多模态 + 长视频| Gemini[Gemini 2.5]
+    Need -->|多模态 + 长视频| Gemini[Gemini 3]
     Need -->|生态 + Assistants| GPT[GPT-5 / Responses API]
     Need -->|自托管 + 隐私| Local["Llama / Qwen / DeepSeek 本地"]
 
@@ -348,7 +348,7 @@ graph LR
     subgraph 模型层
     M1[Claude 3.5] --> M2[Claude 4.x<br>1M context]
     M3[GPT-4] --> M4[GPT-5<br>Responses API]
-    M5[Gemini 1.5<br>2M context] --> M6[Gemini 2.5<br>1M context]
+    M5[Gemini 1.5<br>2M context] --> M6[Gemini 3<br>1M context]
     end
 
     subgraph 协议层

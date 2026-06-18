@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块五 网格、可观测、安全
 > 难度：⭐⭐⭐⭐⭐
 > 预计阅读时间：90 分钟
-> 内容基准：2026 年 5 月（Istio 1.24 / Ambient GA、Cilium 1.16+、Linkerd 2.16+、Gateway API v1.1）
+> 内容基准：2026 年 6 月（Istio 1.24 / Ambient GA、Cilium 1.16+、Linkerd 2.16+、Gateway API v1.1）
 
 ---
 

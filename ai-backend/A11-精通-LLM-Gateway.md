@@ -163,7 +163,7 @@ var aliases = map[string][]ModelAlias{
 |------|-------------:|--------------:|---------|
 | claude-haiku-4-5 | 1.00 | 5.00 | 快速分类、简单摘要 |
 | claude-sonnet-4-6 | 3.00 | 15.00 | 通用任务、agentic |
-| claude-opus-4-7 | 15.00 | 75.00 | 复杂推理 |
+| claude-opus-4-8 | 15.00 | 75.00 | 复杂推理 |
 | gpt-5-mini | 0.50 | 2.00 | 高并发简单任务 |
 | gpt-5 | 5.00 | 20.00 | 通用 |
 | gemini-2.5-pro | 2.50 | 10.00 | 多模态 |
@@ -190,7 +190,7 @@ Gateway 需要为每个(provider, model, key)组合维护一个健康分数,基�
 
 不同模型支持不同能力:
 
-| 能力 | Claude Sonnet 4.5 | GPT-5 | Gemini 2.5 Pro |
+| 能力 | Claude Sonnet 4.6 | GPT-5.5 | Gemini 3 Pro |
 |------|:-:|:-:|:-:|
 | 200K+ 上下文 | ✓ | ✓ | ✓(1M) |
 | 视觉输入 | ✓ | ✓ | ✓ |
@@ -1436,7 +1436,7 @@ Prompt injection、prompt extraction、jailbreak 攻击让 Gateway 不得不集�
 
 1. **多维度限流的优先级**:你的 Gateway 同时维护 (tenant_rpm, user_rpm, upstream_itpm) 三个维度。某次请求 tenant 通过、user 通过、upstream_itpm 失败。如何回滚已扣减的配额,并避免 race condition?写出 Go 代码。
 
-2. **Fallback 的容量规划**:主线 Claude Sonnet 4.5(峰值 RPM=10K),fallback 1 是 Haiku 4.5(峰值 RPM=20K),fallback 2 是 GPT-5(RPM=5K)。设计触发条件,使得 Sonnet 故障时不会立刻把 GPT-5 也打挂。
+2. **Fallback 的容量规划**:主线 Claude Sonnet 4.6(峰值 RPM=10K),fallback 1 是 Haiku 4.5(峰值 RPM=20K),fallback 2 是 GPT-5(RPM=5K)。设计触发条件,使得 Sonnet 故障时不会立刻把 GPT-5 也打挂。
 
 3. **Semantic cache 的 cache key**:相同的 query 文本,在不同 system prompt、不同 tool list、不同 user_id 下,什么时候可以共享缓存?写出你的 cache key 公式。
 

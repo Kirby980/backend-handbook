@@ -4,7 +4,7 @@
 > 每篇约 10000-15000 字，含底层原理、代码示例、生产实践、陷阱清单、练习题
 > 适合后端工程师从入门到高级的系统进阶
 >
-> **📅 内容基准：2026 年 5 月**——TLS 1.3 + post-quantum (X25519MLKEM768) 默认、HTTP/3 主流化、PostgreSQL 18、Redis 8.0 / Valkey、Kafka 4.0 (KRaft)、Istio Ambient GA、K8s Gateway API GA、Passkeys 主流、OAuth 2.1 + DPoP、OpenTelemetry 事实标准、Prometheus 3.0。
+> **📅 内容基准：2026 年 6 月**——TLS 1.3 + post-quantum (X25519MLKEM768) 默认、HTTP/3 主流化、PostgreSQL 18、Redis 8.0 / Valkey、Kafka 4.0 (KRaft)、Istio Ambient GA、K8s Gateway API GA、Passkeys 主流、OAuth 2.1 + DPoP、OpenTelemetry 事实标准、Prometheus 3.0。
 > 每章末尾的"2026 现状"小节标注最新变化。
 
 ---

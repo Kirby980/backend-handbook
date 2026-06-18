@@ -4,7 +4,7 @@
 > 路线图来源：云原生 · 模块二 应用打包与发布
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：70 分钟
-> 内容基准：2026 年 5 月（Helm 3.x、Kustomize 已合入 kubectl、Argo CD 2.x、OCI Chart 主流）
+> 内容基准：2026 年 6 月（Helm 3.x、Kustomize 已合入 kubectl、Argo CD 2.x、OCI Chart 主流）
 
 ---
 

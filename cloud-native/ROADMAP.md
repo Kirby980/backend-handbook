@@ -2,7 +2,7 @@
 
 > 配合 [INDEX.md](./INDEX.md) 与 [QUIZ.md](./QUIZ.md) 使用
 >
-> **📅 内容基准：2026 年 5 月**——Kubernetes 1.36（2026-04，1.34/1.35 仍广泛在用）、Gateway API GA、Istio Ambient GA、Cilium eBPF 主流、Helm 3.x、ArgoCD 3.x。
+> **📅 内容基准：2026 年 6 月**——Kubernetes 1.36（2026-04，1.34/1.35 仍广泛在用）、Gateway API GA、Istio Ambient GA、Cilium eBPF 主流、Helm 3.x、ArgoCD 3.x。
 
 ---
 

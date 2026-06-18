@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块一 API 基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：60 分钟
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 
 ---
 
@@ -957,9 +957,9 @@ POST https://api.anthropic.com/v1/chat/completions
 > 2026-04-23 GPT-5.5 发布（API 2026-04-24 上线），成为当前旗舰；推理能力已并入 GPT-5.x 的 thinking/reasoning 模式。整条 o 系列（o1/o3/o3-mini/o4-mini）已于 2026-02-13 从 ChatGPT 退役，o3 API 字符串处于 sunset 倒计时，**不应作为新项目推荐**。
 
 ```
-GPT-5.5       （顶配，含推理）~ Opus 4.8 / Gemini 2.5 Pro 同档
-GPT-5 mini    （平衡）  ~ Sonnet 4.6 / Gemini 2.5 Flash
-GPT-5 nano    （极便宜） ~ Haiku 4.5 / Gemini 2.5 Flash Lite
+GPT-5.5       （顶配，含推理）~ Opus 4.8 / Gemini 3.1 Pro 同档
+GPT-5 mini    （平衡）  ~ Sonnet 4.6 / Gemini 3 Flash
+GPT-5 nano    （极便宜） ~ Haiku 4.5 / Gemini 3.1 Flash Lite
 （推理）       已并入 GPT-5.x thinking/reasoning 模式，o3/o3-mini 已退役
 gpt-4o-mini   （遗留多模态便宜）大幅降价仍在用
 ```
@@ -1350,10 +1350,10 @@ Anthropic 是单一 Messages API，对比之下 OpenAI 的多 API 历史包袱�
 
 | 维度 | OpenAI | Anthropic | Gemini |
 |---|---|---|---|
-| 最强 reasoning | GPT-5.5 / GPT-5 thinking | Claude Opus 4.8 | Gemini 2.5 Pro Deep Think |
-| 性价比主力 | GPT-5 mini | Sonnet 4.6 | Gemini 2.5 Flash |
+| 最强 reasoning | GPT-5.5 / GPT-5 thinking | Claude Opus 4.8 | Gemini 3 Pro Deep Think |
+| 性价比主力 | GPT-5 mini | Sonnet 4.6 | Gemini 3 Flash |
 | 长上下文 | 400k | 1M (Sonnet 4.6 beta) | 1M (2.5 Pro)；2M 在 Gemini 3.1 Pro |
-| 代码 | GPT-5.5、GPT-5 | Opus 4.8 业内顶尖 | Gemini 2.5 Pro 强 |
+| 代码 | GPT-5.5、GPT-5 | Opus 4.8 业内顶尖 | Gemini 3 Pro 强 |
 | 多模态 | 图像 / 音频 / 视频 / TTS / Whisper / Realtime | 图像（无音频生成） | 图像 / 音频 / 视频原生 |
 | 内置 tools | web/file_search/code_interpreter/computer_use | （需自建 / 通过 MCP） | grounding (Google 搜索) |
 | API 数 | 3 套（Chat/Resp/Assist） | 1 套（Messages） | 2 套（v1beta/Gemini API） |

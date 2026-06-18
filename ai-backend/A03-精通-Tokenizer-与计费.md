@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块一 API 基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：65 分钟
-> 内容基准：2026 年 5 月
+> 内容基准：2026 年 6 月
 
 ---
 
@@ -227,7 +227,7 @@ func (b *BPE) Encode(text string) []int {
 ├────────────────────────────────────────────────────────────┤
 │ OpenAI         │ tiktoken (BPE)  │ 100k/200k  │ GPT-4/4o/5    │
 │ Anthropic      │ 内部 BPE        │ ~100k      │ Claude 4.x    │
-│ Google         │ SentencePiece   │ 128k/256k  │ Gemini 2.5    │
+│ Google         │ SentencePiece   │ 128k/256k  │ Gemini 3    │
 │ Meta           │ tiktoken-like   │ 128k/256k  │ LLaMA 3/4     │
 │ Mistral        │ SentencePiece   │ ~32k/128k  │ Mistral Large │
 │ 阿里 Qwen      │ tiktoken-like   │ 152k       │ Qwen 2.5/3    │
@@ -539,14 +539,14 @@ Claude vision 算法：图片按近似公式 `tokens ≈ (width × height) / 750
 
 Sonnet 4.6（200k 截断）：要先 RAG 检索 / chunk，召回率取决于 embedding 质量
 Sonnet 4.6（1M）：     可一次性扔进去，准确率高但单次成本 5-10x
-Gemini 2.5 Pro（1M）： 可扔进去 + 视频 / 长音频；延迟最长（需 2M 用 Gemini 3.1 Pro）
+Gemini 3 Pro（1M）： 可扔进去 + 视频 / 长音频；延迟最长（需 2M 用 Gemini 3.1 Pro）
 ```
 
 **经验**：≤ 100k 直接全文喂；100k-500k 考虑 RAG + 缓存；> 500k 走专门的长上下文模型。
 
 ### 5.4 lost-in-the-middle 现象
 
-Liu et al. 2023 的研究：在长 context 中间放关键信息，准确率比放开头 / 结尾低 20-40%。2024-2025 模型逐步缓解，2026 年的 Claude Sonnet 4.6 / GPT-5 / Gemini 2.5 在 needle-in-haystack 基准上接近 100% 召回，但**复杂综合推理仍有衰减**。
+Liu et al. 2023 的研究：在长 context 中间放关键信息，准确率比放开头 / 结尾低 20-40%。2024-2025 模型逐步缓解，2026 年的 Claude Sonnet 4.6 / GPT-5 / Gemini 3 在 needle-in-haystack 基准上接近 100% 召回，但**复杂综合推理仍有衰减**。
 
 工程实践：
 
@@ -606,7 +606,7 @@ implicit cache   自动 0.25x  (2.5 Pro 起，2026 GA)
 batch            0.5x
 ```
 
-Google 提供"显式上下文缓存"——用户先 POST 一段 cached_content，得到 ID，后续请求引用 ID 即可。命中后 input ×0.25。**Gemini 2.5 起还有 implicit caching**——自动识别 prefix。
+Google 提供"显式上下文缓存"——用户先 POST 一段 cached_content，得到 ID，后续请求引用 ID 即可。命中后 input ×0.25。**Gemini 3 起还有 implicit caching**——自动识别 prefix。
 
 #### 国产（Qwen / GLM / DeepSeek）
 
@@ -825,7 +825,7 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 | 模型 | input | output | cache write 5m | cache read | batch input | batch output |
 |---|---|---|---|---|---|---|
 | **Anthropic** | | | | | | |
-| Claude Opus 4.7 | 15 | 75 | 18.75 | 1.5 | 7.5 | 37.5 |
+| Claude Opus 4.8 | 15 | 75 | 18.75 | 1.5 | 7.5 | 37.5 |
 | Claude Sonnet 4.6 (≤ 200k) | 3 | 15 | 3.75 | 0.3 | 1.5 | 7.5 |
 | Claude Sonnet 4.6 (> 200k) | 6 | 22.5 | 7.5 | 0.6 | 3 | 11.25 |
 | Claude Haiku 4.5 | 1 | 5 | 1.25 | 0.1 | 0.5 | 2.5 |
@@ -835,10 +835,10 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 | GPT-5 nano | 0.4 | 2 | 0.2 | - | 0.2 | 1 |
 | o3 (reasoning) | 10 | 40 | 5 | - | 5 | 20 |
 | **Google** | | | | | | |
-| Gemini 2.5 Pro (≤ 200k) | 3.5 | 14 | - | 0.875 | 1.75 | 7 |
-| Gemini 2.5 Pro (> 200k) | 7 | 21 | - | 1.75 | 3.5 | 10.5 |
-| Gemini 2.5 Flash | 0.3 | 1.2 | - | 0.075 | 0.15 | 0.6 |
-| Gemini 2.5 Flash Lite | 0.1 | 0.4 | - | 0.025 | 0.05 | 0.2 |
+| Gemini 3 Pro (≤ 200k) | 3.5 | 14 | - | 0.875 | 1.75 | 7 |
+| Gemini 3 Pro (> 200k) | 7 | 21 | - | 1.75 | 3.5 | 10.5 |
+| Gemini 3 Flash | 0.3 | 1.2 | - | 0.075 | 0.15 | 0.6 |
+| Gemini 3 Flash Lite | 0.1 | 0.4 | - | 0.025 | 0.05 | 0.2 |
 | **国产** | | | | | | |
 | Qwen3 Max | ~1.4 | ~5.6 | - | ~0.14 | ~0.7 | ~2.8 |
 | GLM-4.6 | ~0.6 | ~2.2 | - | ~0.15 | ~0.3 | ~1.1 |
@@ -850,11 +850,11 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 ### 9.2 性价比"区间"
 
 ```
-极便宜    GPT-5 nano / Gemini 2.5 Flash Lite / DeepSeek V3.5  (< 1 USD input)
+极便宜    GPT-5 nano / Gemini 3 Flash Lite / DeepSeek V3.5  (< 1 USD input)
 便宜      Haiku 4.5 / Gemini Flash / GLM-4.6 / Kimi K2          (1-2 USD)
 标准      Sonnet 4.6 / Gemini Pro / GPT-5 mini                  (1.5-5 USD)
-高端      GPT-5 / Opus 4.7 / o3                                  (5-15 USD)
-极致      o3-pro / Opus 4.7 + thinking heavy                     (10+ USD 实际算)
+高端      GPT-5 / Opus 4.8 / o3                                  (5-15 USD)
+极致      o3-pro / Opus 4.8 + thinking heavy                     (10+ USD 实际算)
 ```
 
 价格每年下降 30-50%——2026 比 2024 整体便宜 60-70%。
@@ -863,11 +863,11 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 
 ```
 日常 chatbot：           Sonnet 4.6 默认；Haiku 4.5 兜底
-高准代码 / Agent：       Opus 4.7
+高准代码 / Agent：       Opus 4.8
 高吞吐分类 / 抽取：       Haiku 4.5 / Gemini Flash / DeepSeek V3.5
-超长文档 (>200k)：       Sonnet 4.6 1M 或 Gemini 2.5 Pro 1M（需 2M 用 Gemini 3.1 Pro）
+超长文档 (>200k)：       Sonnet 4.6 1M 或 Gemini 3 Pro 1M（需 2M 用 Gemini 3.1 Pro）
 中文专项：               Qwen3 Max / GLM-4.6 / DeepSeek V3.5
-强 reasoning：           o3 / Opus 4.7 (extended thinking)
+强 reasoning：           o3 / Opus 4.8 (extended thinking)
 本地 / 私有部署：         开源 LLaMA 4 / Qwen3 / DeepSeek V3.5
 ```
 
@@ -915,7 +915,7 @@ type Pricing struct {
 }
 
 var table = map[string]Pricing{
-    "claude-opus-4-7": {
+    "claude-opus-4-8": {
         InputPerM: 15, OutputPerM: 75,
         CacheWrite5mPerM: 18.75, CacheWrite1hPerM: 30, CacheReadPerM: 1.5,
     },
@@ -1211,7 +1211,7 @@ func (t *ModelTier) Downgrade() bool {
 
 // 用法：429 / 预算紧张 / 配额满 → 降级
 tier := &ModelTier{Models: []string{
-    "claude-opus-4-7",
+    "claude-opus-4-8",
     "claude-sonnet-4-6",
     "claude-haiku-4-5",
 }}
@@ -1412,7 +1412,7 @@ Batch input/output 各 0.5x；记账时如果忘乘 0.5x，账单估算虚高一
 - 量化技术（FP8 推理普及）
 - 竞争压低 margin
 
-2026 年的"标杆"模型（Sonnet 4.6、Gemini 2.5 Pro、GPT-5）价格区间稳定在 3-7 USD input / 12-25 USD output。
+2026 年的"标杆"模型（Sonnet 4.6、Gemini 3 Pro、GPT-5）价格区间稳定在 3-7 USD input / 12-25 USD output。
 
 ### 13.2 Cache 普及
 
