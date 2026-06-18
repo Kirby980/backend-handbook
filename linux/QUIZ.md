@@ -8,7 +8,7 @@
 
 ## 📖 使用说明
 
-- 每章 **10 道题**，按难度递进：⭐ 概念 → ⭐⭐ 原理 → ⭐⭐⭐ 实战 / 故障排查
+- 每章 **10 道题**，按难度递进：⭐ 基础概念 → ⭐⭐ 原理入门 → ⭐⭐⭐ 常规实战 → ⭐⭐⭐⭐ 复杂排障 → ⭐⭐⭐⭐⭐ 系统级综合
 - 题型混合：单选、简答、场景题、命令 / 代码编写
 - 答案与详解放在每章末尾的 `<details>` 折叠块里——**请先独立作答，再展开对照**
 - 通过标准：**每章 ≥ 7 题正确**；全部通过即可挑战末尾的 **🏆 综合实战题**
@@ -22,12 +22,12 @@
 2. （⭐）什么是 vDSO？为什么经它的 `clock_gettime` 可以不陷入内核？
 3. （⭐⭐）x86-64 上 `syscall` 指令如何传参与返回？`errno` 是怎么来的？
 4. （⭐⭐）`int 0x80` 与 `syscall` 指令有何区别？为何现代用后者？
-5. （⭐⭐）`strace` 基于什么内核机制？为什么它会显著拖慢被跟踪进程？
-6. （⭐⭐）glibc 的 syscall wrapper 起什么作用？
-7. （⭐⭐⭐）一个程序大量调用 `gettimeofday` 导致 CPU 偏高，如何优化？原理是什么？
-8. （⭐⭐⭐）怎样确认某进程当前卡在哪个系统调用上？
-9. （⭐⭐⭐）为什么说 io_uring 改变了「syscall 即陷入」的传统认知？
-10. （⭐⭐⭐）系统调用号在不同 CPU 架构间是否一致？syscall ABI 稳定性意味着什么？
+5. （⭐⭐⭐）`strace` 基于什么内核机制？为什么它会显著拖慢被跟踪进程？
+6. （⭐⭐⭐）glibc 的 syscall wrapper 起什么作用？
+7. （⭐⭐⭐⭐）一个程序大量调用 `gettimeofday` 导致 CPU 偏高，如何优化？原理是什么？
+8. （⭐⭐⭐⭐）怎样确认某进程当前卡在哪个系统调用上？
+9. （⭐⭐⭐⭐⭐）为什么说 io_uring 改变了「syscall 即陷入」的传统认知？
+10. （⭐⭐⭐⭐⭐）系统调用号在不同 CPU 架构间是否一致？syscall ABI 稳定性意味着什么？
 
 <details>
 <summary>📝 L01 答案与详解</summary>
@@ -53,12 +53,12 @@
 2. （⭐）`fork` 之后父子进程共享内存吗？COW 是什么？
 3. （⭐⭐）`task_struct` 里 `pid` 与 `tgid` 的区别？多线程进程里它们如何取值？
 4. （⭐⭐）进程状态 `D`（不可中断睡眠）意味着什么？为什么 `kill -9` 杀不掉？
-5. （⭐⭐）僵尸进程是怎么产生的？如何避免？孤儿进程被谁收养？
-6. （⭐⭐）`clone` 通过哪些 flag 决定「造线程」还是「造进程」？
-7. （⭐⭐⭐）容器主进程为何是 PID 1？这会带来什么信号/回收问题？
-8. （⭐⭐⭐）load average 很高但 CPU 很闲，最可能是什么原因？怎么定位？
-9. （⭐⭐⭐）`pidfd` 解决了传统按 pid 发信号的什么竞态问题？
-10. （⭐⭐⭐）如何查看一个进程打开的所有 fd、内存映射和线程？
+5. （⭐⭐⭐）僵尸进程是怎么产生的？如何避免？孤儿进程被谁收养？
+6. （⭐⭐⭐）`clone` 通过哪些 flag 决定「造线程」还是「造进程」？
+7. （⭐⭐⭐⭐）容器主进程为何是 PID 1？这会带来什么信号/回收问题？
+8. （⭐⭐⭐⭐）load average 很高但 CPU 很闲，最可能是什么原因？怎么定位？
+9. （⭐⭐⭐⭐⭐）`pidfd` 解决了传统按 pid 发信号的什么竞态问题？
+10. （⭐⭐⭐⭐⭐）如何查看一个进程打开的所有 fd、内存映射和线程？
 
 <details>
 <summary>📝 L02 答案与详解</summary>
@@ -84,12 +84,12 @@
 2. （⭐）`nice` 值的范围和含义？数值越小代表什么？
 3. （⭐⭐）CFS 用什么数据结构挑选下一个运行的任务？`vruntime` 是什么？
 4. （⭐⭐）EEVDF（6.6）相比 CFS 改了什么？它对延迟敏感任务为何更友好？
-5. （⭐⭐）`SCHED_FIFO`/`SCHED_RR`/`SCHED_DEADLINE` 各适合什么场景？
-6. （⭐⭐）`cpu.max` 的 quota/period 如何限制 CPU？与 CFS bandwidth 什么关系？
-7. （⭐⭐⭐）容器 CPU 用量没到 limit 却周期性卡顿，根因和定位方法？
-8. （⭐⭐⭐）`cpu.stat` 里 `nr_throttled`/`throttled_usec` 说明什么？
-9. （⭐⭐⭐）如何把延迟敏感进程绑到特定 CPU 并隔离干扰？
-10. （⭐⭐⭐）sched_ext（6.12）带来了什么新能力？
+5. （⭐⭐⭐）`SCHED_FIFO`/`SCHED_RR`/`SCHED_DEADLINE` 各适合什么场景？
+6. （⭐⭐⭐）`cpu.max` 的 quota/period 如何限制 CPU？与 CFS bandwidth 什么关系？
+7. （⭐⭐⭐⭐）容器 CPU 用量没到 limit 却周期性卡顿，根因和定位方法？
+8. （⭐⭐⭐⭐）`cpu.stat` 里 `nr_throttled`/`throttled_usec` 说明什么？
+9. （⭐⭐⭐⭐⭐）如何把延迟敏感进程绑到特定 CPU 并隔离干扰？
+10. （⭐⭐⭐⭐⭐）sched_ext（6.12）带来了什么新能力？
 
 <details>
 <summary>📝 L03 答案与详解</summary>
@@ -115,12 +115,12 @@
 2. （⭐）VSZ 与 RSS 的区别？
 3. （⭐⭐）多级页表解决了什么问题？TLB 的作用是什么？
 4. （⭐⭐）minor fault 与 major fault 的区别？哪个慢、为什么？
-5. （⭐⭐）`mmap` 的文件映射与匿名映射分别用于什么？
-6. （⭐⭐）COW 在 fork 和 mmap MAP_PRIVATE 中如何体现？
-7. （⭐⭐⭐）数据库为什么常建议关闭 THP（透明大页）？
-8. （⭐⭐⭐）HugePage 对 TLB 有什么好处？什么场景用显式大页？
-9. （⭐⭐⭐）一个进程 RSS 持续增长，如何判断是堆、mmap 还是共享内存？
-10. （⭐⭐⭐）TLB shootdown 是什么？为什么多核改页表可能引发性能抖动？
+5. （⭐⭐⭐）`mmap` 的文件映射与匿名映射分别用于什么？
+6. （⭐⭐⭐）COW 在 fork 和 mmap MAP_PRIVATE 中如何体现？
+7. （⭐⭐⭐⭐）数据库为什么常建议关闭 THP（透明大页）？
+8. （⭐⭐⭐⭐）HugePage 对 TLB 有什么好处？什么场景用显式大页？
+9. （⭐⭐⭐⭐⭐）一个进程 RSS 持续增长，如何判断是堆、mmap 还是共享内存？
+10. （⭐⭐⭐⭐⭐）TLB shootdown 是什么？为什么多核改页表可能引发性能抖动？
 
 <details>
 <summary>📝 L04 答案与详解</summary>
@@ -146,12 +146,12 @@
 2. （⭐）`MemAvailable` 与 `MemFree` 有什么区别？
 3. （⭐⭐）伙伴系统（buddy）解决什么问题？外碎片是什么？
 4. （⭐⭐）slab/slub 分配器为什么存在？它分配什么？
-5. （⭐⭐）kswapd 后台回收与直接回收（direct reclaim）的区别？后者为何危险？
-6. （⭐⭐）三条水位线 min/low/high 各触发什么行为？
-7. （⭐⭐⭐）`vm.swappiness` 调大/调小分别影响什么？延迟敏感服务怎么设？
-8. （⭐⭐⭐）MGLRU（多代 LRU）相比传统双链表 LRU 改进了什么？
-9. （⭐⭐⭐）脏页回写参数 `dirty_ratio`/`dirty_background_ratio` 配置不当会怎样？
-10. （⭐⭐⭐）PSI 的 `some` 与 `full` 含义？如何用它判断内存压力？
+5. （⭐⭐⭐）kswapd 后台回收与直接回收（direct reclaim）的区别？后者为何危险？
+6. （⭐⭐⭐）三条水位线 min/low/high 各触发什么行为？
+7. （⭐⭐⭐⭐）`vm.swappiness` 调大/调小分别影响什么？延迟敏感服务怎么设？
+8. （⭐⭐⭐⭐）MGLRU（多代 LRU）相比传统双链表 LRU 改进了什么？
+9. （⭐⭐⭐⭐⭐）脏页回写参数 `dirty_ratio`/`dirty_background_ratio` 配置不当会怎样？
+10. （⭐⭐⭐⭐⭐）PSI 的 `some` 与 `full` 含义？如何用它判断内存压力？
 
 <details>
 <summary>📝 L05 答案与详解</summary>
@@ -177,12 +177,12 @@
 2. （⭐）`oom_score_adj` 的作用？怎样让某进程更/更不容易被 OOM 杀？
 3. （⭐⭐）`memory.max` 与 `memory.high` 触发 OOM 的行为差异？
 4. （⭐⭐）RSS、PSS、USS 的区别？统计「真实占用」该看哪个？
-5. （⭐⭐）如何从 `dmesg` 读懂一次 OOM kill 的决策？
-6. （⭐⭐）systemd-oomd 与内核 OOM killer 有何不同？基于什么决策？
-7. （⭐⭐⭐）一个进程 RSS 不大却让容器 OOM，可能是什么内存被计入了？
-8. （⭐⭐⭐）排查 Go/C 服务内存泄漏，分别用什么工具？
-9. （⭐⭐⭐）完整还原一次容器 OOM：从现象到根因的步骤？
-10. （⭐⭐⭐）`MemAvailable` 充足但仍 OOM，可能的原因？
+5. （⭐⭐⭐）如何从 `dmesg` 读懂一次 OOM kill 的决策？
+6. （⭐⭐⭐）systemd-oomd 与内核 OOM killer 有何不同？基于什么决策？
+7. （⭐⭐⭐⭐）一个进程 RSS 不大却让容器 OOM，可能是什么内存被计入了？
+8. （⭐⭐⭐⭐）排查 Go/C 服务内存泄漏，分别用什么工具？
+9. （⭐⭐⭐⭐⭐）完整还原一次容器 OOM：从现象到根因的步骤？
+10. （⭐⭐⭐⭐⭐）`MemAvailable` 充足但仍 OOM，可能的原因？
 
 <details>
 <summary>📝 L06 答案与详解</summary>
@@ -208,12 +208,12 @@
 2. （⭐）硬链接与符号链接的本质区别？
 3. （⭐⭐）一次 `open()`+`read()` 在内核里经过哪些对象（fd→？→？）？
 4. （⭐⭐）ext4 日志的 `data=ordered/journal/writeback` 三种模式有何取舍？
-5. （⭐⭐）page cache 的脏页在什么时机回写？哪些参数控制？
-6. （⭐⭐）`fsync`、`fdatasync`、`O_DIRECT`、`O_SYNC` 的语义差异？
-7. （⭐⭐⭐）overlayfs 中修改一个 lowerdir 的文件会发生什么（copy-up）？
-8. （⭐⭐⭐）磁盘空间没满却报 `No space left`，可能是什么？怎么查？
-9. （⭐⭐⭐）数据库 `fsync` 慢导致写延迟，如何定位是文件系统还是设备？
-10. （⭐⭐⭐）dentry/inode 缓存膨胀对内存有什么影响？
+5. （⭐⭐⭐）page cache 的脏页在什么时机回写？哪些参数控制？
+6. （⭐⭐⭐）`fsync`、`fdatasync`、`O_DIRECT`、`O_SYNC` 的语义差异？
+7. （⭐⭐⭐⭐）overlayfs 中修改一个 lowerdir 的文件会发生什么（copy-up）？
+8. （⭐⭐⭐⭐）磁盘空间没满却报 `No space left`，可能是什么？怎么查？
+9. （⭐⭐⭐⭐⭐）数据库 `fsync` 慢导致写延迟，如何定位是文件系统还是设备？
+10. （⭐⭐⭐⭐⭐）dentry/inode 缓存膨胀对内存有什么影响？
 
 <details>
 <summary>📝 L07 答案与详解</summary>
@@ -239,12 +239,12 @@
 2. （⭐）五种 I/O 模型分别是什么？
 3. （⭐⭐）`select`/`poll` 为什么是 O(n)？瓶颈在哪？
 4. （⭐⭐）`epoll` 为什么高效？它的红黑树和就绪链表各干什么？
-5. （⭐⭐）LT 与 ET 的区别？ET 编程为什么必须配非阻塞 + 循环读尽？
-6. （⭐⭐）epoll 惊群是什么？`EPOLLEXCLUSIVE` 怎么解决？
-7. （⭐⭐⭐）ET 模式下「漏读」bug 是怎么产生的？
-8. （⭐⭐⭐）服务 fd 持续增长（fd 泄漏），如何排查？
-9. （⭐⭐⭐）Go 的 netpoller 与 epoll 是什么关系？
-10. （⭐⭐⭐）要支撑百万连接，系统层面要做哪些准备？
+5. （⭐⭐⭐）LT 与 ET 的区别？ET 编程为什么必须配非阻塞 + 循环读尽？
+6. （⭐⭐⭐）epoll 惊群是什么？`EPOLLEXCLUSIVE` 怎么解决？
+7. （⭐⭐⭐⭐）ET 模式下「漏读」bug 是怎么产生的？
+8. （⭐⭐⭐⭐）服务 fd 持续增长（fd 泄漏），如何排查？
+9. （⭐⭐⭐⭐⭐）Go 的 netpoller 与 epoll 是什么关系？
+10. （⭐⭐⭐⭐⭐）要支撑百万连接，系统层面要做哪些准备？
 
 <details>
 <summary>📝 L08 答案与详解</summary>
@@ -270,12 +270,12 @@
 2. （⭐）SQ 环与 CQ 环各是什么？
 3. （⭐⭐）为什么传统 Linux AIO（libaio）被认为「鸡肋」？
 4. （⭐⭐）SQPOLL 模式如何做到「几乎零系统调用」提交 I/O？
-5. （⭐⭐）注册 buffer / 注册 fd 带来什么好处？
+5. （⭐⭐⭐）注册 buffer / 注册 fd 带来什么好处？
 6. （⭐⭐⭐）链式请求（IOSQE_IO_LINK）适合什么场景？
-7. （⭐⭐⭐）网络 io_uring 的 multishot 是什么？
-8. （⭐⭐⭐）io_uring 的安全争议是什么？为何有 `io_uring_disabled`？
-9. （⭐⭐⭐）什么工作负载用 io_uring 收益最大？
-10. （⭐⭐⭐）已有 epoll 服务，是否值得迁 io_uring？怎么权衡？
+7. （⭐⭐⭐⭐）网络 io_uring 的 multishot 是什么？
+8. （⭐⭐⭐⭐）io_uring 的安全争议是什么？为何有 `io_uring_disabled`？
+9. （⭐⭐⭐⭐⭐）什么工作负载用 io_uring 收益最大？
+10. （⭐⭐⭐⭐⭐）已有 epoll 服务，是否值得迁 io_uring？怎么权衡？
 
 <details>
 <summary>📝 L09 答案与详解</summary>
@@ -301,12 +301,12 @@
 2. （⭐）bio 是什么？
 3. （⭐⭐）blk-mq 多队列解决了单队列的什么瓶颈？
 4. （⭐⭐）`none`/`mq-deadline`/`bfq`/`kyber` 各适合什么设备/场景？
-5. （⭐⭐）`iostat -x` 的 `await`、`aqu-sz`、`r_await` 含义？
+5. （⭐⭐⭐）`iostat -x` 的 `await`、`aqu-sz`、`r_await` 含义？
 6. （⭐⭐⭐）NVMe SSD 为什么常用 `none` 调度器？
-7. （⭐⭐⭐）定位磁盘高延迟，用哪些工具、看哪些指标？
-8. （⭐⭐⭐）readahead（预读）调大调小分别影响什么？
-9. （⭐⭐⭐）如何用 cgroup `io.max` 限制某服务的磁盘带宽？
-10. （⭐⭐⭐）`%util` 高但应用不慢，怎么解释？
+7. （⭐⭐⭐⭐）定位磁盘高延迟，用哪些工具、看哪些指标？
+8. （⭐⭐⭐⭐）readahead（预读）调大调小分别影响什么？
+9. （⭐⭐⭐⭐⭐）如何用 cgroup `io.max` 限制某服务的磁盘带宽？
+10. （⭐⭐⭐⭐⭐）`%util` 高但应用不慢，怎么解释？
 
 <details>
 <summary>📝 L10 答案与详解</summary>
@@ -332,12 +332,12 @@
 2. （⭐）`sk_buff` 是什么？
 3. （⭐⭐）NAPI 为什么用「中断 + 轮询」混合？硬中断与软中断如何分工？
 4. （⭐⭐）RSS、RPS、RFS 的区别？
-5. （⭐⭐）GRO/GSO/TSO 是什么？对 `tcpdump` 抓包有何影响？
+5. （⭐⭐⭐）GRO/GSO/TSO 是什么？对 `tcpdump` 抓包有何影响？
 6. （⭐⭐⭐）`ksoftirqd` 某核 CPU 打满，如何缓解？
-7. （⭐⭐⭐）qdisc 是什么？`fq`/`fq_codel` 解决什么？
-8. （⭐⭐⭐）XDP 在协议栈的哪个位置？能做什么？
-9. （⭐⭐⭐）网卡多队列如何与 CPU 亲和配合？
-10. （⭐⭐⭐）排查丢包，从网卡到协议栈看哪些计数？
+7. （⭐⭐⭐⭐）qdisc 是什么？`fq`/`fq_codel` 解决什么？
+8. （⭐⭐⭐⭐）XDP 在协议栈的哪个位置？能做什么？
+9. （⭐⭐⭐⭐⭐）网卡多队列如何与 CPU 亲和配合？
+10. （⭐⭐⭐⭐⭐）排查丢包，从网卡到协议栈看哪些计数？
 
 <details>
 <summary>📝 L11 答案与详解</summary>
@@ -363,12 +363,12 @@
 2. （⭐）TIME_WAIT 为什么存在？在 Linux 上停留多久？
 3. （⭐⭐）全连接队列溢出的现象与确认命令？
 4. （⭐⭐）为什么 `tcp_tw_recycle` 不能用？
-5. （⭐⭐）BBR 与 cubic 判断拥塞的根本不同？
-6. （⭐⭐）单条 TCP 跑不满带宽，如何从 BDP 角度调优？
-7. （⭐⭐⭐）RPC 偶发稳定 40ms 延迟的根因与修法？
-8. （⭐⭐⭐）SYN flood 时 syncookies 如何起作用？
-9. （⭐⭐⭐）SACK 与快速重传分别优化了什么？
-10. （⭐⭐⭐）高并发服务器有哪些关键 sysctl，各自风险？
+5. （⭐⭐⭐）BBR 与 cubic 判断拥塞的根本不同？
+6. （⭐⭐⭐）单条 TCP 跑不满带宽，如何从 BDP 角度调优？
+7. （⭐⭐⭐⭐）RPC 偶发稳定 40ms 延迟的根因与修法？
+8. （⭐⭐⭐⭐）SYN flood 时 syncookies 如何起作用？
+9. （⭐⭐⭐⭐⭐）SACK 与快速重传分别优化了什么？
+10. （⭐⭐⭐⭐⭐）高并发服务器有哪些关键 sysctl，各自风险？
 
 <details>
 <summary>📝 L12 答案与详解</summary>
@@ -394,12 +394,12 @@
 2. （⭐）`SO_REUSEADDR` 与 `SO_REUSEPORT` 的区别？
 3. （⭐⭐）`listen(fd, backlog)` 的实际生效队列上限由什么决定？
 4. （⭐⭐）`SO_REUSEPORT` 为什么能消除 accept 惊群？
-5. （⭐⭐）conntrack 表满的现象与日志？
+5. （⭐⭐⭐）conntrack 表满的现象与日志？
 6. （⭐⭐⭐）大量 `CLOSE-WAIT` 的根因？为什么调内核参数没用？
-7. （⭐⭐⭐）Unix domain socket 相比 TCP 回环的优势？`SCM_RIGHTS` 能做什么？
-8. （⭐⭐⭐）`ss -ti` 能看到哪些连接级内核指标？
-9. （⭐⭐⭐）conntrack 表项为何会堆积？如何安全加速回收？
-10. （⭐⭐⭐）定位「连接建立失败」该用哪些工具？
+7. （⭐⭐⭐⭐）Unix domain socket 相比 TCP 回环的优势？`SCM_RIGHTS` 能做什么？
+8. （⭐⭐⭐⭐）`ss -ti` 能看到哪些连接级内核指标？
+9. （⭐⭐⭐⭐⭐）conntrack 表项为何会堆积？如何安全加速回收？
+10. （⭐⭐⭐⭐⭐）定位「连接建立失败」该用哪些工具？
 
 <details>
 <summary>📝 L13 答案与详解</summary>
@@ -425,12 +425,12 @@
 2. （⭐）哪两个信号不可被捕获、阻塞或忽略？
 3. （⭐⭐）`signal` 与 `sigaction` 的区别？为什么推荐后者？
 4. （⭐⭐）为什么信号 handler 里不能调用 `printf`/`malloc`？什么是异步信号安全函数？
-5. （⭐⭐）self-pipe trick / `signalfd` 解决了什么问题？
-6. （⭐⭐）`SIGCHLD` 与僵尸回收的关系？
-7. （⭐⭐⭐）服务优雅停机应如何处理 `SIGTERM`？
-8. （⭐⭐⭐）为什么共享内存是最快的 IPC？它的同步要靠什么？
-9. （⭐⭐⭐）`eventfd`/`timerfd`/`pidfd` 如何统一进 epoll 事件循环？
-10. （⭐⭐⭐）System V IPC 与 POSIX IPC 的主要区别？
+5. （⭐⭐⭐）self-pipe trick / `signalfd` 解决了什么问题？
+6. （⭐⭐⭐）`SIGCHLD` 与僵尸回收的关系？
+7. （⭐⭐⭐⭐）服务优雅停机应如何处理 `SIGTERM`？
+8. （⭐⭐⭐⭐）为什么共享内存是最快的 IPC？它的同步要靠什么？
+9. （⭐⭐⭐⭐⭐）`eventfd`/`timerfd`/`pidfd` 如何统一进 epoll 事件循环？
+10. （⭐⭐⭐⭐⭐）System V IPC 与 POSIX IPC 的主要区别？
 
 <details>
 <summary>📝 L14 答案与详解</summary>
@@ -456,12 +456,12 @@
 2. （⭐）什么是原子操作与 CAS？
 3. （⭐⭐）futex 的「无竞争快路径」为什么不陷入内核？
 4. （⭐⭐）RCU 适合什么场景？读端为何近乎零开销？
-5. （⭐⭐）内存屏障解决什么问题？
-6. （⭐⭐）seqlock（顺序锁）适合什么读写比例？
-7. （⭐⭐⭐）glibc 的 `pthread_mutex` 如何基于 futex 实现？
-8. （⭐⭐⭐）伪共享（false sharing）是什么？如何消除？
-9. （⭐⭐⭐）PI futex（优先级继承）解决什么问题？
-10. （⭐⭐⭐）定位锁争用的工具与方法？
+5. （⭐⭐⭐）内存屏障解决什么问题？
+6. （⭐⭐⭐）seqlock（顺序锁）适合什么读写比例？
+7. （⭐⭐⭐⭐）glibc 的 `pthread_mutex` 如何基于 futex 实现？
+8. （⭐⭐⭐⭐）伪共享（false sharing）是什么？如何消除？
+9. （⭐⭐⭐⭐⭐）PI futex（优先级继承）解决什么问题？
+10. （⭐⭐⭐⭐⭐）定位锁争用的工具与方法？
 
 <details>
 <summary>📝 L15 答案与详解</summary>
@@ -487,12 +487,12 @@
 2. （⭐）`clone`/`unshare`/`setns` 的区别？
 3. （⭐⭐）PID namespace 的 init（PID 1）语义会带来哪些问题？
 4. （⭐⭐）新建的 net namespace 只有 `lo`，容器如何获得对外网络？
-5. （⭐⭐）user namespace 如何实现「容器内 root、宿主无特权」？
+5. （⭐⭐⭐）user namespace 如何实现「容器内 root、宿主无特权」？
 6. （⭐⭐⭐）手搓容器时 `pivot_root` 前为什么要先 bind mount 新 rootfs、并把 `/` 设为 private？
-7. （⭐⭐⭐）容器网络不通，如何用 `nsenter` 进它的网络栈排障？
-8. （⭐⭐⭐）rootless 容器为什么需要 `newuidmap`/`newgidmap` 和 slirp4netns？
-9. （⭐⭐⭐）cgroup namespace 为什么重要？
-10. （⭐⭐⭐）为什么说「namespace 不是容器安全的全部」？
+7. （⭐⭐⭐⭐）容器网络不通，如何用 `nsenter` 进它的网络栈排障？
+8. （⭐⭐⭐⭐）rootless 容器为什么需要 `newuidmap`/`newgidmap` 和 slirp4netns？
+9. （⭐⭐⭐⭐⭐）cgroup namespace 为什么重要？
+10. （⭐⭐⭐⭐⭐）为什么说「namespace 不是容器安全的全部」？
 
 <details>
 <summary>📝 L16 答案与详解</summary>
@@ -518,12 +518,12 @@
 2. （⭐）cgroup v1 与 v2 在「层级」上的根本区别？
 3. （⭐⭐）`cpu.max = "50000 100000"` 等于多少个 CPU？
 4. （⭐⭐）`memory.max` 与 `memory.high` 行为差异？
-5. （⭐⭐）「no internal process」规则是什么？为何这样设计？
+5. （⭐⭐⭐）「no internal process」规则是什么？为何这样设计？
 6. （⭐⭐⭐）容器 CPU 没到 limit 却卡顿，如何排查与根治？
-7. （⭐⭐⭐）容器 OOMKilled 但宿主内存充足，如何确认是 cgroup 内 OOM？
-8. （⭐⭐⭐）v2 在脏页回写计费上相对 v1 的关键改进？为何让 `io.max` 对写负载有效？
-9. （⭐⭐⭐）为什么不应直接 `echo` 改 systemd 管理的 cgroup 文件？
-10. （⭐⭐⭐）`cgroup.freeze` 与 `cgroup.kill` 各自用途？
+7. （⭐⭐⭐⭐）容器 OOMKilled 但宿主内存充足，如何确认是 cgroup 内 OOM？
+8. （⭐⭐⭐⭐）v2 在脏页回写计费上相对 v1 的关键改进？为何让 `io.max` 对写负载有效？
+9. （⭐⭐⭐⭐⭐）为什么不应直接 `echo` 改 systemd 管理的 cgroup 文件？
+10. （⭐⭐⭐⭐⭐）`cgroup.freeze` 与 `cgroup.kill` 各自用途？
 
 <details>
 <summary>📝 L17 答案与详解</summary>
@@ -549,12 +549,12 @@
 2. （⭐）load average 包含哪些进程状态？为什么 load 高 CPU 却可能闲？
 3. （⭐⭐）`perf stat` 能看什么？IPC 偏低通常说明什么？
 4. （⭐⭐）火焰图怎么读？某个函数「宽」代表什么？
-5. （⭐⭐）`strace` 的开销来自哪里？什么时候不该用它？
+5. （⭐⭐⭐）`strace` 的开销来自哪里？什么时候不该用它？
 6. （⭐⭐⭐）CPU / 内存 / I/O / 网络瓶颈分别优先用什么工具定位？
-7. （⭐⭐⭐）Brendan Gregg 的「60 秒检查清单」大致覆盖哪些命令？
-8. （⭐⭐⭐）一台机器 load 50 但 CPU idle 很高，怎么查根因？
-9. （⭐⭐⭐）`perf record -g` 的采样原理是什么？
-10. （⭐⭐⭐）如何区分「应用慢」是 CPU、锁、I/O 还是网络导致？
+7. （⭐⭐⭐⭐）Brendan Gregg 的「60 秒检查清单」大致覆盖哪些命令？
+8. （⭐⭐⭐⭐）一台机器 load 50 但 CPU idle 很高，怎么查根因？
+9. （⭐⭐⭐⭐⭐）`perf record -g` 的采样原理是什么？
+10. （⭐⭐⭐⭐⭐）如何区分「应用慢」是 CPU、锁、I/O 还是网络导致？
 
 <details>
 <summary>📝 L18 答案与详解</summary>
@@ -580,12 +580,12 @@
 2. （⭐）map 在 eBPF 里的作用？列举三种类型。
 3. （⭐⭐）verifier 的职责？列举三种会被拒的写法。
 4. （⭐⭐）为什么「能用 tracepoint 就别用 kprobe」？
-5. （⭐⭐）CO-RE 靠哪三样东西实现「一次编译到处运行」？
+5. （⭐⭐⭐）CO-RE 靠哪三样东西实现「一次编译到处运行」？
 6. （⭐⭐⭐）写一个 bpftrace 单行，按进程名统计 `execve` 调用。
-7. （⭐⭐⭐）在每个网络包上挂 eBPF 有什么风险？三种降开销手段？
-8. （⭐⭐⭐）tail call 与 BPF-to-BPF 调用各解决什么？
-9. （⭐⭐⭐）libbpf + CO-RE 程序的「内核侧 + 用户侧」结构是怎样的？
-10. （⭐⭐⭐）Cilium / Pixie / Parca 各用 eBPF 做什么？
+7. （⭐⭐⭐⭐）在每个网络包上挂 eBPF 有什么风险？三种降开销手段？
+8. （⭐⭐⭐⭐）tail call 与 BPF-to-BPF 调用各解决什么？
+9. （⭐⭐⭐⭐⭐）libbpf + CO-RE 程序的「内核侧 + 用户侧」结构是怎样的？
+10. （⭐⭐⭐⭐⭐）Cilium / Pixie / Parca 各用 eBPF 做什么？
 
 <details>
 <summary>📝 L19 答案与详解</summary>
@@ -611,12 +611,12 @@
 2. （⭐）`multi-user.target` 对应传统哪个 runlevel？
 3. （⭐⭐）`Wants=`/`Requires=`/`After=` 区别？为何 `After=network.target` 不保证网络可用？
 4. （⭐⭐）`Type=simple`/`forking`/`notify`/`oneshot` 的就绪判定各是什么？
-5. （⭐⭐）initramfs 解决什么「鸡生蛋」问题？换内核后忘了重建会怎样？
+5. （⭐⭐⭐）initramfs 解决什么「鸡生蛋」问题？换内核后忘了重建会怎样？
 6. （⭐⭐⭐）服务反复 Failed，用哪三个命令定位、各看什么？
-7. （⭐⭐⭐）`systemd-analyze blame` 与 `critical-chain` 如何配合？为何不能只看 blame？
-8. （⭐⭐⭐）socket activation 的工作流程与好处？
-9. （⭐⭐⭐）把服务「沙箱化」可用哪些 systemd 加固指令？
-10. （⭐⭐⭐）改坏 `/etc/fstab` 进不去系统，如何救援？
+7. （⭐⭐⭐⭐）`systemd-analyze blame` 与 `critical-chain` 如何配合？为何不能只看 blame？
+8. （⭐⭐⭐⭐）socket activation 的工作流程与好处？
+9. （⭐⭐⭐⭐⭐）把服务「沙箱化」可用哪些 systemd 加固指令？
+10. （⭐⭐⭐⭐⭐）改坏 `/etc/fstab` 进不去系统，如何救援？
 
 <details>
 <summary>📝 L20 答案与详解</summary>
@@ -711,4 +711,3 @@ K8s 节点偶发新连接超时与丢包，监控看 CPU、带宽都不满。请
 ---
 
 > 🎓 全部做完并能独立讲清每道综合题，你已具备「懂内核原理、能现场排障、会系统调优」的 Linux 实战能力。配合 [INDEX.md](./INDEX.md) 的完读检查清单复盘薄弱项。
-
