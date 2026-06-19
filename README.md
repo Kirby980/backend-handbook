@@ -1,6 +1,6 @@
 # 后端工程师深度课程 · 中文知识库
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **15 大专题、277 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **16 大专题、307 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
 > **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
 
@@ -13,6 +13,7 @@
 | 🟦 **Backend 通用** | 25 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 所有后端工程师 | [backend/](./backend/INDEX.md) |
 | 🐹 **Go 语言** | 30 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Go 中高级工程师 | [golang/](./golang/INDEX.md) |
 | ☕ **Java 后端** | 32 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Java 中高级 / 面试备战 | [java/](./java/INDEX.md) |
+| 🐍 **Python 后端** | 30 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Python 中高级 / AI 后端 / 面试 | [python/](./python/INDEX.md) |
 | 🐬 **MySQL** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用开发 | [mysql/](./mysql/INDEX.md) |
 | 🐘 **PostgreSQL** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用 / 平台 / AI | [postgresql/](./postgresql/INDEX.md) |
 | 🟥 **Redis** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐ | 缓存 / 高并发场景 | [redis/](./redis/INDEX.md) |
@@ -150,6 +151,18 @@ algorithm/ 08/12/13 回溯/二叉树/堆  →  15-16 动态规划  →  20 高�
 system-design/ S01 方法论  →  按高频场景题（秒杀/Feed/IM/排行榜）查漏补缺
 ```
 
+### 路径 K：Python 后端 / AI 工程师（2-3 个月）
+
+```
+python/ P01-P08（语言核心：对象/容器/作用域/生成器/装饰器）
+   ↓
+python/ P09-P14（OOP 与类型）→ P15-P19（CPython 内幕：执行/GC/GIL/性能）
+   ↓
+python/ P20-P24（并发与异步：线程/进程/asyncio/选型）+ P28 FastAPI + P29 数据库
+   ↓
+ai-backend/ 全套（LLM 应用工程化：RAG / Agent / MCP）
+```
+
 > 每个专题的 `INDEX.md` 里都有更细致的路径建议（API 工程师特化、性能特化、架构师视角、RAG / Agent 特化、Operator 开发者特化等）。
 
 ---
@@ -161,6 +174,7 @@ system-design/ S01 方法论  →  按高频场景题（秒杀/Feed/IM/排行榜
 ├── backend/         # 通用后端 25 篇（网络/API/数据库/架构/安全/运维）
 ├── golang/          # Go 30 篇（语言/并发/工程化/性能/生态）
 ├── java/            # Java 后端 32 篇（集合/并发/JVM/Spring/MyBatis/IO/版本演进/虚拟线程/函数式/测试）
+├── python/          # Python 后端 30 篇（语言核心/OOP与类型/CPython内幕/GIL/并发异步/工程化/Web/数据/版本演进）
 ├── mysql/           # MySQL 12 篇（InnoDB/MVCC/复制/调优/9.x 新特性）
 ├── postgresql/      # PostgreSQL 22 篇（架构/MVCC/索引/pgvector/复制/PostGIS/调优/PG 18）
 ├── redis/           # Redis 12 篇（数据结构/集群/Streams/Redis 8 / Valkey）
