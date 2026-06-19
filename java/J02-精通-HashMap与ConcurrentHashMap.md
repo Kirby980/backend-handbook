@@ -188,7 +188,7 @@ if (桶为空) {
 - **结构稳定**：HashMap/ConcurrentHashMap 的核心实现自 JDK 8 以来基本未变，仍是面试源码题的核心。
 - **computeIfAbsent / merge**：Java 8 起的原子复合方法是并发场景的正确姿势（如并发计数、缓存填充），替代"先查后写"的竞态写法。
 - **不可变 Map**：`Map.of()`（Java 9+）创建不可变 Map，适合常量映射。
-- **GraalVM 原生镜像**：对反射构建的 Map 无影响，但若 key 依赖运行时反射需注意元数据配置（见 [J25](./J25-精通-SpringBoot自动配置.md)）。
+- **GraalVM 原生镜像**：对反射构建的 Map 无影响，但若 key 依赖运行时反射需注意元数据配置（见 [J26](./J26-精通-SpringBoot自动配置.md)）。
 
 ---
 

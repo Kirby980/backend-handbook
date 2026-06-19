@@ -49,15 +49,22 @@ graph TD
     M5 --> J28[J28 IO/NIO]
     M5 --> J29[J29 版本特性]
 
+    M5 --> M6[模块6: 现代并发与工程化]
+    M6 --> J30[J30 虚拟线程/结构化并发]
+    M6 --> J31[J31 函数式/Stream]
+    M6 --> J32[J32 Java测试]
+
     style M1 fill:#c8e6c9
     style M2 fill:#bbdefb
     style M3 fill:#fff9c4
     style M4 fill:#ffccbc
     style M5 fill:#e1bee7
+    style M6 fill:#d7ccc8
     style J02 fill:#ffcdd2
     style J09 fill:#ffcdd2
     style J18 fill:#ffcdd2
     style J24 fill:#ffcdd2
+    style J30 fill:#ffcdd2
 ```
 
 ---
@@ -162,6 +169,27 @@ flowchart TD
 
 ---
 
+## 🧵 虚拟线程 mount/unmount（J30）
+
+```mermaid
+flowchart TD
+    Run[虚拟线程就绪] -->|mount 挂载| Carrier[载体线程<br>=平台线程/OS线程]
+    Carrier --> Exec[借 OS 线程执行 CPU 指令]
+    Exec --> Block{遇到阻塞?<br>IO/sleep/JUC锁}
+    Block -->|否,继续算| Exec
+    Block -->|是| Unmount[unmount 卸载<br>栈存回堆<br>载体线程去跑别的虚拟线程]
+    Unmount -->|阻塞结束| Run
+    Exec -->|synchronized*/native 内阻塞| Pin[pinning 钉住<br>无法卸载,占住载体线程]
+
+    style Carrier fill:#bbdefb
+    style Unmount fill:#c8e6c9
+    style Pin fill:#ffcdd2
+```
+
+> *Java 24（JEP 491）起 `synchronized` 不再 pin；native 帧仍会 pin。
+
+---
+
 ## 🌱 Spring Bean 生命周期（J22）
 
 ```mermaid
@@ -206,11 +234,14 @@ graph LR
     B --> C[J15-J21<br>JVM]
     C --> D[J22-J27<br>Spring]
     D --> E[J28-J29<br>IO/演进]
+    E --> F[J30-J32<br>现代并发/工程化]
 
     style A fill:#c8e6c9
     style B fill:#bbdefb
     style C fill:#fff9c4
     style D fill:#ffccbc
+    style E fill:#e1bee7
+    style F fill:#d7ccc8
 ```
 
 按顺序读 = 完整 Java 后端体系；面试突击 = 看 [INDEX.md](./INDEX.md) 的「路径 A」。

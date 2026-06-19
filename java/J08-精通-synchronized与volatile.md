@@ -154,7 +154,7 @@ JVM 还有其他锁优化（编译器/运行时层面）：
 ## 2026 现状
 
 - **偏向锁已被移除**：JEP 374（JDK 15）默认禁用偏向锁，JDK 18 起删除相关代码。原因是现代应用偏向锁收益下降、维护成本高。所以 **2026 的 synchronized 锁升级实际是"无锁 → 轻量级 → 重量级"**，但偏向锁作为经典面试知识仍要懂其原理。
-- **虚拟线程（Java 21）与 synchronized**：早期虚拟线程在 synchronized 块内阻塞会"钉住（pin）"载体线程；后续版本持续优化，减少 pinning（推荐在虚拟线程中用 ReentrantLock 替代 synchronized 做长时间阻塞，见 [J11](./J11-精通-线程池.md)/[J28](./J28-精通-Java版本特性演进.md)）。
+- **虚拟线程（Java 21）与 synchronized**：早期虚拟线程在 synchronized 块内阻塞会"钉住（pin）"载体线程；后续版本持续优化，减少 pinning（推荐在虚拟线程中用 ReentrantLock 替代 synchronized 做长时间阻塞，见 [J11](./J11-精通-线程池.md)/[J29](./J29-精通-Java版本特性演进.md)）。
 - **synchronized 性能已很好**：经多年优化，无竞争/轻竞争下 synchronized 与 Lock 性能接近，简单场景优先 synchronized。
 
 ---

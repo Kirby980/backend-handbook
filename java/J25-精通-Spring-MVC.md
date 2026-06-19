@@ -14,7 +14,7 @@ Spring MVC 是基于 **Servlet** 的 Web 层 MVC 框架，把一次 HTTP 请求�
 - **View（视图）**：展示（现代前后端分离下多为 JSON，视图弱化）。
 - **Controller（控制器）**：接收请求、调用业务、返回结果。
 
-它构建在 Servlet 之上（[J27 IO](./J27-精通-Java-IO与NIO.md) 相关的 Tomcat 容器提供 Servlet 运行环境），用一个核心的 **DispatcherServlet** 统一接管所有请求，再分发给各 Controller。现代基本是"前后端分离 + RESTful JSON 接口"用法。
+它构建在 Servlet 之上（[J28 IO](./J28-精通-Java-IO与NIO.md) 相关的 Tomcat 容器提供 Servlet 运行环境），用一个核心的 **DispatcherServlet** 统一接管所有请求，再分发给各 Controller。现代基本是"前后端分离 + RESTful JSON 接口"用法。
 
 ---
 
@@ -177,7 +177,7 @@ public class GlobalExceptionHandler {
 ## 2026 现状
 
 - **前后端分离 + RESTful JSON 是绝对主流**：`@RestController` + Jackson + 统一响应/异常处理是标准范式；传统 JSP/视图渲染基本退场。
-- **Spring WebFlux（响应式）**：基于 Reactor 的非阻塞 Web 栈，适合高并发 IO 密集、流式场景；但传统阻塞式 Spring MVC + **虚拟线程（Java 21）** 让"阻塞式写法也能高并发"，降低了对 WebFlux 的需求（见 [J11](./J11-精通-线程池.md)/[J28](./J28-精通-Java版本特性演进.md)）。
+- **Spring WebFlux（响应式）**：基于 Reactor 的非阻塞 Web 栈，适合高并发 IO 密集、流式场景；但传统阻塞式 Spring MVC + **虚拟线程（Java 21）** 让"阻塞式写法也能高并发"，降低了对 WebFlux 的需求（见 [J11](./J11-精通-线程池.md)/[J29](./J29-精通-Java版本特性演进.md)）。
 - **Jakarta 迁移**：Spring 6/Boot 3 把 `javax.servlet` 改为 `jakarta.servlet`，升级需注意。
 - **可观测/OpenAPI**：Micrometer 自动埋点 HTTP 指标、SpringDoc 自动生成 OpenAPI 文档（见 [B07 OpenAPI](../backend/B07-精通-OpenAPI-契约.md)）。
 - **GraalVM 原生镜像**：Spring MVC 控制器在 AOT 下需处理反射元数据。

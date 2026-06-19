@@ -188,7 +188,7 @@ list.add(4);    // ❌ UnsupportedOperationException：固定大小
 
 - **集合框架本身稳定**：核心实现多年未大改，仍是面试必考的源码题。
 - **不可变集合**：Java 9+ 的 `List.of()`/`Map.of()` 创建不可变集合，比 `Arrays.asList` 更推荐用于常量集合（真不可变、null 不友好需注意）。
-- **Stream 与集合**：Java 8 Stream（见 [J28](./J28-精通-Java版本特性演进.md)）改变了集合的遍历/转换写法，但底层数据结构不变。
+- **Stream 与集合**：Java 8 Stream（见 [J29](./J29-精通-Java版本特性演进.md)）改变了集合的遍历/转换写法，但底层数据结构不变。
 - **Sequenced Collections**：Java 21 引入 `SequencedCollection`/`SequencedMap` 接口，统一了"有顺序集合"的首尾访问 API（`getFirst/getLast/reversed`）。
 
 ---

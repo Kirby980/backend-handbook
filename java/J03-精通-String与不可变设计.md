@@ -156,7 +156,7 @@ Java 9 引入 **Compact Strings（紧凑字符串）**：String 底层从 `char[
 ## 2026 现状
 
 - **紧凑字符串已成默认**（Java 9+），英文为主的应用内存占用显著下降。
-- **文本块（Text Blocks）**：Java 15+ 的 `"""..."""` 多行字符串，写 JSON/SQL/HTML 更方便（见 [J28](./J28-精通-Java版本特性演进.md)）。
+- **文本块（Text Blocks）**：Java 15+ 的 `"""..."""` 多行字符串，写 JSON/SQL/HTML 更方便（见 [J29](./J29-精通-Java版本特性演进.md)）。
 - **字符串模板（String Templates）**：作为预览特性演进中（用于安全插值），关注后续 LTS 的稳定化。
 - **`StringConcatFactory`**：Java 9 起用 `invokedynamic` 做字符串拼接，运行时可选最优策略，比老的固定 StringBuilder 方案更灵活高效。
 

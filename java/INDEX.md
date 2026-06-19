@@ -1,6 +1,6 @@
 # Java 后端深度课程 · 总目录
 
-> 面向后端 Java 工程师面试与生产的系统进阶课程，共 **29 篇**深度长文。
+> 面向后端 Java 工程师面试与生产的系统进阶课程，共 **32 篇**深度长文。
 > 每篇约 10000-15000 字，含底层原理、源码剖析、代码示例、生产实践、陷阱清单与练习题。
 >
 > **📅 内容基准：2026 年 6 月** —— Java 21 LTS（虚拟线程 / 记录类 / 密封类 / 模式匹配 / 分代 ZGC）主流、Java 17 LTS 仍广泛在用、Spring Boot 3.x（Spring 6 / Jakarta EE 9+ / GraalVM 原生镜像 / Observability）、Java 25 LTS（2025-09 发布）新特性跟进；JMM、G1/ZGC、AQS 等核心原理稳定。
@@ -42,6 +42,9 @@
 | J27 | [精通 MyBatis 原理](./J27-精通-MyBatis原理.md) | ⭐⭐⭐⭐ | SqlSession / 动态代理 / 一二级缓存 / 插件 |
 | J28 | [精通 Java IO 与 NIO](./J28-精通-Java-IO与NIO.md) | ⭐⭐⭐⭐ | BIO/NIO/AIO / Channel / Selector / 零拷贝 |
 | J29 | [精通 Java 版本特性演进](./J29-精通-Java版本特性演进.md) | ⭐⭐⭐⭐ | Lambda/Stream / Record / 虚拟线程 / 密封类 |
+| J30 | [精通虚拟线程与结构化并发](./J30-精通-虚拟线程与结构化并发.md) | ⭐⭐⭐⭐⭐ | 虚拟线程 / 载体线程 / mount-unmount / pinning / ScopedValue / 结构化并发 |
+| J31 | [精通函数式编程与 Stream](./J31-精通-函数式编程与Stream.md) | ⭐⭐⭐⭐ | Lambda/invokedynamic / 函数式接口 / 惰性与短路 / Collector / 并行流 / Optional |
+| J32 | [精通 Java 测试](./J32-精通-Java测试.md) | ⭐⭐⭐⭐ | JUnit5 / Mockito / 参数化 / Testcontainers / 测试切片 / 覆盖率 |
 
 ---
 
@@ -99,6 +102,14 @@
 - **J28 IO/NIO**：BIO/NIO/AIO、Channel/Buffer/Selector、多路复用、零拷贝、Netty 关联
 - **J29 版本演进**：Java 8（Lambda/Stream/Optional）→ 11 → 17（Record/Sealed/Pattern）→ 21/25（虚拟线程/结构化并发）
 
+### 🟤 模块六：现代并发、函数式与工程化（J30-J32）
+
+> 三篇进阶补充，分别从「现代并发」「语言深度」「工程化」三个维度补齐前五个模块——与 Go 专题对照最强的部分。
+
+- **J30 虚拟线程与结构化并发**：M:N 用户态线程、载体线程与 mount/unmount、pinning、ScopedValue、`StructuredTaskScope`、vs 线程池/响应式选型 ⭐ 2026 头号考点（深化 [J11](./J11-精通-线程池.md)/[J28](./J28-精通-Java-IO与NIO.md)）
+- **J31 函数式编程与 Stream**：函数式接口体系、Lambda 的 `invokedynamic` 实现、Stream 惰性与短路、Collector 四件套与自定义、并行流陷阱、Optional 范式（深化 [J29](./J29-精通-Java版本特性演进.md)）
+- **J32 Java 测试**：JUnit 5 架构与扩展模型、Mockito 的 stub/verify、参数化、Spring Boot 测试切片、Testcontainers、覆盖率与变异测试（对照 Go [G18](../golang/G18-精通-Go-测试.md)）
+
 ---
 
 ## 🎯 学习路径建议
@@ -108,11 +119,11 @@
 ```
 J02 HashMap + J01 集合（必背源码）
    ↓
-J07-J11 并发核心（JMM/锁/AQS/线程池——面试重头）
+J07-J11 并发核心（JMM/锁/AQS/线程池）+ J30 虚拟线程（2026 头号考点）
    ↓
 J15-J19 JVM（内存/类加载/GC/调优）
    ↓
-J22-J24 Spring（IOC/AOP/事务循环依赖）
+J22-J24 Spring（IOC/AOP/事务循环依赖）+ J31 函数式/Stream
 ```
 
 ### 路径 B：并发专精（2 周）
@@ -161,7 +172,7 @@ Java 和 Go 在并发与内存模型上思路迥异，对照学习收获最大�
 | 并发模型 | 线程 + 锁 + 线程池 | goroutine + channel + GMP |
 | 内存模型 | JMM / happens-before | Go MM / happens-before |
 | 同步原语 | synchronized / AQS / Lock | sync.Mutex / channel |
-| 轻量并发 | 虚拟线程（J28） | goroutine（[G11](../golang/G11-精通-Goroutines-与-GMP-调度.md)） |
+| 轻量并发 | 虚拟线程 + 结构化并发（[J30](./J30-精通-虚拟线程与结构化并发.md)） | goroutine（[G11](../golang/G11-精通-Goroutines-与-GMP-调度.md)） |
 | GC | 分代 / G1 / ZGC | 三色标记并发 GC（[G20](../golang/G20-精通-Go-内存管理.md)） |
 | 泛型 | 类型擦除（J04） | 类型参数（[G09](../golang/G09-精通-Go-泛型-类型参数与约束.md)） |
 
@@ -171,7 +182,7 @@ Java 和 Go 在并发与内存模型上思路迥异，对照学习收获最大�
 
 | 章节 | 2026 必知 |
 |---|---|
-| **J11/J28 并发** | **虚拟线程（Virtual Threads）** Java 21 正式 GA，"一请求一线程"重新可行，颠覆传统线程池思路 |
+| **J30 虚拟线程** | **虚拟线程（Virtual Threads）** Java 21 正式 GA，"一请求一线程"重新可行；配套**结构化并发 + ScopedValue**（Java 25 趋于转正）颠覆传统线程池/响应式思路。Java 24（JEP 491）起 `synchronized` 不再 pin |
 | **J18 GC** | **分代 ZGC** Java 21 默认可用，亚毫秒停顿；G1 仍是默认收集器 |
 | **J22-J27 Spring** | **Spring Boot 3.x / Spring 6**：基线 Java 17、Jakarta EE（`javax`→`jakarta`）、GraalVM 原生镜像、内置 Observability（Micrometer + OTel） |
 | **J28 语言** | **Java 25 LTS**（2025-09）：跟进 records/sealed/pattern matching/虚拟线程/结构化并发的稳定化 |
@@ -194,6 +205,9 @@ Java 和 Go 在并发与内存模型上思路迥异，对照学习收获最大�
 - [ ] 讲清 Spring Bean 生命周期、AOP 实现、事务失效场景、循环依赖三级缓存
 - [ ] 说清 Spring MVC 中 DispatcherServlet 处理一个请求的完整流程
 - [ ] 说清虚拟线程相比平台线程的优势与适用场景
+- [ ] 解释虚拟线程的载体线程、mount/unmount 与 pinning，以及结构化并发/ScopedValue 解决了什么
+- [ ] 说清 Stream 的惰性求值与短路、Collector 四件套，以及并行流的适用与陷阱
+- [ ] 用 JUnit 5 + Mockito + Testcontainers 写出分层（单元/切片/集成）测试
 
 ---
 
