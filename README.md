@@ -1,6 +1,6 @@
 # 后端工程师深度课程 · 中文知识库
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **14 大专题、257 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **15 大专题、277 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
 > **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
 
@@ -24,6 +24,7 @@
 | 🕸️ **微服务架构** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 架构师 / 后端 / SRE | [microservices/](./microservices/INDEX.md) |
 | 🐧 **Linux / 操作系统** | 20 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 后端 / SRE / 平台 | [linux/](./linux/INDEX.md) |
 | 🏛️ **系统设计** | 15 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 面试备战 / 后端 / 架构师 | [system-design/](./system-design/INDEX.md) |
+| 🧮 **算法面试** | 20 | ⭐⭐ — ⭐⭐⭐⭐⭐ | 面试备战 / 编码面试 | [algorithm/](./algorithm/INDEX.md) |
 
 - `INDEX.md` —— 总目录、模块划分、学习路径
 - `ROADMAP.md` —— Mermaid 可视化路线图
@@ -139,6 +140,16 @@ linux/ L11–L17（网络栈 / TCP / Socket / IPC / 同步 / 容器：namespace 
 linux/ L18–L20（性能诊断 / eBPF / systemd）+ cloud-native/ C03 网络、C06 资源、C11 可观测
 ```
 
+### 路径 J：算法 + 系统设计面试突击（3-4 周）
+
+```
+algorithm/ 01 方法论与复杂度  →  04-06 双指针/滑窗/二分（高频模板）
+   ↓
+algorithm/ 08/12/13 回溯/二叉树/堆  →  15-16 动态规划  →  20 高频题清单
+   ↓
+system-design/ S01 方法论  →  按高频场景题（秒杀/Feed/IM/排行榜）查漏补缺
+```
+
 > 每个专题的 `INDEX.md` 里都有更细致的路径建议（API 工程师特化、性能特化、架构师视角、RAG / Agent 特化、Operator 开发者特化等）。
 
 ---
@@ -160,7 +171,8 @@ linux/ L18–L20（性能诊断 / eBPF / systemd）+ cloud-native/ C03 网络、
 ├── cloud-native/    # 云原生 16 篇（Docker/K8s/Gateway API/Service Mesh/Operator/GitOps/Serverless/多集群）
 ├── microservices/   # 微服务 22 篇（DDD/通信/服务发现/分布式事务/韧性/网格/可观测/安全/反模式）
 ├── linux/           # Linux/OS 20 篇（架构/进程/调度/内存/I/O/网络/IPC/同步/容器/eBPF/systemd）
-└── system-design/   # 系统设计 15 篇（方法论/估算/接入/数据层/缓存/秒杀/Feed/IM/网盘/搜索/附近/延迟队列/支付）
+├── system-design/   # 系统设计 15 篇（方法论/估算/接入/数据层/缓存/秒杀/Feed/IM/网盘/搜索/附近/延迟队列/支付）
+└── algorithm/       # 算法面试 20 篇（复杂度/双指针/滑窗/二分/回溯/树图/DP/贪心/字符串/位运算）
 ```
 
 ---
