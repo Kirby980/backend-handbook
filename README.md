@@ -1,5 +1,7 @@
 # 后端工程师深度课程 · 中文知识库
 
+> 🚀 **在线体验**：[OfferPilot 后端知识库](https://offerpilot.yzenghe.top/) —— 在线浏览课程内容、按专题学习，并通过练习题自测。
+
 > 一套面向**中级到高级**后端工程师的系统进阶课程，共 **17 大专题、317 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
 > **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）。
