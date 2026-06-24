@@ -127,6 +127,7 @@
 
 - **可视化路线图**：[ROADMAP.md](./ROADMAP.md)
 - **测验题与答案**：[QUIZ.md](./QUIZ.md)（每章 5 题，共 160 题）
+- **生态库选型地图**：[Cpp-生态库选型地图.md](./libraries/Cpp-生态库选型地图.md)（2026 实战精选：构建/包管理、测试、JSON、网络、协程、分配器等场景的有主见选型）
 - **必读**：《Effective Modern C++》（Scott Meyers）、《C++ Concurrency in Action》（Anthony Williams）、[C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/)
 
 ---

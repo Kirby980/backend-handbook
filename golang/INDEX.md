@@ -140,6 +140,7 @@
 
 - **Mermaid 路线图**：见 [ROADMAP.md](./ROADMAP.md)
 - **测验题与答案**：见 [QUIZ.md](./QUIZ.md)
+- **生态库选型地图**：见 [Go 生态库选型地图](./libraries/Go-生态库选型地图.md)（按场景精选第三方库 + 2026 选型建议）
 - **官方 roadmap**：[roadmap.sh/golang](https://roadmap.sh/golang)
 - **官方文档**：[go.dev/doc](https://go.dev/doc/)
 - **源码**：[github.com/golang/go](https://github.com/golang/go)（重点看 `runtime/` 和 `sync/`）

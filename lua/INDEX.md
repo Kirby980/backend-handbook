@@ -183,6 +183,7 @@
 
 - **可视化路线图**：见 [ROADMAP.md](./ROADMAP.md)
 - **测验题与答案**：见 [QUIZ.md](./QUIZ.md)（每章 5 题，共 125 题）
+- **生态库选型地图**：见 [libraries/Lua-生态库选型地图.md](./libraries/Lua-生态库选型地图.md)（按 PUC-Lua / LuaJIT / OpenResty / Neovim / Love2D 三套运行时组织，2026 现状）
 - **官方手册**：[Lua 5.4](https://www.lua.org/manual/5.4/) · [Lua 5.5](https://www.lua.org/manual/5.5/)
 - **LuaJIT**：[luajit.org](https://luajit.org/) · **OpenResty**：[openresty.org](https://openresty.org/)
 - **Programming in Lua**（PiL，作者 Roberto Ierusalimschy）：语言圣经

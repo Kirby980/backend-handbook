@@ -158,6 +158,7 @@ J24 事务/循环依赖 → J25 Spring MVC → J26 Spring Boot → J27 MyBatis
 
 - **Mermaid 路线图**：见 [ROADMAP.md](./ROADMAP.md)
 - **综合测验**：见 [QUIZ.md](./QUIZ.md)（开放题，配套 Day 17.5 AI 补答案）
+- **生态库选型地图**：见 [libraries/Java-生态库选型地图.md](./libraries/Java-生态库选型地图.md)（2026 实战精选——Spring/JDK 标准库优先的第三方库选型）
 - **Go 镜像专题**：[golang/](../golang/INDEX.md)——对照学习两种语言的并发与内存模型
 - **通用后端**：[backend/](../backend/INDEX.md)——语言无关的设计与协议
 

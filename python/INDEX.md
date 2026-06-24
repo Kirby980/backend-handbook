@@ -151,6 +151,7 @@ P22-P24 异步并发 → P28 FastAPI → P29 数据库 → ai-backend RAG/Agent
 ## 📋 配套资源
 
 - **Mermaid 路线图**：见 [ROADMAP.md](./ROADMAP.md)
+- **生态库选型地图**：见 [Python-生态库选型地图.md](./libraries/Python-生态库选型地图.md)（2026 实战精选：uv/ruff/Pydantic v2/FastAPI/polars… 按场景选型）
 - **综合测验**：见 [QUIZ.md](./QUIZ.md)（开放题，配套 AI 补答案）
 - **镜像专题**：[Go](../golang/INDEX.md) / [Java](../java/INDEX.md)——三语言对照学习并发与内存模型
 - **AI 后端**：[ai-backend/](../ai-backend/INDEX.md)——Python 是 LLM 应用的主力语言
