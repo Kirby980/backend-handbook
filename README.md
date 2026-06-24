@@ -2,9 +2,9 @@
 
 > 🚀 **在线体验**：[OfferPilot 后端知识库](https://offerpilot.yzenghe.top/) —— 支持全站内容在线浏览、多专题体系化学习与实战真题自测。
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **18 大专题、342 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **19 大专题、374 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
-> **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）；Lua 5.5 / LuaJIT 2.1 / OpenResty 1.27。
+> **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）；Lua 5.5 / LuaJIT 2.1 / OpenResty 1.27；C++23（GCC 14 / Clang 18 / MSVC 19.4x）。
 
 ---
 
@@ -16,6 +16,7 @@
 | 🐹 **Go 语言** | 30 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Go 中高级工程师 | [golang/](./golang/INDEX.md) |
 | ☕ **Java 后端** | 32 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Java 中高级 / 面试备战 | [java/](./java/INDEX.md) |
 | 🐍 **Python 后端** | 30 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Python 中高级 / AI 后端 / 面试 | [python/](./python/INDEX.md) |
+| 🔷 **现代 C++** | 32 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | C++ 中高级 / 性能 / 系统 / 面试 | [cpp/](./cpp/INDEX.md) |
 | 🌙 **Lua / OpenResty** | 25 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 网关 / 游戏 / 嵌入式 / Neovim | [lua/](./lua/INDEX.md) |
 | 🐬 **MySQL** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用开发 | [mysql/](./mysql/INDEX.md) |
 | 🐘 **PostgreSQL** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用 / 平台 / AI | [postgresql/](./postgresql/INDEX.md) |
@@ -179,6 +180,7 @@ ai-backend/ 全套（LLM 应用工程化：RAG / Agent / MCP）
 ├── golang/          # Go 30 篇（语言/并发/工程化/性能/生态）
 ├── java/            # Java 后端 32 篇（集合/并发/JVM/Spring/MyBatis/IO/版本演进/虚拟线程/函数式/测试）
 ├── python/          # Python 后端 30 篇（语言核心/OOP与类型/CPython内幕/GIL/并发异步/工程化/Web/数据/版本演进）
+├── cpp/             # 现代 C++ 32 篇（语言核心/对象模型/模板泛型/STL/并发/现代特性 · C++23）
 ├── lua/             # Lua 25 篇（语言核心/LuaJIT-FFI/C API/OpenResty/Redis脚本/Neovim/游戏/5.4-5.5 新特性）
 ├── mysql/           # MySQL 12 篇（InnoDB/MVCC/复制/调优/9.x 新特性）
 ├── postgresql/      # PostgreSQL 22 篇（架构/MVCC/索引/pgvector/复制/PostGIS/调优/PG 18）
