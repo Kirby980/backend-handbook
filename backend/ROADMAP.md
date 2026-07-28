@@ -47,6 +47,7 @@ graph TD
     M6 --> B23[B23 OWASP]
     M6 --> B24[B24 可观测性]
     M6 --> B25[B25 Web 服务器]
+    M6 --> B26[B26 Nginx 深入]
     
     M6 --> End([Backend 高级工程师])
     
@@ -64,7 +65,7 @@ graph TD
     class B08,B09,B10,B11,B12,B13,B14 db
     class B15,B16,B17 accel
     class B18,B19,B20,B21 arch
-    class B22,B23,B24,B25 ops
+    class B22,B23,B24,B25,B26 ops
 ```
 
 ---
@@ -256,7 +257,7 @@ graph TB
 
 ---
 
-## 🟠 模块 6：安全与运维（B22-B25）
+## 🟠 模块 6：安全与运维（B22-B26）
 
 ```mermaid
 graph TB
@@ -264,13 +265,17 @@ graph TB
     B23[B23 OWASP Top 10<br>注入/IDOR/SSRF]
     B24[B24 可观测性<br>logs/metrics/traces]
     B25[B25 Web 服务器<br>Nginx/Caddy/Envoy]
+    B26[B26 Nginx 深入<br>location/upstream/限流]
     
     B22 -.-> B23
     B25 -.前置.-> B22
     B23 -.监控.-> B24
+    B25 --> B26
+    B26 -.真实IP/限流.-> B23
+    B26 -.日志字段.-> B24
     
     classDef ops fill:#ed8936,stroke:#c05621,color:#fff
-    class B22,B23,B24,B25 ops
+    class B22,B23,B24,B25,B26 ops
 ```
 
 **生产架构图**：
@@ -329,7 +334,7 @@ gantt
     section 月 5
     B18-B21 架构与韧性     :a7, after a6, 30d
     section 月 6
-    B22-B25 安全与运维     :a8, after a7, 30d
+    B22-B26 安全与运维     :a8, after a7, 30d
 ```
 
 ### 路径 B：API 工程师特化
@@ -409,6 +414,12 @@ mindmap
       OWASP B23
       可观测 B24
       Web 服务器 B25
+      Nginx 深入 B26
+        location 优先级
+        proxy_pass 语义
+        upstream keepalive
+        缓存与限流
+        reload 机制
 ```
 
 ---
@@ -456,6 +467,7 @@ mindmap
 | B21 限流 | ⭐⭐⭐ | 🔥🔥🔥🔥 | token bucket / sliding window |
 | B23 OWASP | ⭐⭐⭐ | 🔥🔥🔥🔥🔥 | Top 10 必知 |
 | B25 Web 服务器 | ⭐⭐⭐ | 🔥🔥🔥🔥 | Nginx / Envoy 怎么放 |
+| B26 Nginx 深入 | ⭐⭐⭐⭐ | 🔥🔥🔥🔥 | location 优先级 / proxy_pass / 限流 / reload |
 
 ### 选学（按需深入）
 
@@ -475,7 +487,7 @@ graph TD
     DB[数据库 B08-B14]
     Cache[缓存 + MQ B15-B17]
     Arch[架构韧性 B18-B21]
-    Sec[安全运维 B22-B25]
+    Sec[安全运维 B22-B26]
     
     Network --> API
     API --> Arch
@@ -552,7 +564,8 @@ graph LR
 | 登录系统 | B22 |
 | OWASP 自查 | B23 |
 | 看不到 prod 在干啥 | B24 |
-| Nginx 反代配置 | B25 |
+| Nginx 反代配置 | B25、**B26** |
+| Nginx 配置不生效 / 502 / 限流失效 | **B26** |
 
 ---
 

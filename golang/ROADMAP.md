@@ -51,6 +51,7 @@ graph TD
     M5 --> G28[G28 gRPC]
     M5 --> G29[G29 数据库]
     M5 --> G30[G30 日志]
+    M5 --> G31[G31 Socket/WebSocket]
     
     M5 --> End([Go 高级工程师])
     
@@ -66,7 +67,7 @@ graph TD
     class G11,G12,G13,G14,G15 concur
     class G16,G17,G18,G19 eng
     class G20,G21,G22,G23,G24,G25,G26 perf
-    class G27,G28,G29,G30 eco
+    class G27,G28,G29,G30,G31 eco
 ```
 
 ---
@@ -199,7 +200,7 @@ flowchart TD
 
 ---
 
-## 🟠 模块 5：生态（G27-G30）依赖图
+## 🟠 模块 5：生态（G27-G31）依赖图
 
 ```mermaid
 graph LR
@@ -209,14 +210,18 @@ graph LR
     G27 --> G30[G30 日志]
     G28 --> G30
     G29 --> G30
+    G27 --> G31[G31 Socket/WebSocket]
     G14[G14 context] -.-> G27
     G14 -.-> G28
     G14 -.-> G29
+    G14 -.-> G31
+    G11[G11 Goroutines] -.netpoller.-> G31
+    G15[G15 并发模式] -.writePump.-> G31
 
     classDef eco fill:#ed8936,stroke:#c05621,color:#fff
-    class G27,G28,G29,G30 eco
+    class G27,G28,G29,G30,G31 eco
     classDef ref fill:#bee3f8,stroke:#2b6cb0,color:#000
-    class G14 ref
+    class G14,G11,G15 ref
 ```
 
 **生产级服务架构**（典型 Go 微服务）：
@@ -264,7 +269,7 @@ graph LR
     W1[第 1-4 周<br>G01-G10<br>语言基础] --> W5[第 5-7 周<br>G11-G15<br>并发]
     W5 --> W8[第 8 周<br>G16-G19<br>工程化]
     W8 --> W9[第 9-11 周<br>G20-G26<br>性能底层]
-    W9 --> W12[第 12 周<br>G27-G30<br>生态]
+    W9 --> W12[第 12 周<br>G27-G31<br>生态]
     
     style W1 fill:#48bb78
     style W5 fill:#4299e1
@@ -387,6 +392,11 @@ mindmap
       gRPC G28
       DB G29
       日志 G30
+      Socket/WebSocket G31
+        TCP 字节流
+        粘包与消息边界
+        WebSocket 帧格式
+        心跳与背压
 ```
 
 ---
@@ -434,6 +444,7 @@ mindmap
 | G18 测试 | ⭐⭐⭐ | 🔥🔥🔥🔥 | table-driven / fuzz |
 | G28 gRPC | ⭐⭐⭐⭐ | 🔥🔥🔥🔥 | 流 / 拦截器 / metadata |
 | G30 日志 | ⭐⭐ | 🔥🔥🔥🔥 | slog 标准化 |
+| G31 Socket/WebSocket | ⭐⭐⭐⭐ | 🔥🔥🔥🔥 | 粘包 / 帧格式 / 心跳 / 背压 |
 
 ### 选学（按需深入）
 

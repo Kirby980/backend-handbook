@@ -644,7 +644,7 @@ SSE 流被代理缓冲 → 实时性丢。`proxy_buffering off`。
 
 ## 课程总结
 
-这是 **B25 / 25**——Backend 路线图深度课程系列的最后一篇。
+这是 **B25 / 25**——Backend 路线图深度课程主线的最后一篇。
 
 回顾整个系列覆盖：
 
@@ -658,7 +658,9 @@ SSE 流被代理缓冲 → 实时性丢。`proxy_buffering off`。
 | B22-B24 | 安全与运维：认证、OWASP、可观测性 |
 | B25 | Web 服务器与反向代理 |
 
-加上 Go 路线图 30 篇，整套深度课程系列共 **55 篇**。
+> 📌 本篇是**横向选型**对比。想把 Nginx 一个个配置指令的真实语义吃透（location 优先级、`proxy_pass` 尾斜杠、upstream keepalive、limit_req 的 burst/nodelay、reload 机制），看延伸篇 **[B26 — 精通 Nginx](./B26-精通-Nginx.md)**。
+
+加上 Go 路线图 31 篇，整套深度课程系列共 **57 篇**。
 
 **下一步建议**：
 

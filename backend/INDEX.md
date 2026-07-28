@@ -1,6 +1,6 @@
 # Backend 路线图深度课程 · 总目录
 
-> 基于 [roadmap.sh/backend](https://roadmap.sh/backend) 生成的 25 篇中文深度课程
+> 基于 [roadmap.sh/backend](https://roadmap.sh/backend) 生成的 26 篇中文深度课程
 > 每篇约 10000-15000 字，含底层原理、代码示例、生产实践、陷阱清单、练习题
 > 适合后端工程师从入门到高级的系统进阶
 >
@@ -38,6 +38,7 @@
 | B23 | [精通 OWASP Top 10](./B23-精通-OWASP-Top-10.md) | ⭐⭐⭐⭐ | 注入 / IDOR / SSRF / XSS / CSRF |
 | B24 | [精通可观测性](./B24-精通可观测性.md) | ⭐⭐⭐⭐ | logs / metrics / traces / OTel / SLO |
 | B25 | [精通 Web 服务器与反向代理](./B25-精通-Web-服务器与反向代理.md) | ⭐⭐⭐⭐ | Nginx / Caddy / HAProxy / Envoy / Traefik |
+| B26 | [精通 Nginx](./B26-精通-Nginx.md) | ⭐⭐⭐⭐ | location 优先级 / proxy_pass / keepalive / limit_req / reload |
 
 ---
 
@@ -89,14 +90,15 @@
 - **B20 韧性模式**：timeout、retry、circuit breaker、bulkhead、降级
 - **B21 背压与限流**：token bucket、sliding window、自适应并发
 
-### 🟠 模块六：安全与运维（B22-B25）
+### 🟠 模块六：安全与运维（B22-B26）
 
 > 让系统安全又能看见——authn/authz、observability、infra。
 
 - **B22 认证**：session、JWT、OAuth 2.0、OIDC、MFA、密码 hash
 - **B23 OWASP Top 10**：注入、IDOR、SSRF、加密失败等十大风险
 - **B24 可观测性**：logs/metrics/traces、OTel、SLO、错误预算
-- **B25 Web 服务器**：Nginx、Caddy、HAProxy、Envoy、Traefik
+- **B25 Web 服务器**：Nginx、Caddy、HAProxy、Envoy、Traefik（横向选型）
+- **B26 Nginx 深入**：location 优先级、proxy_pass 语义、upstream keepalive、缓存与限流、长连接代理、reload 机制
 
 ---
 
@@ -145,6 +147,7 @@
 - **B23 OWASP Top 10**
 - **B24 可观测性**（log + audit）
 - **B25 Web 服务器**（WAF、限流前置）
+- **B26 Nginx**（真实 IP、限流 key、TLS 配置、防未知 Host）
 
 ---
 
@@ -200,6 +203,8 @@
 - [ ] 检查 web app 是否中 OWASP Top 10 的每一条
 - [ ] 设计 SLO + 错误预算 + 告警
 - [ ] 写出生产级 Nginx 反代配置
+- [ ] 说清 `proxy_pass` 带不带尾斜杠的区别，以及 location 的匹配优先级
+- [ ] 从 `$request_time` 与 `$upstream_response_time` 的差值判断瓶颈在哪一侧
 
 ---
 
@@ -222,6 +227,7 @@ Backend 路线图是语言无关的——讲概念、设计、协议。Go 路线
 | B20 韧性 | G14 context |
 | B22 认证 | G27 net/http middleware |
 | B24 可观测性 | G22 pprof + G30 slog |
+| B26 Nginx | G31 Socket 与 WebSocket（代理侧 ↔ 服务端） |
 
 Backend 读"该做什么"；Go 读"在 Go 里怎么做"。
 
@@ -242,6 +248,7 @@ Backend 读"该做什么"；Go 读"在 Go 里怎么做"。
 | **B23 OWASP** | OWASP Top 10 2021 仍是当前正式版；**OWASP API Security Top 10 2023** API-first 必读；2025 草案讨论中 |
 | **B24 可观测性** | **OpenTelemetry CNCF Graduated**——logs/metrics/traces 三柱协议事实标准；**Prometheus 3.0** native histograms / UTF-8 / OTLP 接收 |
 | **B25 Web 服务器** | **NGINX One** (2024-09) 统一管理；NGINX Plus R33+ 要 JWT license；ModSecurity EOL（用 Coraza） |
+| **B26 Nginx** | stable 1.30.x / mainline 1.31.x；`http2 on;` 取代 `listen ... http2`（1.25.1+）；1.25.0+ 内置 QUIC/HTTP-3 |
 
 ---
 

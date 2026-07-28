@@ -1,6 +1,6 @@
 # Go 路线图深度课程 · 总目录
 
-> 基于 [roadmap.sh/golang](https://roadmap.sh/golang) 生成的 30 篇中文深度课程
+> 基于 [roadmap.sh/golang](https://roadmap.sh/golang) 生成的 31 篇中文深度课程
 > 每篇约 10000-15000 字，含底层原理、代码示例、生产实践、陷阱清单、练习题
 > 适合从中级到高级 Go 工程师的系统进阶
 >
@@ -43,6 +43,7 @@
 | G28 | [精通 gRPC 与 Protobuf](./G28-精通-Go-gRPC-与-Protobuf.md) | ⭐⭐⭐⭐ | 四种 RPC / interceptor / status code / metadata |
 | G29 | [精通 Go 数据库访问](./G29-精通-Go-数据库访问.md) | ⭐⭐⭐⭐ | database/sql / pgx / sqlc / N+1 / 连接池 |
 | G30 | [精通 Go 结构化日志](./G30-精通-Go-结构化日志.md) | ⭐⭐⭐ | slog / zap / zerolog / 采样 / OTel |
+| G31 | [精通 Go Socket 与 WebSocket](./G31-精通-Go-Socket-与-WebSocket.md) | ⭐⭐⭐⭐ | 字节流 / 粘包 / 帧格式 / 心跳 / 背压 / CSWSH |
 
 ---
 
@@ -89,7 +90,7 @@
 - **G25 unsafe**：六条合法转换、//go:linkname、Pinner
 - **G26 CGO**：~200ns 开销、内存所有权、信号交互、交叉编译影响
 
-### 🟠 模块五：生态（G27-G30）
+### 🟠 模块五：生态（G27-G31）
 
 > 生产级 Go 服务的最后一公里。
 
@@ -97,6 +98,7 @@
 - **G28 gRPC**：protoc 流程、四种 RPC 模式、interceptor、status code、metadata
 - **G29 数据库**：连接池、事务模式、pgx、sqlc、GORM、N+1
 - **G30 日志**：slog（标准库）/ zap / zerolog 对比、采样、OTel 集成
+- **G31 Socket/WebSocket**：socket API 与 netpoller、TCP 粘包与消息边界、WebSocket 握手与帧格式、心跳、背压、水平扩展
 
 ---
 
@@ -186,6 +188,8 @@
 - [ ] 写一个零分配的 string ↔ []byte 转换并说明风险
 - [ ] 给一个真实业务设计 gRPC + interceptor + 错误码
 - [ ] 配置生产级 net/http server（四超时 + middleware + graceful）
+- [ ] 手写一个带长度前缀的 TCP 协议，说明为什么必须校验 maxSize
+- [ ] 解析一个 WebSocket 帧头，并说明客户端为什么必须 mask
 
 ---
 
@@ -227,6 +231,7 @@
 | 1.26 | `os.File.End` | 标准库 |
 | 1.26 | 实验 `simd/archsimd`、`runtime/secret` | G25 |
 | 1.26 | `cmd/doc` 移除（用 `go doc`） | G17 |
+| — | `nhooyr.io/websocket` → `github.com/coder/websocket`（2024 迁移） | G31 §5.1 |
 
 权威来源：[Go 1.23](https://go.dev/doc/go1.23) · [Go 1.24](https://go.dev/doc/go1.24) · [Go 1.25](https://go.dev/doc/go1.25) · [Go 1.26](https://go.dev/doc/go1.26)。
 

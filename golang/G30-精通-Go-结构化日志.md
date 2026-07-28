@@ -551,7 +551,7 @@ func (h *otelHandler) Handle(ctx context.Context, r slog.Record) error {
 
 ## 课程总结
 
-这是 **G30 / 30**——roadmap.sh Go 路线图深度课程系列的最后一篇。
+这是 **G30 / 30**——roadmap.sh Go 路线图深度课程主线的最后一篇。
 
 回顾整个系列覆盖：
 
@@ -562,6 +562,8 @@ func (h *otelHandler) Handle(ctx context.Context, r slog.Record) error {
 | G16-G19 | 工程化：race、modules、测试、benchmark |
 | G20-G26 | 性能与底层：GC、逃逸、pprof、trace、反射、unsafe、CGO |
 | G27-G30 | 生态：net/http、gRPC、数据库、日志 |
+
+> 📌 主线之外还有延伸篇 **[G31 — 精通 Go Socket 与 WebSocket](./G31-精通-Go-Socket-与-WebSocket.md)**，覆盖 socket API、TCP 字节流语义与实时长连接的生产实践。
 
 每篇都以"引言悬念 → 章节 → 生产实践 → 陷阱 → 练习 → 小结表 → 下一篇预告"为骨架，配有源码示例、性能数据、工具命令。
 

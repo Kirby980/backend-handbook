@@ -856,6 +856,49 @@
 
 ---
 
+## B26 — Nginx 深入
+
+**26.1 ⭐⭐⭐** 以下配置，请求 `/api/users` 时上游收到的路径是？
+```nginx
+location /api/ { proxy_pass http://backend/; }
+```
+- A. `/api/users`
+- B. `/users`
+- C. `/api/api/users`
+- D. `/`
+
+**26.2 ⭐⭐⭐⭐** 同时存在 `location /static/` 和 `location ~ \.js$`，请求 `/static/app.js` 命中哪个？
+- A. `/static/`，因为它写在前面
+- B. `~ \.js$`，普通前缀匹配后仍会继续检查正则
+- C. 报错，配置冲突
+- D. 随机
+
+**26.3 ⭐⭐⭐⭐** upstream 里写了 `keepalive 32;` 但连接池不生效，最可能漏了什么？
+- A. `proxy_buffering on`
+- B. `proxy_http_version 1.1;` + `proxy_set_header Connection "";`
+- C. `keepalive_timeout`
+- D. `least_conn`
+
+**26.4 ⭐⭐⭐⭐** `rate=10r/s burst=20`（不加 `nodelay`）时，突发请求的表现是？
+- A. 超出的立即返回 503
+- B. 排队按 100ms/个放行，队尾延迟约 1.9 秒
+- C. 全部立即处理
+- D. 与加 nodelay 完全相同
+
+**26.5 ⭐⭐⭐⭐** 监控显示 `$request_time` 平均 3.2s 而 `$upstream_response_time` 仅 0.08s，说明？
+- A. 后端慢
+- B. 数据库慢
+- C. 客户端接收慢（弱网 / 响应体过大），不是后端问题
+- D. Nginx 有 bug
+
+**26.6 ⭐⭐⭐** WebSocket 服务每次 reload 后 nginx 内存涨一截，根因是？
+- A. 内存泄漏
+- B. 老 worker 等长连接结束才退出，`worker_shutdown_timeout` 默认无限制
+- C. 缓存过大
+- D. worker_connections 太小
+
+---
+
 ## ✅ 参考答案
 
 ### B01
@@ -1033,16 +1076,24 @@
 25.4 **B**（buffering 会缓冲流，破坏实时性）
 25.5 **B**
 
+### B26
+26.1 **B**（`proxy_pass` 带 URI 就替换 location 前缀；不带才完整透传）
+26.2 **B**（普通前缀记录最长匹配后仍查正则，正则胜出；要用 `^~` 才跳过）
+26.3 **B**（两行缺一不可，否则默认 HTTP/1.0 + `Connection: close`）
+26.4 **B**（漏桶排队，用户感受是"卡"而非被拒；应加 `nodelay`）
+26.5 **C**（`$request_time` 含发送给客户端的全过程）
+26.6 **B**（老 worker 卡在 `is shutting down`，需设 `worker_shutdown_timeout`）
+
 ---
 
 ## 📊 评分标准
 
 | 分数 | 评价 |
 |---|---|
-| 113+/125（>90%） | 🏆 精通—— Backend 高级工程师候选 |
-| 88-112（70-89%） | 🥇 熟练—— 能胜任生产开发 |
-| 63-87（50-69%） | 🥈 入门—— 重点补足薄弱章节 |
-| <63（<50%） | 📖 建议重读对应章节 + 动手实践 |
+| 118+/131（>90%） | 🏆 精通—— Backend 高级工程师候选 |
+| 92-117（70-89%） | 🥇 熟练—— 能胜任生产开发 |
+| 66-91（50-69%） | 🥈 入门—— 重点补足薄弱章节 |
+| <66（<50%） | 📖 建议重读对应章节 + 动手实践 |
 
 按模块统计错题：
 
@@ -1057,10 +1108,10 @@
 
 ## 🔁 与 Go 路线图测验组合
 
-55 篇课程合起来涉及的测验题：
-- Go 路线图：150 题
-- Backend 路线图：125 题
-- 合计 **275 题**
+57 篇课程合起来涉及的测验题：
+- Go 路线图：155 题
+- Backend 路线图：131 题
+- 合计 **286 题**
 
 建议：
 1. 先完整 Go QUIZ 一遍
