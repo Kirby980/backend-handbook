@@ -4,7 +4,7 @@
 
 ## 1. 引言:为什么 LLM 必须 streaming
 
-我们先看一组实测数据。一个 800 token 的 Claude Sonnet 4.6 响应,在两种模式下的用户体验:
+我们先看一组实测数据。一个 800 token 的 Claude Sonnet 5 响应,在两种模式下的用户体验:
 
 | 指标 | 非流式 | 流式 |
 |------|------:|----:|
@@ -680,7 +680,7 @@ client := &sse.Client{
     URL: "https://api.anthropic.com/v1/messages",
     HTTPClient: &http.Client{Timeout: 0},
 }
-body := strings.NewReader(`{"model":"claude-sonnet-4-6","stream":true,...}`)
+body := strings.NewReader(`{"model":"claude-sonnet-5","stream":true,...}`)
 events, errs := client.Stream(ctx, body, func(req *http.Request) {
     req.Header.Set("x-api-key", apiKey)
     req.Header.Set("anthropic-version", "2023-06-01")

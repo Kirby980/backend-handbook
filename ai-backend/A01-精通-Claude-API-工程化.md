@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块一 API 基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：60 分钟
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 
 ---
 
@@ -24,13 +24,20 @@ fmt.Println(msg.Content[0].Text)
 
 五行代码做 demo——这是 Claude API 的"招牌"。但生产环境的 Claude 工程化远不止于此：prompt caching 命中率、batch 半价、streaming 断点重连、extended thinking 预算、tool use 多轮、citations、files API、retry / rate limit headers、成本控制。本章把生产级 **Claude API** 拆开。
 
-2026 年 5 月，Anthropic 的主力模型版图：
+2026 年 8 月，Anthropic 的主力模型版图（Claude 5 家族已发布）：
 
-| 模型 ID | 别名 | 角色 |
-|---|---|---|
-| `claude-opus-4-8` | Opus 4.8 | 顶配——复杂推理、长任务 Agent、代码生成（Opus 4.7 为其前一版本） |
-| `claude-sonnet-4-6` | Sonnet 4.6（1M ctx beta） | 通用主力——200k 默认 / 1M context beta |
-| `claude-haiku-4-5-20251001` | Haiku 4.5 | 高吞吐 / 低延迟——分类、抽取、轻 RAG |
+| 模型 ID | 别名 | context | max output | 角色 |
+|---|---|---|---|---|
+| `claude-fable-5` | Fable 5 | 1M | 128K | 天花板——最难的推理与长程 agentic 任务。thinking **常开且不可关** |
+| `claude-opus-5` | Opus 5 | 1M | 128K | **顶配主力**——复杂 agentic 编码、企业级长任务。与 Opus 4.8 同价 |
+| `claude-opus-4-8` | Opus 4.8 | 1M | 128K | 上一代顶配，仍在服务（4.7 / 4.6 亦可用） |
+| `claude-sonnet-5` | Sonnet 5 | 1M | 128K | **通用主力**——编码与 agentic 逼近 Opus 档，Sonnet 价 |
+| `claude-sonnet-4-6` | Sonnet 4.6 | 1M | 128K | 上一代通用主力 |
+| `claude-haiku-4-5` | Haiku 4.5 | 200K | 64K | 高吞吐 / 低延迟——分类、抽取、轻 RAG |
+
+> ⚠️ **模型 ID 不要自己拼日期后缀**。`claude-opus-5`、`claude-sonnet-5` 就是完整 ID，写成 `claude-opus-5-20260601` 会 404。只有 Haiku 4.5 等老模型有 `claude-haiku-4-5-20251001` 这样的带日期全 ID。
+>
+> ⚠️ **1M context 已是默认，不再是 beta**，且无长上下文溢价。
 
 它们共享同一套 Messages API；不同模型只是改 `model` 字段。这是 Anthropic API 一直以来的设计：**一个 Messages API 走天下**。
 
@@ -123,7 +130,7 @@ batch, _ := client.Messages.Batches.New(ctx, batchParams)
 
 ```json
 {
-  "model": "claude-opus-4-8",
+  "model": "claude-opus-5",
   "max_tokens": 1024,
   "system": "You are a helpful assistant.",
   "messages": [
@@ -312,12 +319,16 @@ req 4: [A][B][C][E]       ← 前 [A][B][C] 命中
 
 **任何字节级修改都会破坏缓存**——包括日期 / 时间戳 / 随机 nonce 这些"看似无关"的字段。
 
-**最小缓存长度**：
+**最小缓存长度**（低于阈值的 prefix 不会被缓存，哪怕打了 cache_control 也无效）：
 
-- Sonnet 4.x：≥ 1024 tokens
-- Opus 4.5/4.6/4.7/4.8 与 Haiku 4.5：≥ 4096 tokens
+| 阈值 | 模型 |
+|---|---|
+| **512** tokens | Opus 5、Fable 5 |
+| **1024** tokens | Opus 4.8、Sonnet 5、Sonnet 4.6、Sonnet 4.5 |
+| **2048** tokens | Opus 4.7、Haiku 3.5 |
+| **4096** tokens | Opus 4.6、Opus 4.5、Haiku 4.5 |
 
-（旧的 1024 / 2048 阈值仅适用于 Claude 3.x / 早期 4 代模型。）低于阈值的 prefix 不会被缓存（哪怕你打了 cache_control 也无效）。
+> ⚠️ **这个阈值不随代际单调递减**——最新的 Opus 5 是 512，而 Opus 4.6 和 Haiku 4.5 是 4096。一个 3K token 的 prompt 在 Opus 5 / Opus 4.8 / Sonnet 5 上能缓存，在 Opus 4.6 或 Haiku 4.5 上**静默不缓存**。Opus 4.8 → Opus 5 把门槛砍半（1024 → 512），原先"太短不值得缓存"的 prompt 值得重新评估。
 
 ### 3.4 TTL：5min vs 1h
 
@@ -680,63 +691,112 @@ for {
 
 ---
 
-## 第八章：Extended Thinking——可见思考链
+## 第八章：Thinking——从固定预算到 adaptive + effort
 
 ### 8.1 是什么
 
-Claude 4.x 引入的"长思考"能力：模型在生成正式回复前先输出一段 `thinking` 内容（可见或加密），用 token 换更深推理。
+Claude 4.x 引入的"长思考"能力：模型在生成正式回复前先做一段推理，用 token 换更深的结果。
 
 ```
 用户问题 → [thinking: 数百到数千 token 推理] → [text: 最终答案]
 ```
 
-### 8.2 启用
+**2026 年的重大变化：固定 token 预算的 extended thinking 已被 adaptive thinking 取代。**
+
+| 写法 | 状态 |
+|---|---|
+| `thinking: {type: "enabled", budget_tokens: N}` | **在 Fable 5 / Opus 5 / Opus 4.8 / 4.7 / Sonnet 5 上返回 400**；在 Opus 4.6 / Sonnet 4.6 上仅作为过渡逃生口保留 |
+| `thinking: {type: "adaptive"}` | **当前写法**——由模型自己决定何时想、想多久 |
+| `output_config: {effort: "..."}` | 控制思考深度与整体 token 花费，取代了"预算"这个概念 |
+
+### 8.2 每个模型的默认值不一样——这是最容易踩的坑
+
+| 模型 | 不传 `thinking` 会怎样 | `{type: "disabled"}` |
+|---|---|---|
+| **Fable 5** | 跑 adaptive（**常开**） | **400**——直接省略该参数 |
+| **Opus 5** | 跑 **adaptive**（默认开） | 仅在 effort ≤ `high` 时接受；配 `xhigh`/`max` 返回 **400** |
+| **Opus 4.8 / 4.7** | **不思考**——必须显式传 `{type:"adaptive"}` | 接受 |
+| **Sonnet 5** | 跑 adaptive | 接受 |
+| **Opus 4.6 / Sonnet 4.6** | 不思考——需显式传 | 接受 |
+
+> ⚠️ Opus 4.8 → Opus 5 迁移时，一条从没设过 `thinking` 的链路**会突然开始思考**。而 `max_tokens` 是 thinking + 正文的**共同上限**——原先卡得紧的 `max_tokens` 会导致回答被截断。逐条 review。
+
+### 8.3 启用
 
 ```go
+// Go SDK 没有 ThinkingConfigParamOfAdaptive 辅助函数，直接构造 union
+adaptive := anthropic.ThinkingConfigAdaptiveParam{
+    Display: anthropic.ThinkingConfigAdaptiveDisplaySummarized, // 见 8.4
+}
+
 resp, _ := client.Messages.New(ctx, anthropic.MessageNewParams{
-    Model:     anthropic.ModelClaudeOpus4_8,
-    MaxTokens: anthropic.F(int64(16000)),
-    Thinking: anthropic.F(anthropic.ThinkingConfigEnabledParam{
-        Type:         anthropic.F("enabled"),
-        BudgetTokens: anthropic.F(int64(10000)),  // thinking 上限
-    }),
-    Messages: anthropic.F([]anthropic.MessageParam{
+    Model:     "claude-opus-5",
+    MaxTokens: 64000,
+    Thinking:  anthropic.ThinkingConfigParamUnion{OfAdaptive: &adaptive},
+    // effort 在 output_config 里，不是顶层字段
+    // low | medium | high（默认）| xhigh | max
+    Messages: []anthropic.MessageParam{
         anthropic.NewUserMessage(anthropic.NewTextBlock("证明费马小定理")),
-    }),
+    },
 })
 
 for _, block := range resp.Content {
     switch b := block.AsAny().(type) {
     case anthropic.ThinkingBlock:
-        log.Printf("[thinking] %s", b.Thinking) // 可见思考链
+        log.Printf("[thinking] %s", b.Thinking)
     case anthropic.TextBlock:
         fmt.Println(b.Text)
     }
 }
 ```
 
-`BudgetTokens` 限制 thinking 的 token 量；模型可能少用。
+> ⚠️ 同时注意：**`temperature` / `top_p` / `top_k` 在 Fable 5 / Opus 5 / Opus 4.8 / 4.7 上已移除**，传了返回 400。想控制风格只能靠 prompt。
 
-### 8.3 计费
+### 8.4 `display`：默认拿不到思考文本
 
-thinking tokens **按 output 价计费**——和正常输出一样。Budget 设高就是花钱换准确率。
+`thinking.display` 有两个值：
 
-### 8.4 何时用
+- `"omitted"`——**Fable 5 / Opus 5 / Opus 4.8 / 4.7 / Sonnet 5 的默认值**。`thinking` block 仍在响应里，但文本是空字符串
+- `"summarized"`——返回一段可读的推理摘要
+
+这是相对 Opus 4.6 / Sonnet 4.6 的**静默变更**（那两个默认是 `summarized`）。如果你的产品把推理过程流给用户看，不显式设 `summarized` 的话，用户看到的是**输出前一段长时间的空白**。
+
+三条必须记住的性质：
+
+1. `display` **只控制可见性**——思考照常发生、照常按 output 价计费
+2. **原始思考链（raw chain of thought）在任何模型上都不返回**，你能拿到的最多是摘要
+3. 多轮对话里，**thinking block 要原样传回**（同一个模型）。换模型时其他模型会静默丢弃它们——丢弃发生在计价之前，所以不会多收钱，也不需要你手动剥离
+
+### 8.5 effort：真正的调节旋钮
+
+`output_config.effort` 现在是控制"想多深、花多少"的主开关，默认 `high`：
+
+| 档位 | 适用 |
+|---|---|
+| `max` | 正确性远比成本重要；可能过度思考，收益递减 |
+| `xhigh` | **编码与 agentic 的推荐档**——Claude Code 的默认值 |
+| `high` | 默认；对智力敏感的任务的推荐下限 |
+| `medium` | 成本敏感场景的降档 |
+| `low` | 短小、有明确边界、对智力不敏感的任务；子 agent |
+
+低 effort 不只是"想得少"，它同时改变**行为形状**：tool call 更少更集中、前言更短、确认更简洁。所以它是一个可以**按路由分档**的 harness 级参数（见 A17 第八章）。
+
+### 8.6 计费
+
+thinking tokens **按 output 价计费**——和正常输出一样。提高 effort 就是花钱换准确率。
+
+### 8.7 何时用
 
 - 数学 / 形式推理
 - 代码逻辑分析
 - 复杂规划（Agent 任务分解）
 - Eval / debug 时想看模型"心路"
 
-**不要**对简单分类、抽取打开 thinking——浪费钱。
+**不要**对简单分类、抽取开高 effort——浪费钱。但在 Opus 5 上，**关掉 thinking 不是省钱的正确姿势**：更省也更稳的做法是保持 thinking 开启、把 effort 降到 `low`/`medium`。原因见 A17 第八章（关 thinking 会引发 tool call 变成纯文本静默不执行、`<thinking>` 标签泄漏两个故障）。
 
-### 8.5 thinking + tool use
+### 8.8 thinking + tool use
 
-extended thinking 可以和 tool use 同时启用。模型先 thinking，再决定调 tool，再 thinking，再回复。这是 Agent 长任务的核心模式。
-
-### 8.6 加密 thinking
-
-若不想让 thinking 暴露给客户端（防 prompt 泄露），用 `thinking.type = "redacted"`——返回加密 block，下次请求可以原样传回作为上下文，但不可见明文。
+adaptive thinking 会**自动在 tool 调用之间穿插思考**（interleaved thinking），不再需要 `interleaved-thinking-2025-05-14` 这个 beta header。模型先想、再决定调 tool、拿到结果再想、再回复——这是 Agent 长任务的核心模式。
 
 ---
 
@@ -909,7 +969,7 @@ data: {"type":"error","error":{"type":"overloaded_error","message":"..."}}
 ```go
 type ClaudeConfig struct {
     APIKey          string
-    DefaultModel    string                // claude-sonnet-4-6
+    DefaultModel    string                // claude-sonnet-5
     FallbackModel   string                // claude-haiku-4-5-20251001
     MaxRetries      int                   // 3
     RequestTimeout  time.Duration         // 120s
@@ -968,14 +1028,24 @@ func (m *CostMonitor) Track(model string, u anthropic.Usage) error {
 }
 ```
 
-2026 年 5 月主流价格（API 公开价，USD / 1M tokens）：
+2026 年 8 月主流价格（Anthropic 一方 API 公开价，USD / 1M tokens）：
 
-| 模型 | input | output | cache write 5m | cache read |
-|---|---|---|---|---|
-| `claude-opus-4-8` | 15 | 75 | 18.75 | 1.5 |
-| `claude-sonnet-4-6` | 3 | 15 | 3.75 | 0.3 |
-| `claude-sonnet-4-6` (1M ctx 区段) | 6 | 22.5 | 7.5 | 0.6 |
-| `claude-haiku-4-5-20251001` | 1 | 5 | 1.25 | 0.1 |
+| 模型 | input | output | cache write 5m (1.25×) | cache write 1h (2×) | cache read (0.1×) |
+|---|---|---|---|---|---|
+| `claude-fable-5` | 10 | 50 | 12.5 | 20 | 1 |
+| `claude-opus-5` | 5 | 25 | 6.25 | 10 | 0.5 |
+| `claude-opus-4-8` | 5 | 25 | 6.25 | 10 | 0.5 |
+| `claude-sonnet-5` | 3 | 15 | 3.75 | 6 | 0.3 |
+| `claude-sonnet-4-6` | 3 | 15 | 3.75 | 6 | 0.3 |
+| `claude-haiku-4-5` | 1 | 5 | 1.25 | 2 | 0.1 |
+
+> Sonnet 5 有引导价：2026-08-31 之前按 **2 / 10** 计费。
+>
+> **1M context 无溢价**——不再有"超过 200k 换一档价"的区段计费。
+>
+> **cache 回本点跟 TTL 有关**：5min TTL 两次请求即回本（1.25× + 0.1× = 1.35× vs 2× 无缓存）；1h TTL 要三次以上（2× + 0.2× = 2.2× vs 3×）。
+>
+> Bedrock / Vertex 是合作方运营，另有定价；Microsoft Foundry 按一方价走。
 
 > 这里只是举例量级，实际价格以 [anthropic.com/pricing](https://www.anthropic.com/pricing) 为准。
 
@@ -1063,7 +1133,7 @@ Anthropic 不给默认值。漏写 → 400。
 
 ### 2. cache_control 加在小 prompt 上
 
-低于阈值（Sonnet 4.x 为 1024、Opus 4.x / Haiku 4.5 为 4096 token）——cache_control 被忽略，多花 25% 的 cache write 钱却没缓存。**自己监控 `CacheCreationInputTokens > 0` 但 `CacheReadInputTokens == 0`**——这是"花钱没收益"信号。
+低于阈值——cache_control 被静默忽略，多花 25% 的 cache write 钱却没缓存。阈值按模型分档且**不单调**（Opus 5 / Fable 5 是 512，Opus 4.8 / Sonnet 5 是 1024，Opus 4.7 是 2048，Opus 4.6 / Haiku 4.5 是 4096——见 3.3）。**自己监控 `CacheCreationInputTokens > 0` 但 `CacheReadInputTokens == 0`**——这是"花钱没收益"信号。
 
 ### 3. messages 顺序错
 
@@ -1125,9 +1195,13 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 
 流式中途 5xx 后简单 retry → 前端 token 重复。要么从头重发并通知前端清屏，要么把已收到部分作为最终结果返回。
 
-### 12. extended thinking budget 设太小
+### 12. 在 Opus 5 上关掉 thinking
 
-`BudgetTokens: 100` → 模型还没想清楚就停。复杂问题至少 2000-5000，证明 / 长 Agent 任务给 10000+。
+`thinking: {type: "disabled"}` 从 Opus 4.8 沿用过来，会引发两个静默故障：tool call 可能被写成**纯文本**（这一轮正常结束、调用从未执行、无报错），以及 `<thinking>` 标签泄漏进可见输出。而且它配 `xhigh`/`max` effort 直接 400，还是**逐请求校验**的。正确做法是**保持 thinking 开启、降 effort**。详见 A17 第八章。
+
+### 13. 沿用 `budget_tokens`
+
+`thinking: {type:"enabled", budget_tokens: N}` 在 Fable 5 / Opus 5 / Opus 4.8 / 4.7 / Sonnet 5 上返回 400。改用 `{type:"adaptive"}` + `output_config.effort`。
 
 ---
 
@@ -1136,36 +1210,42 @@ Batch 在 dashboard 计费里是**独立科目**——不要按普通价算预�
 ### 13.1 模型版图
 
 ```
-顶配:        Opus 4.8         （15/75 USD per M tokens；Opus 4.8 为其前一版本）
-通用:        Sonnet 4.6       （3/15；1M ctx 区段 6/22.5）
-快速:        Haiku 4.5        （1/5；2025-10-01 release 起 ID 含日期）
+天花板:      Fable 5          （10/50；thinking 常开不可关）
+顶配:        Opus 5           （5/25；agentic 编码主力）
+上一代顶配:  Opus 4.8         （5/25；仍在服务）
+通用:        Sonnet 5         （3/15，引导价 2/10 至 2026-08-31）
+快速:        Haiku 4.5        （1/5；200K ctx，ID 含日期）
 ```
 
-**何时选 Opus**：复杂推理、长 Agent 任务、代码大改、要 extended thinking。
+**何时选 Opus 5**：复杂 agentic 编码、多文件重构、长程自主任务、企业级交付物。它对**难任务**的优势最大，简单单轮编辑上跟 Sonnet 差距不明显——评估要挑工作负载里最难的那一端。
 
-**何时选 Sonnet 4.6**：默认主力——质量接近 Opus、价格 1/5。1M context beta 适合超长文档 / 项目级 codebase。
+**何时选 Sonnet 5**：默认主力——编码与 agentic 已逼近 Opus 档，价格 3/5。
+
+**何时选 Fable 5**：只在明确需要天花板能力时。价格高于 Opus 档，且要求 **30 天数据保留**（零保留策略的组织调它每次都 400）。
+
+**何时选 Haiku**：分类、抽取、轻 RAG（top-k 后回答）、agent 中"工具调度员"角色、批量任务。
 
 **何时选 Haiku**：分类、抽取、轻 RAG（top-k 后回答）、agent 中"工具调度员"角色、批量任务。
 
 ### 13.2 对比 GPT-5 / Gemini 3
 
-| 维度 | Claude 4.x | GPT-5 | Gemini 3 |
+| 维度 | Claude 5 家族 | GPT-5 | Gemini 3 |
 |---|---|---|---|
-| 长上下文 | Sonnet 1M | 400k（GPT-5 main） | 1M Pro / 1M Flash（2M 在 Gemini 3.1 Pro） |
-| 思考链 | extended thinking（可见 / 加密） | reasoning model（o3-mini）独立产品线 | thinking mode |
-| Tool use | tool_use（成熟） | function calling（v3，Responses API） | function calling |
-| 多模态 | vision（不含音频生成） | vision + audio + voice | vision + audio + 视频原生 |
-| Prompt caching | ephemeral 5m/1h（成熟） | 自动 prompt caching（透明） | implicit + explicit |
+| 长上下文 | **1M 全系默认，无溢价** | 400k（GPT-5 main） | 1M Pro / 1M Flash（2M 在 Gemini 3.1 Pro） |
+| 思考链 | adaptive thinking + `effort` 五档（budget_tokens 已移除） | reasoning model 独立产品线 | thinking mode |
+| Tool use | tool_use（成熟）+ tool search / 程序化调用 | function calling（Responses API） | function calling |
+| 多模态 | vision（2576px 高分辨率，不含音频生成） | vision + audio + voice | vision + audio + 视频原生 |
+| Prompt caching | ephemeral 5m/1h（Opus 5 门槛降到 512 token） | 自动 prompt caching（透明） | implicit + explicit |
 | Batch | 50% | 50%（24h） | 50% |
-| 代码能力 | Opus 4.8 业界顶尖（SWE-bench 高分） | GPT-5 强 | Gemini 3 Pro 强 |
-| Agent loop | Anthropic agent SDK + Claude Code | OpenAI agents SDK | Google ADK |
+| 代码能力 | Opus 5 业界顶尖（SWE-bench 高分） | GPT-5 强 | Gemini 3 Pro 强 |
+| Agent harness | Claude Agent SDK / Managed Agents / Tool Runner（见 A17） | OpenAI agents SDK | Google ADK |
 
-**2026 年 5 月的真实选型经验**：
+**2026 年 8 月的真实选型经验**：
 
-- 复杂 Agent / 高准代码 → Opus 4.8
-- 默认主力 → Sonnet 4.6（性价比之王）
+- 复杂 Agent / 高准代码 → Opus 5
+- 默认主力 → Sonnet 5（性价比之王）
 - 高吞吐分类 → Haiku 4.5 或 Gemini Flash
-- 超长 context（书本 / 代码库） → Gemini 3 Pro（1M，需 2M 用 Gemini 3.1 Pro）或 Sonnet 4.6（1M）
+- 超长 context（书本 / 代码库） → Claude 全系 1M 已够；需 2M 用 Gemini 3.1 Pro
 - 需要 OpenAI 生态绑定（Whisper、TTS、Realtime API） → GPT-5 系列
 
 ### 13.3 MCP 与 Agent SDK
@@ -1211,7 +1291,7 @@ client.Messages.New(ctx, anthropic.MessageNewParams{
 
 **练习 3**：你要离线给 50 万条评论做情感分类。预算很紧。设计完整方案。
 
-**练习 4**：写 Go 函数 `callWithFallback(ctx, prompt)` —— 优先用 Opus 4.8；如果 429 或 529 退化到 Sonnet 4.6；如果再次 429 退化到 Haiku 4.5。每次重试要把 model 切到下一档。
+**练习 4**：写 Go 函数 `callWithFallback(ctx, prompt)` —— 优先用 Opus 5；如果 429 或 529 退化到 Sonnet 5；如果再次 429 退化到 Haiku 4.5。每次重试要把 model 切到下一档。
 
 **练习 5**：解释 extended thinking 与 tool use 同时启用时的事件顺序（SSE 里）。
 
@@ -1361,13 +1441,13 @@ messages = append(messages, anthropic.NewUserMessage(toolResults...))
 |---|---|
 | SDK 选型 | 官方 `anthropic-sdk-go`，必要时直接 HTTP |
 | Messages API | system 顶层、user/assistant 交替、max_tokens 必填 |
-| Prompt caching | cache_control ephemeral、4 个 breakpoint、5m/1h TTL、Sonnet 4.x 1024 / Opus 4.x · Haiku 4.5 4096 阈值 |
+| Prompt caching | cache_control ephemeral、4 个 breakpoint、5m/1h TTL、最小前缀按模型分档（512 / 1024 / 2048 / 4096） |
 | Cache 计费 | write 1.25x（5m）/ 2x（1h）；read 0.1x |
 | Streaming | SSE event：message_start / content_block_* / message_delta / message_stop |
 | Batch | input+output 半价、24h、最多 100k 请求 |
 | Files | 32MB PDF / 5MB 图片、file_id 引用 |
 | Tool use | stop_reason=tool_use → 收集 tool_use → 回填 tool_result → 再请求 |
-| Extended thinking | budget_tokens、thinking block、可见 / 加密 |
+| Thinking | adaptive thinking、`output_config.effort` 五档、`display` 默认 omitted、budget_tokens 已移除 |
 | Citations | RAG 自动标注来源 |
 | 重试 | 429 / 5xx / 529 退避；尊重 retry-after |
 | 限流 | RPM + TPM 双轨；input/output 分桶 |

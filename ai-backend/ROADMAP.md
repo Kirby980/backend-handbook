@@ -2,7 +2,7 @@
 
 > 配合 [INDEX.md](./INDEX.md) 与 [QUIZ.md](./QUIZ.md) 使用
 >
-> **📅 内容基准：2026 年 6 月**——Claude 4.x / GPT-5 / Gemini 3、MCP 主流化、prompt caching 普及、Langfuse / Phoenix 事实标准、pgvector / Pinecone / Milvus 三足鼎立。
+> **📅 内容基准：2026 年 8 月**——Claude 5 家族（Fable 5 / Opus 5 / Sonnet 5）/ GPT-5 / Gemini 3、1M context 全系默认无溢价、adaptive thinking + effort、MCP 主流化、harness engineering 成为新调优重心、Langfuse / Phoenix 事实标准、pgvector / Pinecone / Milvus 三足鼎立。
 
 ---
 
@@ -28,8 +28,9 @@ graph TD
     M4 --> A08[A08 Tool Use]
     M4 --> A09[A09 Agent 系统]
     M4 --> A10[A10 MCP]
+    M4 --> A17[A17 Agent Harness]
 
-    A10 --> M5[模块 5: 生产化]
+    A17 --> M5[模块 5: 生产化]
     M5 --> A11[A11 LLM Gateway]
     M5 --> A12[A12 流式 + SSE]
     M5 --> A13[A13 可观测性]
@@ -50,7 +51,7 @@ graph TD
     class A01,A02,A03 api
     class A04,A05 prompt
     class A06,A07 rag
-    class A08,A09,A10 agent
+    class A08,A09,A10,A17 agent
     class A11,A12,A13,A14,A15,A16 prod
 ```
 
@@ -72,8 +73,8 @@ graph LR
 ```mermaid
 flowchart TD
     Start[新建 LLM 应用] --> Need{首要需求?}
-    Need -->|超长上下文 + 推理| Claude["Claude Sonnet/Opus<br>1M context"]
-    Need -->|低延迟低成本| Haiku["Claude Haiku / GPT-5-mini"]
+    Need -->|超长上下文 + 推理| Claude["Claude Sonnet 5 / Opus 5<br>1M context 无溢价"]
+    Need -->|低延迟低成本| Haiku["Claude Haiku 4.5 / GPT-5-mini"]
     Need -->|多模态 + 长视频| Gemini[Gemini 3]
     Need -->|生态 + Assistants| GPT[GPT-5 / Responses API]
     Need -->|自托管 + 隐私| Local["Llama / Qwen / DeepSeek 本地"]
@@ -150,7 +151,7 @@ flowchart TD
 
 ---
 
-## 🔴 模块 4：Agent 与工具（A08-A10）
+## 🔴 模块 4：Agent 与工具（A08-A10、A17）
 
 ```mermaid
 graph TB
@@ -181,6 +182,39 @@ flowchart LR
     Style -->|Anthropic 推荐| Loop["agentic loop<br>消息循环"]
 
     style Loop fill:#4299e1,color:#fff
+```
+
+**A17：loop 之外的 harness 层**——A09 管 loop 何时停，A17 管每一圈给模型看什么：
+
+```mermaid
+flowchart TB
+    subgraph H["Harness（A17）"]
+        T["工具集设计<br>bash vs 专用 tool"]
+        C["context 生命周期<br>editing / compaction / memory"]
+        P["权限门控<br>审批 / 凭据隔离"]
+        S["子 agent 派生"]
+        V["verification loop<br>编译 / 测试信号回灌"]
+        B["预算与 effort"]
+    end
+    L["Agent Loop（A09）<br>stop_reason 状态机"]
+    H <--> L
+    L <--> M["模型"]
+
+    style H fill:#9f7aea,color:#fff
+    style L fill:#4299e1,color:#fff
+```
+
+**四条构建路径**（谁提供 harness / 谁提供部署）：
+
+```mermaid
+flowchart LR
+    Q{要什么}
+    Q -->|完全掌控循环| P1["① 手写 loop<br>harness 自建 · 自托管"]
+    Q -->|自定义工具 不想写循环| P2["② Tool Runner<br>SDK 给 loop · 自托管"]
+    Q -->|连沙箱一起托管| P3["③ Managed Agents<br>harness + 部署托管"]
+    Q -->|开箱即用编码 agent| P4["④ Claude Agent SDK<br>完整 harness · 自托管<br>（无 Go 版本）"]
+
+    style P3 fill:#ed8936,color:#fff
 ```
 
 ---
@@ -246,6 +280,7 @@ gantt
     A08 Tool Use                :a4, after a3, 7d
     section 月 3
     A09-A10 Agent + MCP         :a5, after a4, 14d
+    A17 Agent Harness           :a5b, after a5, 5d
     A11-A14 生产化              :a6, after a5, 14d
 ```
 
@@ -271,6 +306,7 @@ graph LR
     G3 --> G4[A08 Tool Use]
     G4 --> G5[A09 Agent]
     G5 --> G6[A10 MCP]
+    G6 --> G7[A17 Agent Harness]
 
     style G5 fill:#9f7aea,color:#fff
     style G6 fill:#ed8936,color:#fff
@@ -297,6 +333,7 @@ mindmap
       Tool Use A08
       系统 A09
       MCP A10
+      Harness A17
     生产
       Gateway A11
       Streaming A12
@@ -320,6 +357,7 @@ mindmap
 | A08 Tool Use | ⭐⭐⭐⭐ | 🔥🔥🔥🔥🔥 | Agent 基本盘 |
 | A09 Agent | ⭐⭐⭐⭐⭐ | 🔥🔥🔥🔥 | 2026 最热方向 |
 | A10 MCP | ⭐⭐⭐⭐ | 🔥🔥🔥🔥 | 新协议但已成主流 |
+| A17 Agent Harness | ⭐⭐⭐⭐⭐ | 🔥🔥🔥🔥🔥 | 2026 调优重心所在 |
 | A11 LLM Gateway | ⭐⭐⭐⭐ | 🔥🔥🔥🔥 | 多 provider 必须 |
 | A12 SSE | ⭐⭐⭐⭐ | 🔥🔥🔥🔥🔥 | UX 决定生死 |
 | A13 可观测性 | ⭐⭐⭐⭐ | 🔥🔥🔥🔥🔥 | 没有就是黑盒 |
@@ -346,7 +384,7 @@ mindmap
 ```mermaid
 graph LR
     subgraph 模型层
-    M1[Claude 3.5] --> M2[Claude 4.x<br>1M context]
+    M1[Claude 3.5] --> M2[Claude 4.x<br>1M context] --> M2b[Claude 5 家族<br>Fable/Opus/Sonnet]
     M3[GPT-4] --> M4[GPT-5<br>Responses API]
     M5[Gemini 1.5<br>2M context] --> M6[Gemini 3<br>1M context]
     end

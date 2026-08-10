@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块五 生产化
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：65 分钟
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 
 ---
 
@@ -130,7 +130,7 @@ LLM-as-Judge         $$      ★★★★   ★★      开放生成
 
 ### 2.2 LLM-as-Judge：让模型给模型打分
 
-核心思想：用一个**更强的模型**当裁判。比如评测 Sonnet 4.6 的输出可以用 Opus 4.8 / GPT-5 当 judge。
+核心思想：用一个**更强的模型**当裁判。比如评测 Sonnet 5 的输出可以用 Opus 5 / GPT-5 当 judge。
 
 **Pairwise（成对偏好）** 更稳定：
 
@@ -372,7 +372,7 @@ JUDGE_PROMPT = """你是严谨的评测员。请按 1-5 分评价以下回答。
 
 def judge(question: str, reference: str, answer: str) -> dict:
     resp = client.messages.create(
-        model="claude-opus-4-8",
+        model="claude-opus-5",
         max_tokens=200,
         messages=[{
             "role": "user",

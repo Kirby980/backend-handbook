@@ -1,7 +1,7 @@
 # A13 精通 LLM 可观测性
 
 > 适用读者：中高级 Go 工程师、AI 平台架构师、LLM 应用运维负责人
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 > 配套阅读：A01《精通 Claude API 工程化》、A12《精通 RAG 评测》、B24《精通可观测性》
 
 ---
@@ -114,8 +114,8 @@ LLM 延迟比传统 API 复杂得多：
 
 | 指标 | p50 参考 | p99 参考 |
 |------|---------|---------|
-| TTFT (Claude Sonnet 4.6) | 400ms | 1500ms |
-| TPS (Claude Sonnet 4.6) | 70 t/s | - |
+| TTFT (Claude Sonnet 5) | 400ms | 1500ms |
+| TPS (Claude Sonnet 5) | 70 t/s | - |
 | TTFT (Claude Haiku 4) | 200ms | 800ms |
 | TPS (Claude Haiku 4) | 120 t/s | - |
 | TTFT (GPT-5) | 350ms | 1200ms |
@@ -142,8 +142,8 @@ OpenTelemetry 的 GenAI Semantic Convention 截至 2026-05 仍处于 experimenta
 | 属性 | 含义 | 示例 |
 |------|------|------|
 | `gen_ai.system` | 提供商 | `anthropic`, `openai`, `google` |
-| `gen_ai.request.model` | 请求模型 | `claude-sonnet-4-6` |
-| `gen_ai.response.model` | 实际响应模型 | `claude-sonnet-4-6` |
+| `gen_ai.request.model` | 请求模型 | `claude-sonnet-5` |
+| `gen_ai.response.model` | 实际响应模型 | `claude-sonnet-5` |
 | `gen_ai.operation.name` | 操作类型 | `chat`, `embeddings`, `text_completion` |
 | `gen_ai.request.temperature` | 温度 | `0.7` |
 | `gen_ai.request.max_tokens` | 最大 token | `4096` |
@@ -152,7 +152,7 @@ OpenTelemetry 的 GenAI Semantic Convention 截至 2026-05 仍处于 experimenta
 | `gen_ai.response.finish_reasons` | 结束原因 | `["stop"]`, `["length"]` |
 | `gen_ai.conversation.id` | 会话 ID | `conv_abc123` |
 
-Span name 规范：`{operation} {model}`，例如 `chat claude-sonnet-4-6`。
+Span name 规范：`{operation} {model}`，例如 `chat claude-sonnet-5`。
 
 ### 3.2 Event 命名（消息体不放 attribute）
 
@@ -804,8 +804,8 @@ type Price struct {
 
 // 2026-05 参考价格（实际以官方为准）
 var Table = map[string]Price{
-    "claude-opus-4-8":    {5, 25, 0.50, 6.25},
-    "claude-sonnet-4-6":  {3, 15, 0.30, 3.75},
+    "claude-opus-5":    {5, 25, 0.50, 6.25},
+    "claude-sonnet-5":  {3, 15, 0.30, 3.75},
     "claude-haiku-4-5":   {1.00, 5.00, 0.10, 1.25},
     "gpt-5":              {1.25, 10, 0.125, 1.25},
     "gpt-5-mini":         {0.25, 2.00, 0.025, 0.25},
@@ -925,7 +925,7 @@ func RunGolden(cases []GoldenCase, llm Caller, judge Judger) []EvalResult {
         start := time.Now()
         out, usage := llm(c.Input)
         score := judge(c.Input, out, c.Expected)
-        cost := pricing.Compute("claude-sonnet-4-6", usage.In, usage.Out, 0, 0)
+        cost := pricing.Compute("claude-sonnet-5", usage.In, usage.Out, 0, 0)
         results = append(results, EvalResult{
             CaseID: c.ID, Score: score,
             Latency: time.Since(start), CostUSD: cost,

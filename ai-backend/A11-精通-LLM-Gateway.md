@@ -9,7 +9,7 @@
 ```go
 client := anthropic.NewClient(os.Getenv("ANTHROPIC_API_KEY"))
 resp, err := client.Messages.New(ctx, anthropic.MessageNewParams{
-    Model:     anthropic.F("claude-sonnet-4-6"),
+    Model:     anthropic.F("claude-sonnet-5"),
     MaxTokens: anthropic.F(int64(1024)),
     Messages:  anthropic.F([]anthropic.MessageParam{...}),
 })
@@ -124,7 +124,7 @@ LLM 路由比传统 API 路由复杂得多,因为决策维度本身就是多元�
 
 ### 3.1 按模型路由
 
-最基础的策略。客户端指定 `model: claude-sonnet-4-6`,Gateway 查表把它路由到 Anthropic。如果客户端用了 alias(如 `model: smart`),Gateway 解析 alias 后选择具体模型。alias 机制非常实用,因为它让你可以**在不改业务代码的前提下**全局升级模型。
+最基础的策略。客户端指定 `model: claude-sonnet-5`,Gateway 查表把它路由到 Anthropic。如果客户端用了 alias(如 `model: smart`),Gateway 解析 alias 后选择具体模型。alias 机制非常实用,因为它让你可以**在不改业务代码的前提下**全局升级模型。
 
 ```go
 type ModelAlias struct {
@@ -136,7 +136,7 @@ type ModelAlias struct {
 
 var aliases = map[string][]ModelAlias{
     "smart": {
-        {Alias: "smart", Provider: "anthropic", ModelID: "claude-sonnet-4-6", Weight: 100},
+        {Alias: "smart", Provider: "anthropic", ModelID: "claude-sonnet-5", Weight: 100},
     },
     "fast": {
         {Alias: "fast", Provider: "anthropic", ModelID: "claude-haiku-4-5", Weight: 80},
@@ -162,8 +162,9 @@ var aliases = map[string][]ModelAlias{
 | 模型 | Input $/MTok | Output $/MTok | 适合场景 |
 |------|-------------:|--------------:|---------|
 | claude-haiku-4-5 | 1.00 | 5.00 | 快速分类、简单摘要 |
-| claude-sonnet-4-6 | 3.00 | 15.00 | 通用任务、agentic |
-| claude-opus-4-8 | 15.00 | 75.00 | 复杂推理 |
+| claude-sonnet-5 | 3.00 | 15.00 | 通用任务、agentic |
+| claude-opus-5 | 5.00 | 25.00 | 复杂推理、agentic |
+| claude-fable-5 | 10.00 | 50.00 | 天花板能力 |
 | gpt-5-mini | 0.50 | 2.00 | 高并发简单任务 |
 | gpt-5 | 5.00 | 20.00 | 通用 |
 | gemini-2.5-pro | 2.50 | 10.00 | 多模态 |
@@ -190,7 +191,7 @@ Gateway 需要为每个(provider, model, key)组合维护一个健康分数,基�
 
 不同模型支持不同能力:
 
-| 能力 | Claude Sonnet 4.6 | GPT-5.5 | Gemini 3 Pro |
+| 能力 | Claude Sonnet 5 | GPT-5.5 | Gemini 3 Pro |
 |------|:-:|:-:|:-:|
 | 200K+ 上下文 | ✓ | ✓ | ✓(1M) |
 | 视觉输入 | ✓ | ✓ | ✓ |
@@ -644,7 +645,7 @@ func (cb *CircuitBreaker) Record(success bool) {
 chains:
   smart_chat:
     - provider: anthropic
-      model: claude-sonnet-4-6
+      model: claude-sonnet-5
       timeout: 30s
       retry: 1
     - provider: anthropic
@@ -1436,7 +1437,7 @@ Prompt injection、prompt extraction、jailbreak 攻击让 Gateway 不得不集�
 
 1. **多维度限流的优先级**:你的 Gateway 同时维护 (tenant_rpm, user_rpm, upstream_itpm) 三个维度。某次请求 tenant 通过、user 通过、upstream_itpm 失败。如何回滚已扣减的配额,并避免 race condition?写出 Go 代码。
 
-2. **Fallback 的容量规划**:主线 Claude Sonnet 4.6(峰值 RPM=10K),fallback 1 是 Haiku 4.5(峰值 RPM=20K),fallback 2 是 GPT-5(RPM=5K)。设计触发条件,使得 Sonnet 故障时不会立刻把 GPT-5 也打挂。
+2. **Fallback 的容量规划**:主线 Claude Sonnet 5(峰值 RPM=10K),fallback 1 是 Haiku 4.5(峰值 RPM=20K),fallback 2 是 GPT-5(RPM=5K)。设计触发条件,使得 Sonnet 故障时不会立刻把 GPT-5 也打挂。
 
 3. **Semantic cache 的 cache key**:相同的 query 文本,在不同 system prompt、不同 tool list、不同 user_id 下,什么时候可以共享缓存?写出你的 cache key 公式。
 

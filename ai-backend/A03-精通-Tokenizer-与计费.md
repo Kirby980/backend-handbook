@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块一 API 基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：65 分钟
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 
 ---
 
@@ -18,7 +18,7 @@
 
 LLM 不是按字符或单词收费——它按 **token** 计费。Token 是模型词表里的一个子词单位。BPE / SentencePiece / WordPiece 等不同算法切出来的 token 边界不一样，**同一句话在 GPT、Claude、Gemini 上 token 数能差 15-30%**。
 
-这看似小事，放到生产环境就是真金白银。一个用 Sonnet 4.6 处理 1M 输入的批量任务，按 0.3 USD/M 算缓存命中价大约 0.3 美元；按 3 USD/M 算未命中价是 3 美元——10 倍差距。再放大到日活十万的客服系统，月成本可以差**百万美元**。
+这看似小事，放到生产环境就是真金白银。一个用 Sonnet 5 处理 1M 输入的批量任务，按 0.3 USD/M 算缓存命中价大约 0.3 美元；按 3 USD/M 算未命中价是 3 美元——10 倍差距。再放大到日活十万的客服系统，月成本可以差**百万美元**。
 
 本章把 LLM 后端的"度量基础"拆开：
 
@@ -511,6 +511,8 @@ Claude vision 算法：图片按近似公式 `tokens ≈ (width × height) / 750
 2025.10   Claude Sonnet 4.5 1M beta     1M
 2025.12   GPT-5                         400k (main) / 1M (long-ctx beta)
 2026.03   Claude Sonnet 4.6 1M (GA)     1M
+2026.06   Claude Opus 4.8               1M (标准价，无长上下文溢价)
+2026.07   Claude 5 家族 (Fable/Opus/Sonnet)  1M 全系默认
 2026.02   Gemini 3.1 Pro                2M (GA)
 ```
 
@@ -527,7 +529,7 @@ Claude vision 算法：图片按近似公式 `tokens ≈ (width × height) / 750
 
 但 context 不是"越大越好"——存在**几个铁律**：
 
-1. **价格非线性**：超过某阈值（如 200k）按更高梯度计费（Sonnet 4.6 在 ≤ 200k 段 3/15 USD，> 200k 段 6/22.5 USD）
+1. **价格非线性**（**Claude 5 家族已取消这一档**——1M 按标准价计费，无长上下文溢价；Gemini 3 Pro 仍是 ≤200k 3.5/14、>200k 7/21 的分段）
 2. **延迟非线性**：1M 上下文首 token 延迟 5-20 秒
 3. **质量"中间丢失"现象（lost-in-the-middle）**：超长上下文中间部分召回率下降
 4. **memory / KV cache 成本**：模型推理时 KV cache 占显存与 context 长度线性相关
@@ -537,8 +539,8 @@ Claude vision 算法：图片按近似公式 `tokens ≈ (width × height) / 750
 ```
 任务：在 800k token 的代码库里找一个函数定义。
 
-Sonnet 4.6（200k 截断）：要先 RAG 检索 / chunk，召回率取决于 embedding 质量
-Sonnet 4.6（1M）：     可一次性扔进去，准确率高但单次成本 5-10x
+Sonnet 5（截断到 200k）：要先 RAG 检索 / chunk，召回率取决于 embedding 质量
+Sonnet 5（用满 1M）：     可一次性扔进去，准确率高、单次成本按标准价线性上升（无溢价档）
 Gemini 3 Pro（1M）： 可扔进去 + 视频 / 长音频；延迟最长（需 2M 用 Gemini 3.1 Pro）
 ```
 
@@ -546,7 +548,7 @@ Gemini 3 Pro（1M）： 可扔进去 + 视频 / 长音频；延迟最长（需 2
 
 ### 5.4 lost-in-the-middle 现象
 
-Liu et al. 2023 的研究：在长 context 中间放关键信息，准确率比放开头 / 结尾低 20-40%。2024-2025 模型逐步缓解，2026 年的 Claude Sonnet 4.6 / GPT-5 / Gemini 3 在 needle-in-haystack 基准上接近 100% 召回，但**复杂综合推理仍有衰减**。
+Liu et al. 2023 的研究：在长 context 中间放关键信息，准确率比放开头 / 结尾低 20-40%。2024-2025 模型逐步缓解，2026 年的 Claude Sonnet 5 / GPT-5 / Gemini 3 在 needle-in-haystack 基准上接近 100% 召回，但**复杂综合推理仍有衰减**。
 
 工程实践：
 
@@ -622,7 +624,7 @@ batch        0.5x   （部分平台）
 ### 6.3 输入 / 输出价差
 
 ```
-Sonnet 4.6 (≤ 200k 段):
+Sonnet 5:
   input  3 USD / 1M
   output 15 USD / 1M
   比例 5:1
@@ -651,7 +653,7 @@ Cache read         0.3 USD        (0.1x)   ← 关键
 
 **Cache read 比 cache write 便宜 10-20 倍**。这是 Anthropic 设计的核心动机——**鼓励长 system prompt + 多轮调用**。
 
-收益场景实测（Claude Sonnet 4.6）：
+收益场景实测（Claude Sonnet 5）：
 
 ```
 任务：50KB 知识库 + 10 KB 历史 + 1 KB 问题 → 1 KB 答案
@@ -752,12 +754,12 @@ C. Prompt caching + 长上下文  最适合"反复访问同样大上下文"
 #### 策略 A：每次都全文塞
 
 ```
-每次 input: 12.5M token (Sonnet 4.6 long-ctx 6 USD/M) = $75
-每次 output: 2k × 22.5 USD/M = $0.045
-100 次: $7504.5
+每次 input: 12.5M token (Sonnet 5，3 USD/M 标准价，1M 段无溢价) = $37.5
+每次 output: 2k × 15 USD/M = $0.03
+100 次: $3753
 ```
 
-不可行——单用户成本 7500 美元。
+不可行——单用户成本近 4000 美元。（注：Claude 5 家族取消了 >200k 的溢价档，这个数字比上一代砍半，但结论不变。）
 
 #### 策略 B：RAG（top-k = 5，每块 1k token）
 
@@ -816,7 +818,7 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 
 ---
 
-## 第九章：2026 年价格表（2026.05 数据）
+## 第九章：2026 年价格表（2026.08 数据）
 
 价格单位：USD per 1M tokens。仅供数量级参考，实际以官方为准。
 
@@ -825,9 +827,11 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 | 模型 | input | output | cache write 5m | cache read | batch input | batch output |
 |---|---|---|---|---|---|---|
 | **Anthropic** | | | | | | |
-| Claude Opus 4.8 | 15 | 75 | 18.75 | 1.5 | 7.5 | 37.5 |
-| Claude Sonnet 4.6 (≤ 200k) | 3 | 15 | 3.75 | 0.3 | 1.5 | 7.5 |
-| Claude Sonnet 4.6 (> 200k) | 6 | 22.5 | 7.5 | 0.6 | 3 | 11.25 |
+| Claude Fable 5 | 10 | 50 | 12.5 | 1 | 5 | 25 |
+| Claude Opus 5 | 5 | 25 | 6.25 | 0.5 | 2.5 | 12.5 |
+| Claude Opus 4.8 | 5 | 25 | 6.25 | 0.5 | 2.5 | 12.5 |
+| Claude Sonnet 5 | 3 | 15 | 3.75 | 0.3 | 1.5 | 7.5 |
+| Claude Sonnet 4.6 | 3 | 15 | 3.75 | 0.3 | 1.5 | 7.5 |
 | Claude Haiku 4.5 | 1 | 5 | 1.25 | 0.1 | 0.5 | 2.5 |
 | **OpenAI** | | | | | | |
 | GPT-5 | 5 | 25 | 2.5 (cached) | - | 2.5 | 12.5 |
@@ -852,22 +856,22 @@ LLM 进入 1M 时代后，新的工程话题——**context engineering**——�
 ```
 极便宜    GPT-5 nano / Gemini 3 Flash Lite / DeepSeek V3.5  (< 1 USD input)
 便宜      Haiku 4.5 / Gemini Flash / GLM-4.6 / Kimi K2          (1-2 USD)
-标准      Sonnet 4.6 / Gemini Pro / GPT-5 mini                  (1.5-5 USD)
-高端      GPT-5 / Opus 4.8 / o3                                  (5-15 USD)
-极致      o3-pro / Opus 4.8 + thinking heavy                     (10+ USD 实际算)
+标准      Sonnet 5 / Gemini Pro / GPT-5 mini                    (1.5-5 USD)
+高端      GPT-5 / Opus 5 / o3                                    (5-15 USD)
+极致      Fable 5 / o3-pro / Opus 5 + max effort                 (10+ USD 实际算)
 ```
 
-价格每年下降 30-50%——2026 比 2024 整体便宜 60-70%。
+价格每年下降 30-50%——2026 比 2024 整体便宜 60-70%。**Opus 档尤其明显**：Opus 4.1 时代 15/75，到 Opus 4.8 / Opus 5 已是 5/25。
 
 ### 9.3 实际选型经验
 
 ```
-日常 chatbot：           Sonnet 4.6 默认；Haiku 4.5 兜底
-高准代码 / Agent：       Opus 4.8
+日常 chatbot：           Sonnet 5 默认；Haiku 4.5 兜底
+高准代码 / Agent：       Opus 5
 高吞吐分类 / 抽取：       Haiku 4.5 / Gemini Flash / DeepSeek V3.5
-超长文档 (>200k)：       Sonnet 4.6 1M 或 Gemini 3 Pro 1M（需 2M 用 Gemini 3.1 Pro）
+超长文档 (>200k)：       Claude 全系 1M 无溢价；需 2M 用 Gemini 3.1 Pro
 中文专项：               Qwen3 Max / GLM-4.6 / DeepSeek V3.5
-强 reasoning：           o3 / Opus 4.8 (extended thinking)
+强 reasoning：           Fable 5 / o3 / Opus 5 (高 effort)
 本地 / 私有部署：         开源 LLaMA 4 / Qwen3 / DeepSeek V3.5
 ```
 
@@ -1316,11 +1320,13 @@ ORDER BY total_cost DESC;
 ### 2. 忘了 long-context 价格分段
 
 ```
-Sonnet 4.6 ≤ 200k:  3 / 15 USD
-Sonnet 4.6 > 200k:  6 / 22.5 USD
+Gemini 3 Pro ≤ 200k:  3.5 / 14 USD
+Gemini 3 Pro > 200k:  7 / 21 USD
 ```
 
 `total = input + output` 一过 200k 整条请求按贵价算（不是只算超出部分）。预算估算要按上下文长度判断。
+
+> ✅ **Claude 5 家族已取消这一档**——1M 全程按标准价线性计费，不再有阈值跳变。但 Gemini 等仍是分段计费，多 provider 路由时别把 Claude 的口径套过去。
 
 ### 3. cache write 没人 read 就被丢弃
 
@@ -1412,7 +1418,7 @@ Batch input/output 各 0.5x；记账时如果忘乘 0.5x，账单估算虚高一
 - 量化技术（FP8 推理普及）
 - 竞争压低 margin
 
-2026 年的"标杆"模型（Sonnet 4.6、Gemini 3 Pro、GPT-5）价格区间稳定在 3-7 USD input / 12-25 USD output。
+2026 年的"标杆"模型（Sonnet 5、Gemini 3 Pro、GPT-5）价格区间稳定在 3-7 USD input / 12-25 USD output。
 
 ### 13.2 Cache 普及
 
@@ -1478,7 +1484,7 @@ gen_ai.request.model              attribute
 ### 13.7 自托管的经济学
 
 ```
-托管 API (Sonnet 4.6):  3 USD / 1M input
+托管 API (Sonnet 5):    3 USD / 1M input
 自托管 LLaMA 4 70B:    GPU 4×H100 ≈ $40/h
   推理 ~ 50 token/s × 4 = 200 t/s
   1 小时 720k token = 0.72M token
@@ -1497,7 +1503,7 @@ gen_ai.request.model              attribute
 
 ## 第十四章：练习题
 
-**练习 1**：估算下面这段中文需要多少 Claude Sonnet 4.6 input token：
+**练习 1**：估算下面这段中文需要多少 Claude Sonnet 5 input token：
 
 > "在 2026 年的 LLM 后端工程实践中，prompt caching 已经成为标配能力——它把长 system prompt 的费用降到 1/10，但要求开发者主动管理 cache 边界与 TTL。"
 
@@ -1509,7 +1515,7 @@ gen_ai.request.model              attribute
 - 打 5min cache 的日成本（假设 80% 命中率）？
 - 打 1h cache 的日成本（假设 95% 命中率）？
 
-用 Sonnet 4.6（≤ 200k 段位）价格表算。
+用 Sonnet 5 价格表算（3 USD/M input，1M 全段统一价）。
 
 **练习 3**：解释为什么 OpenAI 的 cached input ×0.5x 与 Anthropic 的 cache_read ×0.1x 设计差距这么大。这两种模式背后的"经济鼓励"分别是什么？
 
@@ -1535,7 +1541,7 @@ func estimate(msgs []Message) int {
 - batch ×0.5x 折扣
 - 已知 cache 命中场景下：第一次 write，后续 read
 
-**练习 6**：用户在你的 SaaS 产品里上传了一份 1.5 MB（约 400k token）的 PDF，问 10 个问题。设计三种实现方案的成本对比（Sonnet 4.6）：
+**练习 6**：用户在你的 SaaS 产品里上传了一份 1.5 MB（约 400k token）的 PDF，问 10 个问题。设计三种实现方案的成本对比（Sonnet 5）：
 
 - 全部喂进去（每次 400k input）
 - RAG（top-5 chunk × 1k token）
@@ -1551,7 +1557,7 @@ func estimate(msgs []Message) int {
 4. 根据 usage 算实际 cost
 5. 写入租户配额账本
 
-**练习 9**：以下 prompt 在 Anthropic Sonnet 4.6 上 cache 命中率为何很低？怎么改？
+**练习 9**：以下 prompt 在 Anthropic Sonnet 5 上 cache 命中率为何很低？怎么改？
 
 ```go
 systemPrompt := fmt.Sprintf(
@@ -1579,7 +1585,7 @@ Claude 估算：110 × 1.18 ≈ 130 token
 **练习 2**：
 
 ```
-Sonnet 4.6 价格：input 3 USD/M，output 15 USD/M
+Sonnet 5 价格：input 3 USD/M，output 15 USD/M
                 cache write 5m 3.75，cache read 0.3
                 cache write 1h 6（注：1h 是 2x 不是 1.6x）
 

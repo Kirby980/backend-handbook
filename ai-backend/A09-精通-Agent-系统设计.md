@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块四 Agent 与工具
 > 难度：⭐⭐⭐⭐⭐
 > 预计阅读时间：75 分钟
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 
 ---
 
@@ -292,7 +292,7 @@ ReAct 是**反应式**的——每一步只考虑当前观察。问题：
 **Plan-and-Execute**（也叫 Plan-and-Solve）把任务拆两阶段：
 
 ```
-阶段 1（Planner，Opus 4.8 等强模型）：
+阶段 1（Planner，Opus 5 等强模型）：
   - 接收用户任务
   - 输出 step-by-step 计划（结构化 JSON）
 
@@ -1327,7 +1327,7 @@ type StepLog struct {
     ParentAgentID string  // sub-agent 时填父
     StepIdx       int
     Type          string  // "llm" | "tool"
-    Name          string  // tool 名 / "claude-sonnet-4-6"
+    Name          string  // tool 名 / "claude-sonnet-5"
     Input         json.RawMessage
     Output        json.RawMessage
     Tokens        int
@@ -1664,7 +1664,7 @@ LangGraph（开源框架）
 ```python
 # Python SDK 示例（Go 等价同样的 pattern）
 from anthropic import Agent
-agent = Agent(client=client, model="claude-sonnet-4-6", tools=[...], system="...")
+agent = Agent(client=client, model="claude-sonnet-5", tools=[...], system="...")
 result = agent.run("修这个 bug")
 ```
 
@@ -1725,7 +1725,7 @@ Agent 系统设计与 MCP 的边界：
 
 2026 年 5 月几个公认强势的 Agent 任务：
 
-- **代码工程**：Claude Code（Opus 4.8）—— SWE-bench Verified ~70%+
+- **代码工程**：Claude Code（Opus 5）—— SWE-bench Verified ~70%+
 - **网络浏览**：OpenAI Operator / Anthropic computer use ——能完成基础订机票、填表
 - **数据分析**：Code Interpreter（多家） + agent loop ——已能跑完整 EDA
 - **客服**：客户专属 Agent ——回答率 ~80%+，剩余 20% 转人工
@@ -1780,7 +1780,7 @@ func (a *Agent) Run(ctx context.Context, task string) (string, error) {
 
 **练习 6**：解释为什么"用 ReWOO 处理 debug 任务（找 codebase 中 bug）"是糟糕选择。
 
-**练习 7**：你的 Agent 用 Claude Sonnet 4.6，平均一次 task 跑 20 步、每步 input 5000 token + output 200 token。一天 1000 次 task。算一下日均成本（用 A01 的价格）。然后说明开 prompt caching 后能省多少。
+**练习 7**：你的 Agent 用 Claude Sonnet 5，平均一次 task 跑 20 步、每步 input 5000 token + output 200 token。一天 1000 次 task。算一下日均成本（用 A01 的价格）。然后说明开 prompt caching 后能省多少。
 
 **练习 8**：实现一个 `compactMessages(msgs []MessageParam, maxTokens int)` 函数——当 messages 总 token 超 `maxTokens` 时，把前半部分用 summary 替代。给出函数签名 + 算法描述。
 
@@ -1895,7 +1895,7 @@ func (o *Orchestrator) Run(ctx context.Context, task string) (string, error) {
 
 ```
 单次 task: 20 步 × (5000 input + 200 output) = 100,000 input + 4,000 output
-价格（Sonnet 4.6）: input $3/M, output $15/M
+价格（Sonnet 5）: input $3/M, output $15/M
 单次成本: 100k × 3/1M + 4k × 15/1M = $0.30 + $0.06 = $0.36
 日成本: $0.36 × 1000 = $360/day = ~$10,800/月
 ```

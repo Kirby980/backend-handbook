@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块五 生产化
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：65 分钟
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 
 ---
 
@@ -41,7 +41,7 @@ LLM 应用商业化的两座大山：
         - cache read × 缓存读折扣
 ```
 
-以 Claude Sonnet 4.6 为例（2026/05 估值）：
+以 Claude Sonnet 5 为例（2026/08 估值）：
 
 | 类目 | 价格（per MTok） |
 |---|---|
@@ -144,7 +144,7 @@ SYSTEM = """你是企业知识库助手。以下是规章制度（5000 tokens �
 ...."""
 
 resp = client.messages.create(
-    model="claude-sonnet-4-6",
+    model="claude-sonnet-5",
     max_tokens=500,
     system=[{
         "type": "text",
@@ -169,12 +169,13 @@ resp.usage
 
 ### 2.3 缓存什么放在哪
 
-**Anthropic 缓存规则**（2026/05）：
+**Anthropic 缓存规则**（2026/08）：
 
 - 缓存最多 4 个 breakpoint（`cache_control` 位置）
 - 缓存按 prefix 命中——前缀完全相同才命中
-- 缓存最小 1024 tokens（Sonnet），不够不生效
+- **最小前缀按模型分档，且不单调**：Opus 5 / Fable 5 为 **512**，Opus 4.8 / Sonnet 5 / Sonnet 4.6 为 **1024**，Opus 4.7 为 **2048**，Opus 4.6 / Haiku 4.5 为 **4096**。不够不生效，且**不报错**
 - TTL 默认 5min，GA 支持 1h cache（cache write 为 base 的 2x，5min 为 1.25x）
+- **回本点跟 TTL 相关**：5min TTL 两次请求即回本（1.25× + 0.1× = 1.35× vs 2×）；1h TTL 要三次以上（2× + 0.2× = 2.2× vs 3×）
 
 **正确摆放顺序**：
 
@@ -208,6 +209,9 @@ resp.usage
 - **冷启动**：第一个请求要写缓存（贵 25%）+ 后续才便宜，scale up 时容易踩
 - **多 user 隔离**：如果 system 里嵌了用户名，缓存就分流了——尽量保 system 全局
 - **provider 区别**：OpenAI 自动缓存（无需 hint），GPT-5 及更新模型折扣约 90%（cached input 付 10%）；Anthropic 需显式 cache_control，命中折扣约 90%
+- **并发 fan-out 全部 miss**：缓存条目要等第一个响应**开始流式输出**之后才可读。N 个前缀相同的请求同时发出去，全部按原价计费。正确姿势是先发 1 个、等到首 token 流出、再并发发剩下的
+- **单轮超过 20 个 content block**：cache 断点向前最多回溯 20 个 block 找已有条目。agentic loop 里一轮塞十几对 `tool_use`/`tool_result` 就会超，导致静默 miss——长 turn 里每约 15 块插一个中间断点（详见 A17 第四章）
+- **换模型 / 改 tool 集会全量失效**：缓存按模型隔离；tool 定义渲染在位置 0，增删任一 tool 都让 tools + system + messages 三层全灭。长会话里要动工具集，用 tool search 的 `defer_loading`（追加而非替换）
 
 ---
 
@@ -232,7 +236,7 @@ requests = [
     {
         "custom_id": f"task-{i}",
         "params": {
-            "model": "claude-sonnet-4-6",
+            "model": "claude-sonnet-5",
             "max_tokens": 200,
             "messages": [{"role": "user", "content": f"摘要：{doc}"}],
         },
@@ -276,11 +280,13 @@ for result in client.messages.batches.results(batch.id):
 意图分类器 (Haiku / 规则)
   │
   ├──► 简单 (闲聊 / FAQ)        → Haiku 4.5  ($5/M out)
-  ├──► 中等 (摘要 / 通用 QA)     → Sonnet 4.6 ($15/M out)
-  └──► 复杂 (推理 / 代码 / 长链路) → Opus 4.8  ($25/M out)
+  ├──► 中等 (摘要 / 通用 QA)     → Sonnet 5   ($15/M out)
+  └──► 复杂 (推理 / 代码 / 长链路) → Opus 5     ($25/M out)
 ```
 
 **省钱效应**：如果 60% 走 Haiku、30% Sonnet、10% Opus，平均成本只有"全用 Sonnet"的 30%。
+
+> 💡 **2026 年多了一个正交旋钮：`effort`。** 同一个模型，`output_config.effort` 从 `high`（默认）降到 `low`/`medium` 能显著削 token——它不只让模型"想得少"，还会让 tool call 更少更集中、前言更短。所以分级不再是一维的"选哪个模型"，而是**二维的（模型 × effort）**：一个 Opus 5 + `low` 在很多任务上比 Sonnet 5 + `high` 又好又便宜。迁移时务必重新扫一遍每条路由的 effort，别照搬上一代模型的默认值。
 
 ### 4.2 路由实现
 
@@ -289,10 +295,10 @@ for result in client.messages.batches.results(batch.id):
 ```python
 def route(query: str, history: list) -> str:
     if len(history) > 10 or "推理" in query or "对比" in query:
-        return "claude-opus-4-8"
+        return "claude-opus-5"
     if len(query) < 50 and is_smalltalk(query):
         return "claude-haiku-4-5"
-    return "claude-sonnet-4-6"
+    return "claude-sonnet-5"
 ```
 
 **LLM 分类**（精准但慢）：
@@ -348,7 +354,7 @@ client ─── network ───► gateway ─── network ───► LLM
 - **ITL (Inter-Token Latency)**：每个 token 间隔，约 20-50ms
 - **Total Latency** = TTFT + (output_tokens × ITL)
 
-**经验值**（Sonnet 4.6, 2026/05）：
+**经验值**（Sonnet 5, 2026/08）：
 
 | 输入 token | TTFT |
 |---|---|
@@ -531,9 +537,9 @@ async def call_llm(prompt):
 
 ```python
 PROVIDERS = [
-    ("anthropic", "claude-sonnet-4-6"),
-    ("bedrock", "anthropic.claude-sonnet-4-6"),
-    ("vertex", "claude-sonnet-4-6@anthropic"),
+    ("anthropic", "claude-sonnet-5"),
+    ("bedrock", "anthropic.claude-sonnet-5"),
+    ("vertex", "claude-sonnet-5@anthropic"),
 ]
 
 async def call_with_fallback(messages):
@@ -604,7 +610,7 @@ QPS 平均 5（高峰 20）
   - user message 80 tokens
   - history 1000 tokens
   - output 300 tokens
-模型：Sonnet 4.6
+模型：Sonnet 5
 单次成本：~$0.025
 月成本：5 QPS × 86400 × 30 / 1000 × $0.025 ≈ $325/day × 30 ≈ $9750
 ```

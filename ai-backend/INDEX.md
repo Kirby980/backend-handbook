@@ -1,10 +1,10 @@
 # AI / LLM 后端工程深度课程 · 总目录
 
-> 面向 Go / 后端工程师的 LLM 应用工程化系统进阶，共 16 篇万字长文
+> 面向 Go / 后端工程师的 LLM 应用工程化系统进阶，共 17 篇万字长文
 > 每篇约 10000-15000 字，含底层原理、Go 代码示例、生产实践、陷阱清单与练习题
 > 适合从"会调 OpenAI API"到"构建生产级 LLM 系统"的进阶
 >
-> **📅 内容基准：2026 年 6 月**——Claude Opus 4.8 / Sonnet 4.6 / Haiku 4.5、GPT-5.5、Gemini 3、MCP 主流化、prompt caching 普及、structured output / tool use 稳定、Langfuse / Arize Phoenix 可观测性事实标准、Pinecone / pgvector / Milvus 三足鼎立。
+> **📅 内容基准：2026 年 8 月**——Claude 5 家族（Fable 5 / Opus 5 / Sonnet 5）+ Haiku 4.5、GPT-5.5、Gemini 3、1M context 全系默认且无溢价、adaptive thinking + effort 取代 budget_tokens、MCP 主流化、harness engineering 成为新的调优重心、Langfuse / Arize Phoenix 可观测性事实标准、Pinecone / pgvector / Milvus 三足鼎立。
 
 ---
 
@@ -28,6 +28,7 @@
 | A14 | [精通 LLM 安全](./A14-精通-LLM-安全.md) | ⭐⭐⭐⭐ | prompt injection / output validation / PII / red team |
 | A15 | [精通 LLM Evaluation](./A15-精通-LLM-Evaluation.md) | ⭐⭐⭐⭐ | Ragas / LLM-as-Judge / golden set / 离线 + 在线 / Braintrust |
 | A16 | [精通 LLM 成本与延迟优化](./A16-精通-LLM-成本与延迟优化.md) | ⭐⭐⭐⭐ | prompt cache / batch / 分级路由 / TTFT / SLA |
+| A17 | [精通 Agent Harness 工程](./A17-精通-Agent-Harness-工程.md) | ⭐⭐⭐⭐⭐ | harness / 工具集设计 / context 生命周期 / 权限门控 / verification loop |
 
 ---
 
@@ -55,13 +56,14 @@
 - **A06 Embedding 与向量库**：embedding 模型选型（OpenAI text-embedding-3、Voyage、BGE、Cohere）、距离度量、pgvector / Pinecone / Milvus / Weaviate / Qdrant 对比
 - **A07 RAG 架构**：chunking 策略、混合检索（dense + BM25）、reranking（Cohere / Voyage）、评测（Ragas / 自建集）、常见失败模式
 
-### 🔴 模块四：Agent 与工具（A08-A10）
+### 🔴 模块四：Agent 与工具（A08-A10、A17）
 
 > 让模型"做事"而不只是"说话"。
 
 - **A08 Tool Use**：Anthropic tool_use / OpenAI function calling、JSON schema 设计、多轮 tool 循环、错误恢复、parallel tool calls
 - **A09 Agent 系统**：ReAct、Plan-and-Execute、Reflection、ReWOO、Multi-Agent、Anthropic 的 "agentic loop" 实践
 - **A10 MCP**：Model Context Protocol（2024-11 推出，2026 主流）、server / resource / tool / sampling、跟传统 API 的区别
+- **A17 Agent Harness**：模型之外那层运行时——工具集设计（bash vs 专用 tool）、context 生命周期（editing / compaction / memory）、权限门控与凭据隔离、子 agent、verification loop、四条构建路径（手写 loop / Tool Runner / Managed Agents / Claude Agent SDK）
 
 ### 🟣 模块五：生产化（A11-A16）
 
@@ -101,6 +103,7 @@
 - **A08**（Tool use）
 - **A09**（Agent 系统）
 - **A10**（MCP）
+- **A17**（Agent Harness）
 
 ### 路径 D：LLM 平台工程师（1-2 个月）
 
@@ -162,6 +165,8 @@
 - [ ] 设计一个 RAG 系统：选 embedding、选向量库、写 chunking、加 reranking、做评测
 - [ ] 写一个多轮 tool use 循环，处理 tool error 与超时
 - [ ] 用 Anthropic 的 agentic loop 写一个能"自主完成任务"的 Agent
+- [ ] 说清 harness 的七项职责，并判断一个需求该用手写 loop / Tool Runner / Managed Agents / Claude Agent SDK 哪条路径
+- [ ] 给一个 agent 加上 verification loop（编译 + 测试信号回灌），并解释为什么不能三个失败一起回灌
 - [ ] 实现一个 MCP server 暴露内部工具
 - [ ] 设计一个支持多 provider 路由、限流、降级的 LLM Gateway
 - [ ] 用 SSE 把 token stream 推给前端，支持断线重连
@@ -176,12 +181,13 @@
 
 | 章节 | 2026 必知 |
 |---|---|
-| **A01 Claude** | Claude 4.8 Opus / 4.6 Sonnet / 4.5 Haiku；Sonnet 4.6 支持 1M context；prompt caching 5min/1h；extended thinking GA；citations、files、batch、memory tool 等多个工具就绪 |
+| **A01 Claude** | Claude 5 家族发布：Fable 5 / Opus 5 / Sonnet 5（+ Haiku 4.5）；**1M context 全系默认且无长上下文溢价**；`budget_tokens` 被 adaptive thinking + `output_config.effort` 取代（老写法返回 400）；`thinking.display` 默认 `omitted`；`temperature`/`top_p`/`top_k` 在 Opus 5 / 4.8 / 4.7 / Fable 5 上移除；prompt cache 最小前缀降到 512（Opus 5） |
 | **A02 OpenAI** | GPT-5 系列发布；Responses API 替代 Chat Completions 成主推；Assistants v2 → 待并入 Responses |
-| **A03 Token** | 主流模型上下文：Claude 1M / Gemini 1M / GPT-5 400k；prompt caching 让长上下文经济性可控 |
+| **A03 Token** | 主流模型上下文：Claude 全系 1M / Gemini 1M / GPT-5 400k；Claude 取消 >200k 的溢价档，长上下文按标准价线性计费 |
 | **A07 RAG** | hybrid retrieval 成标配；late interaction（ColBERT/ColPali）兴起；BBQ 量化（ES 8.18 GA）让大库可负担 |
 | **A09 Agent** | Anthropic agentic loop / OpenAI agents SDK / LangGraph 三大方向；多 Agent 协作模式（Orchestrator-Worker）落地 |
 | **A10 MCP** | MCP 已是 IDE / Agent / Tool 的事实标准（Claude Code、Cursor、Windsurf 全部原生支持）；Anthropic / OpenAI / Google 联合推进 |
 | **A11 Gateway** | LiteLLM、Portkey、Helicone 成熟；OpenAI / Anthropic / Bedrock / Vertex 多源路由 |
 | **A13 可观测性** | OpenTelemetry GenAI semantic convention 稳定；Langfuse 开源版成事实标准 |
 | **A14 安全** | OWASP LLM Top 10 (2025) 是基线；NIST AI RMF 在企业普及 |
+| **A17 Harness** | 调优重心从 prompt → context → **harness engineering**；Claude Agent SDK（Claude Code 打包成库，无 Go 版本）、Managed Agents（harness + 沙箱托管）、Tool Runner 三条路径成型；服务端 compaction / context editing / memory 已是 API 原生能力；"凭据不进沙箱、出口注入"成为托管方案默认设计 |

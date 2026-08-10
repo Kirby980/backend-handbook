@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块一 API 基础
 > 难度：⭐⭐⭐⭐
 > 预计阅读时间：70 分钟
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 
 ---
 
@@ -26,7 +26,7 @@ promptB := `你是一位专业的情感分析专家。请判断下面文本的�
 
 2026 年 5 月，业界对 Prompt 工程的认识已经从"玄学魔咒"演化成"软件工程"：
 
-- **模型上限取决于 prompt**。Sonnet 4.6 用糟糕 prompt 也跑不赢 Haiku 4.5 用好 prompt
+- **模型上限取决于 prompt**。Sonnet 5 用糟糕 prompt 也跑不赢 Haiku 4.5 用好 prompt
 - **Prompt 也是代码**。需要版本管理、测试、回归、CI/CD
 - **评测是 Prompt 工程的核心**。没有评测的 prompt 调优等于盲调
 - **结构化输出已成标配**。json_schema / XML 标签 / function calling 把"模型输出"变成"程序输入"
@@ -267,7 +267,7 @@ func selectExamples(input string, pool []Example, k int) []Example {
 排序 2: [正面, 中性, 负面] → 输入 → 模型倾向输出 "负面"
 ```
 
-这种偏差在 GPT-3.5 时代特别严重，2026 年的旗舰模型（Opus 4.8、GPT-5、Gemini 3 Pro）已大幅减弱但**未消失**。
+这种偏差在 GPT-3.5 时代特别严重，2026 年的旗舰模型（Opus 5、GPT-5、Gemini 3 Pro）已大幅减弱但**未消失**。
 
 应对：
 
@@ -1079,7 +1079,7 @@ prompts/
 ```yaml
 # metadata.yaml
 version: "1.0.0"
-model: "claude-sonnet-4-6"
+model: "claude-sonnet-5"
 temperature: 0.0
 max_tokens: 256
 description: "评论情感分类，三分类"
@@ -1342,7 +1342,7 @@ func judge(ctx context.Context, q, ref, cand string) (*JudgeResult, error) {
 
 LLM-as-Judge 的注意事项：
 
-- **裁判模型 ≥ 被评模型**——用 Opus 4.8 评 Haiku 4.5 输出，不要反过来
+- **裁判模型 ≥ 被评模型**——用 Opus 5 评 Haiku 4.5 输出，不要反过来
 - **位置偏差**——把候选答案 A、B 互换位置，结果可能不同；要做对称采样
 - **冗长偏差**——LLM judge 倾向给"长答案"高分；prompt 里要明确"长短不影响评分"
 - **格式偏差**——LLM judge 偏好 markdown 格式好的答案
@@ -1373,7 +1373,7 @@ prompts:
   - file://prompts/sentiment_v2.txt
 
 providers:
-  - id: anthropic:messages:claude-sonnet-4-6
+  - id: anthropic:messages:claude-sonnet-5
   - id: anthropic:messages:claude-haiku-4-5
 
 tests:
@@ -1854,7 +1854,7 @@ Agent 模式下，单次 prompt 设计变得不那么关键——**整个 agenti
 帮我写一个产品介绍页
 ```
 
-**练习 2**：你要用 Claude Sonnet 4.6 做"客服工单分类"——把工单分到 7 个类别。设计 prompt（system + few-shot）。约束：
+**练习 2**：你要用 Claude Sonnet 5 做"客服工单分类"——把工单分到 7 个类别。设计 prompt（system + few-shot）。约束：
 
 - 输出必须是单一类别 ID（cls_1 到 cls_7），不要解释
 - 输入可能包含 emoji、错别字
@@ -2312,7 +2312,7 @@ func detectInjection(input string) InjectionResult {
 - **BLEU / chrF**：自动指标，作为快速回归
 - **BERTScore / COMET**：语义级指标，比 BLEU 更接近人类判断
 - **人工 5 分制**：在 50-100 条 hold-out 上人工评分（准确性、流畅性、风格）
-- **LLM-judge**：用 Opus 4.8 给每条评分，作为 CI 自动指标
+- **LLM-judge**：用 Opus 5 给每条评分，作为 CI 自动指标
 - **A/B 用户偏好**：上线后做真实用户偏好测试
 
 人工 vs LLM-judge：

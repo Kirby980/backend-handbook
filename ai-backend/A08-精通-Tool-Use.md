@@ -4,7 +4,7 @@
 > 路线图来源：AI / LLM 后端工程 · 模块二 模型能力
 > 难度：⭐⭐⭐⭐⭐
 > 预计阅读时间：80 分钟
-> 内容基准：2026 年 6 月
+> 内容基准：2026 年 8 月
 
 ---
 
@@ -82,7 +82,7 @@ sequenceDiagram
 ```json
 // 请求 1
 {
-  "model": "claude-sonnet-4-6",
+  "model": "claude-sonnet-5",
   "max_tokens": 1024,
   "tools": [{
     "name": "get_weather",
@@ -116,7 +116,7 @@ sequenceDiagram
 
 // 请求 2（带回 tool 执行结果）
 {
-  "model": "claude-sonnet-4-6",
+  "model": "claude-sonnet-5",
   "max_tokens": 1024,
   "tools": [/* 同上 */],
   "messages": [
@@ -1697,7 +1697,7 @@ gen_ai.tool.invocation             # 单次 tool 执行
 
 ```
 gen_ai.system               = "anthropic"
-gen_ai.request.model        = "claude-sonnet-4-6"
+gen_ai.request.model        = "claude-sonnet-5"
 gen_ai.response.id          = "msg_01..."
 gen_ai.response.finish_reason = "tool_use"
 gen_ai.usage.input_tokens   = 1234
@@ -1853,8 +1853,8 @@ tool 实现里用 `http.DefaultClient.Get(url)`——没 ctx。上游 cancel 时
 
 | 模型 | tool use 准确率 | 并行 | 推荐场景 |
 |---|---|---|---|
-| Claude Opus 4.8 | 业界顶尖 | 是 | Agent / 复杂工具链 |
-| Claude Sonnet 4.6 | 优秀 | 是 | 默认主力 |
+| Claude Opus 5 | 业界顶尖 | 是 | Agent / 复杂工具链 |
+| Claude Sonnet 5 | 优秀 | 是 | 默认主力 |
 | Claude Haiku 4.5 | 良好 | 是（弱） | 简单 router / 单 tool |
 | GPT-5 / GPT-5-mini | 优秀 | 是 | OpenAI 生态绑定 |
 | GPT-5-thinking | 强（推理类 tool） | 是 | 需要 reasoning 的 Agent |
