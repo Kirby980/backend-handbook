@@ -1,6 +1,6 @@
 # 精通 Redis Cluster：16384 slot、gossip、MOVED/ASK、resharding
 
-> 关联章节：[06 复制与 Sentinel](./06-精通-Redis-复制与-Sentinel.md)、[10 性能模型](./10-精通-Redis-性能模型.md)、[14 客户端](./14-精通-Redis-客户端.md)
+> 关联章节：[06 复制与 Sentinel](./04-精通-Redis-复制与-Sentinel.md)、[10 性能模型](./08-精通-Redis-性能模型.md)、[14 客户端](./12-精通-Redis-客户端.md)
 
 ---
 

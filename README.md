@@ -2,9 +2,11 @@
 
 > 🚀 **在线体验**：[OfferPilot 后端知识库](https://offerpilot.yzenghe.top/) —— 支持全站内容在线浏览、多专题体系化学习与实战真题自测。
 
-> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **19 大专题、374 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
+> 一套面向**中级到高级**后端工程师的系统进阶课程，共 **20 大专题、388 篇万字长文**，每篇含底层原理、代码示例、生产实践、陷阱清单与练习题。
 >
-> **📅 内容基准：2026 年 6 月** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、Claude 4.x / GPT-5 / MCP 主流化、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）；Lua 5.5 / LuaJIT 2.1 / OpenResty 1.27；C++23（GCC 14 / Clang 18 / MSVC 19.4x）。
+> **📅 内容基准：2026 年 8 月（AI/LLM 专题）· 2026 年 6 月（其余专题）** —— HTTP/3 主流、TLS 1.3 + post-quantum、PostgreSQL 18、Redis 8 / Valkey、Kafka 4 (KRaft)、Go 1.26、Passkeys、OAuth 2.1 + DPoP、OpenTelemetry、Prometheus 3、**Claude 5 家族（Fable 5 / Opus 5 / Sonnet 5）/ GPT-5 / MCP 主流化 / harness engineering**、Kubernetes 1.36、Gateway API GA、Istio Ambient GA、Cilium eBPF；Linux 6.12 LTS（EEVDF / io_uring / cgroup v2 / eBPF / PSI）；Lua 5.5 / LuaJIT 2.1 / OpenResty 1.27；C++23（GCC 14 / Clang 18 / MSVC 19.4x）。
+>
+> 各专题的实际基准日期以其 `INDEX.md` 顶部标注为准。
 
 ---
 
@@ -12,29 +14,33 @@
 
 | 专题 | 篇数 | 难度 | 适合谁 | 入口 |
 |---|---|---|---|---|
-| 🟦 **Backend 通用** | 25 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 所有后端工程师 | [backend/](./backend/INDEX.md) |
-| 🐹 **Go 语言** | 30 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Go 中高级工程师 | [golang/](./golang/INDEX.md) |
-| ☕ **Java 后端** | 32 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Java 中高级 / 面试备战 | [java/](./java/INDEX.md) |
-| 🐍 **Python 后端** | 30 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Python 中高级 / AI 后端 / 面试 | [python/](./python/INDEX.md) |
-| 🔷 **现代 C++** | 32 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | C++ 中高级 / 性能 / 系统 / 面试 | [cpp/](./cpp/INDEX.md) |
-| 🌙 **Lua / OpenResty** | 25 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 网关 / 游戏 / 嵌入式 / Neovim | [lua/](./lua/INDEX.md) |
+| 🟦 **Backend 通用** | 26 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 所有后端工程师 | [backend/](./backend/INDEX.md) |
+| 🐹 **Go 语言** | 32 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Go 中高级工程师 | [golang/](./golang/INDEX.md) |
+| ☕ **Java 后端** | 33 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Java 中高级 / 面试备战 | [java/](./java/INDEX.md) |
+| 🐍 **Python 后端** | 31 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | Python 中高级 / AI 后端 / 面试 | [python/](./python/INDEX.md) |
+| 🔷 **现代 C++** | 33 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | C++ 中高级 / 性能 / 系统 / 面试 | [cpp/](./cpp/INDEX.md) |
+| 🌙 **Lua / OpenResty** | 26 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 网关 / 游戏 / 嵌入式 / Neovim | [lua/](./lua/INDEX.md) |
 | 🐬 **MySQL** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用开发 | [mysql/](./mysql/INDEX.md) |
 | 🐘 **PostgreSQL** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | DBA / 应用 / 平台 / AI | [postgresql/](./postgresql/INDEX.md) |
 | 🟥 **Redis** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐ | 缓存 / 高并发场景 | [redis/](./redis/INDEX.md) |
 | 🍃 **MongoDB** | 12 | ⭐⭐⭐ — ⭐⭐⭐⭐ | 文档库使用者 | [mongodb/](./mongodb/INDEX.md) |
 | 📨 **Kafka** | 12 | ⭐⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 流式 / 消息系统 | [kafka/](./kafka/INDEX.md) |
 | 🔎 **Elasticsearch** | 11 | ⭐⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 搜索 / 日志分析 | [elasticsearch/](./elasticsearch/INDEX.md) |
-| 🤖 **AI / LLM 后端** | 16 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | LLM 应用工程化 | [ai-backend/](./ai-backend/INDEX.md) |
+| 🤖 **AI / LLM 后端** | 17 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | LLM 应用工程化 | [ai-backend/](./ai-backend/INDEX.md) |
 | ☸️ **云原生 / K8s** | 16 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 平台 / SRE / 应用上云 | [cloud-native/](./cloud-native/INDEX.md) |
 | 🕸️ **微服务架构** | 22 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 架构师 / 后端 / SRE | [microservices/](./microservices/INDEX.md) |
 | 🐧 **Linux / 操作系统** | 20 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 后端 / SRE / 平台 | [linux/](./linux/INDEX.md) |
+| 🎓 **计算机基础（408）** | 31 | ⭐⭐ — ⭐⭐⭐⭐⭐ | 考研 408 / 补理论基础 | [cs-basics/](./cs-basics/INDEX.md) |
 | 🏛️ **系统设计** | 15 | ⭐⭐⭐ — ⭐⭐⭐⭐⭐ | 面试备战 / 后端 / 架构师 | [system-design/](./system-design/INDEX.md) |
 | 🧮 **算法面试** | 20 | ⭐⭐ — ⭐⭐⭐⭐⭐ | 面试备战 / 编码面试 | [algorithm/](./algorithm/INDEX.md) |
 | 🗣️ **求职与面试软技能** | 10 | ⭐⭐⭐ — ⭐⭐⭐⭐ | 求职全流程 / 简历 / 模拟面试 | [interview-skills/](./interview-skills/INDEX.md) |
 
+> 🎓 **计算机基础（408）已全部完成**：数据结构 8 篇 + 计算机组成原理 8 篇 + 操作系统 9 篇 + 计算机网络 6 篇，共 31 篇。四科各配 `INDEX / ROADMAP / QUIZ`，数据结构每章附力扣题单。
+
 - `INDEX.md` —— 总目录、模块划分、学习路径
 - `ROADMAP.md` —— Mermaid 可视化路线图
 - `QUIZ.md` —— 配套测验与答案
+- `libraries/` —— Go / Java / Python / C++ / Lua 五个语言专题各附一份**生态库选型地图**
 
 ---
 
@@ -87,9 +93,19 @@ ai-backend/ A01–A03（API 基础）  →  A04–A05（Prompt 与上下文）
    ↓
 ai-backend/ A06–A07（Embedding + RAG）+ postgresql/ P06 pgvector + elasticsearch/ 向量检索
    ↓
-ai-backend/ A08–A10（Tool Use + Agent + MCP）
+ai-backend/ A08–A10 + A17（Tool Use + Agent + MCP + Harness 工程）
    ↓
-ai-backend/ A11–A14（Gateway / SSE / 可观测 / 安全）+ backend/ B21 限流、B24 可观测
+ai-backend/ A11–A16（Gateway / SSE / 可观测 / 安全 / 评测 / 成本延迟）+ backend/ B21 限流、B24 可观测
+```
+
+### 路径 L：计算机基础补课 / 408 备考（1-6 个月）
+
+```
+cs-basics/ DS01–DS08（数据结构，45 分，最耗时）
+   ↓ 边学边刷各章配套力扣题单
+CO01–CO08（组成原理，45 分）→ OS01–OS09（操作系统，35 分）→ CN01–CN06（网络，25 分）
+   ↓ 工程视角对照
+linux/（内核实现）、algorithm/（刷题技巧）、backend/ B01–B02（网络应用层）
 ```
 
 ### 路径 G：PostgreSQL 专家（2-3 个月）
@@ -192,6 +208,7 @@ ai-backend/ 全套（LLM 应用工程化：RAG / Agent / MCP）
 ├── cloud-native/    # 云原生 16 篇（Docker/K8s/Gateway API/Service Mesh/Operator/GitOps/Serverless/多集群）
 ├── microservices/   # 微服务 22 篇（DDD/通信/服务发现/分布式事务/韧性/网格/可观测/安全/反模式）
 ├── linux/           # Linux/OS 20 篇（架构/进程/调度/内存/I/O/网络/IPC/同步/容器/eBPF/systemd）
+├── cs-basics/       # 计算机基础 408 31 篇（数据结构 8/组成原理 8/操作系统 9/计算机网络 6）
 ├── system-design/   # 系统设计 15 篇（方法论/估算/接入/数据层/缓存/秒杀/Feed/IM/网盘/搜索/附近/延迟队列/支付）
 ├── algorithm/       # 算法面试 20 篇（复杂度/双指针/滑窗/二分/回溯/树图/DP/贪心/字符串/位运算）
 └── interview-skills/ # 求职与面试软技能 10 篇（简历/JD对标/自我介绍/项目深挖/行为面试/HR/反问/谈薪/表达复盘）
@@ -210,7 +227,8 @@ ai-backend/ 全套（LLM 应用工程化：RAG / Agent / MCP）
 
 ## 🔄 内容版本
 
-- **最近一次内容基准对齐**：2026-06
+- **最近一次内容基准对齐**：2026-08（AI/LLM 专题：Claude 5 家族 / harness engineering）；其余专题 2026-06
+- **最近完成**：`cs-basics/` 计算机基础 408 系列（31/31 篇，四科配套 INDEX / ROADMAP / QUIZ 齐备）
 - **更新原则**：跟随主流技术栈每 6–12 个月迭代一次，重大变更（如 Kafka 5、Go 1.27、PostgreSQL 19）随版本号同步
 
 ---

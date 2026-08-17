@@ -1,7 +1,7 @@
 # 精通 Redis 数据结构内部：SDS、listpack、quicklist、skiplist 与 dict
 
 > 路线图来源：[Redis 官方数据类型介绍](https://redis.io/docs/latest/develop/data-types/) + Redis 8.x 源码
-> 关联章节：[R02 内存与过期](./04-精通-Redis-内存与过期.md)、[R08 性能模型](./10-精通-Redis-性能模型.md)
+> 关联章节：[R02 内存与过期](./02-精通-Redis-内存与过期.md)、[R08 性能模型](./08-精通-Redis-性能模型.md)
 
 ---
 

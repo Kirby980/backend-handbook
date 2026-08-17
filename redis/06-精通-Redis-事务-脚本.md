@@ -1,6 +1,6 @@
 # 精通 Redis 事务、Pipeline 与脚本：MULTI/EXEC、Lua、Functions
 
-> 关联章节：[07 Cluster](./07-精通-Redis-Cluster.md)、[09 Streams](./09-精通-Redis-Streams.md)、[10 性能模型](./10-精通-Redis-性能模型.md)
+> 关联章节：[07 Cluster](./05-精通-Redis-Cluster.md)、[09 Streams](./07-精通-Redis-Streams.md)、[10 性能模型](./08-精通-Redis-性能模型.md)
 
 ---
 

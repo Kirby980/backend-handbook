@@ -1,6 +1,6 @@
 # 精通 Redis Streams 与发布订阅：消息流、Consumer Group、Sharded Pub/Sub
 
-> 关联章节：[08 事务与脚本](./08-精通-Redis-事务-脚本.md)、[07 Cluster](./07-精通-Redis-Cluster.md)、[12 生产实践](./12-精通-Redis-生产实践.md)
+> 关联章节：[08 事务与脚本](./06-精通-Redis-事务-脚本.md)、[07 Cluster](./05-精通-Redis-Cluster.md)、[12 生产实践](./10-精通-Redis-生产实践.md)
 
 ---
 

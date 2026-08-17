@@ -1,6 +1,6 @@
 # 精通 Redis 生产实践与陷阱：bigkey、hotkey、三大缓存问题、ACL
 
-> 关联章节：[04 内存与过期](./04-精通-Redis-内存与过期.md)、[07 Cluster](./07-精通-Redis-Cluster.md)、[10 性能模型](./10-精通-Redis-性能模型.md)
+> 关联章节：[04 内存与过期](./02-精通-Redis-内存与过期.md)、[07 Cluster](./05-精通-Redis-Cluster.md)、[10 性能模型](./08-精通-Redis-性能模型.md)
 
 ---
 

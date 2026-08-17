@@ -1,6 +1,6 @@
 # 精通 Redis 主从复制与 Sentinel：PSYNC2、故障转移、split-brain
 
-> 关联章节：[05 持久化](./05-精通-Redis-持久化.md)、[07 Cluster](./07-精通-Redis-Cluster.md)、[10 性能模型](./10-精通-Redis-性能模型.md)
+> 关联章节：[05 持久化](./03-精通-Redis-持久化.md)、[07 Cluster](./05-精通-Redis-Cluster.md)、[10 性能模型](./08-精通-Redis-性能模型.md)
 
 ---
 
@@ -11,7 +11,7 @@
 1. **主从复制（replication）**：异步把主节点的写入复制到一个或多个从节点；从节点可以承担读请求。**仍然需要人手动做故障转移**。
 2. **Sentinel**：在主从之上加一个监控集群，自动检测主节点故障并提升某个从节点为新主。
 
-> 注意：Sentinel 不解决"水平扩展"——所有节点存全量数据。要分片去看 [07 Cluster](./07-精通-Redis-Cluster.md)。
+> 注意：Sentinel 不解决"水平扩展"——所有节点存全量数据。要分片去看 [07 Cluster](./05-精通-Redis-Cluster.md)。
 
 读完之后你应该能：
 

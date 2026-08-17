@@ -786,4 +786,4 @@ SELECT count(*)::float / 10 AS recall FROM hnsw;
 - DiskANN 论文：Subramanya et al., *DiskANN: Fast Accurate Billion-point Nearest Neighbor Search on a Single Node*（NeurIPS 2019）
 - Matryoshka Embeddings：[matryoshka.dev](https://matryoshka.dev/)
 - OpenAI embedding 文档：[platform.openai.com/docs/guides/embeddings](https://platform.openai.com/docs/guides/embeddings)
-- 关联章节 — [P05 多类型索引](./05-精通-多类型索引.md)、[P12 JSONB 与全文检索](./12-精通-JSONB-与全文检索.md)、[P18 扩展生态](./18-精通-扩展生态.md)、[ai-backend/A06 Embedding 与 RAG](../ai-backend/A06-精通-Embedding-与-RAG.md)
+- 关联章节 — [P05 多类型索引](./05-精通-多类型索引.md)、[P12 JSONB 与全文检索](./12-精通-JSONB-与全文检索.md)、[P18 扩展生态](./18-精通-扩展生态.md)、[ai-backend/A06 Embedding 与 RAG](../ai-backend/A06-精通-Embedding-与向量库.md)
