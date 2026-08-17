@@ -12,12 +12,14 @@
 
 | 科目 | 篇数 | 目录 | 408 分值 | 重点 |
 |---|---|---|---|---|
-| 🔷 **数据结构** | 8 | [data-structure/](./data-structure/) | 45 分 | 线性表 / 树 / 图 / 查找 / 排序 |
-| 🔶 **计算机组成原理** | 8 | [computer-organization/](./computer-organization/) | 45 分 | 数据表示 / 存储 / 指令 / CPU / 总线 / I/O |
-| 🟩 **操作系统** | 9 | [operating-system/](./operating-system/) | 35 分 | 进程 / 同步 / 死锁 / 内存 / 文件 / I/O |
-| 🟦 **计算机网络** | 6 | [computer-network/](./computer-network/) | 25 分 | 分层 / 链路 / 网络 / 传输 / 应用 |
+| 🔷 **数据结构** | 8 | [data-structure/](./data-structure/INDEX.md) | 45 分 | 线性表 / 树 / 图 / 查找 / 排序 |
+| 🔶 **计算机组成原理** | 8 | [computer-organization/](./computer-organization/INDEX.md) | 45 分 | 数据表示 / 存储 / 指令 / CPU / 总线 / I/O |
+| 🟩 **操作系统** | 9 | [operating-system/](./operating-system/INDEX.md) | 35 分 | 进程 / 同步 / 死锁 / 内存 / 文件 / I/O |
+| 🟦 **计算机网络** | 6 | [computer-network/](./computer-network/INDEX.md) | 25 分 | 分层 / 链路 / 网络 / 传输 / 应用 |
 
-合计 **31 篇**。408 总分 150（含 30 分选择题跨科），本系列按考纲章节组织，不按分值裁剪。
+合计 **31 篇，已全部完成**。408 总分 150（含 30 分选择题跨科），本系列按考纲章节组织，不按分值裁剪。
+
+每科子目录下配 `INDEX.md`（该科总目录与模块划分）、`ROADMAP.md`（Mermaid 路线图）、`QUIZ.md`（每章 5 题 + 参考答案）。
 
 ---
 
@@ -40,45 +42,51 @@
 
 ## 🔶 计算机组成原理（CO01-CO08）
 
+> 计算题占比最高的一科：进制转换、IEEE 754、Cache 命中率、流水线加速比、总线带宽。详见 [computer-organization/INDEX.md](./computer-organization/INDEX.md)。
+
 | # | 课程 | 408 考纲章节 | 难度 |
 |---|---|---|---|
-| CO01 | 计算机系统概述与性能指标 | 第 1 章 | ⭐⭐ |
-| CO02 | 数据的表示：定点、浮点与 IEEE 754 | 第 2 章 | ⭐⭐⭐⭐ |
-| CO03 | 运算方法与运算器（ALU / 加法器 / 乘除法） | 第 2 章 | ⭐⭐⭐⭐ |
-| CO04 | 存储系统：层次结构、SRAM/DRAM 与主存 | 第 3 章 | ⭐⭐⭐ |
-| CO05 | Cache 与虚拟存储器 | 第 3 章 | ⭐⭐⭐⭐⭐ |
-| CO06 | 指令系统：格式、寻址方式与 CISC/RISC | 第 4 章 | ⭐⭐⭐⭐ |
-| CO07 | 中央处理器：数据通路、控制器与流水线 | 第 5 章 | ⭐⭐⭐⭐⭐ |
-| CO08 | 总线与输入输出系统（中断 / DMA） | 第 6-7 章 | ⭐⭐⭐⭐ |
+| CO01 | [计算机系统概述与性能指标](./computer-organization/CO01-精通-计算机系统概述与性能指标.md) | 第 1 章 | ⭐⭐ |
+| CO02 | [数据的表示：定点、浮点与 IEEE 754](./computer-organization/CO02-精通-数据的表示与-IEEE-754.md) | 第 2 章 | ⭐⭐⭐⭐ |
+| CO03 | [运算方法与运算器（ALU / 加法器 / 乘除法）](./computer-organization/CO03-精通-运算方法与运算器.md) | 第 2 章 | ⭐⭐⭐⭐ |
+| CO04 | [存储系统：层次结构、SRAM/DRAM 与主存](./computer-organization/CO04-精通-存储系统.md) | 第 3 章 | ⭐⭐⭐ |
+| CO05 | [Cache 与虚拟存储器](./computer-organization/CO05-精通-Cache-与虚拟存储器.md) | 第 3 章 | ⭐⭐⭐⭐⭐ |
+| CO06 | [指令系统：格式、寻址方式与 CISC/RISC](./computer-organization/CO06-精通-指令系统.md) | 第 4 章 | ⭐⭐⭐⭐ |
+| CO07 | [中央处理器：数据通路、控制器与流水线](./computer-organization/CO07-精通-中央处理器.md) | 第 5 章 | ⭐⭐⭐⭐⭐ |
+| CO08 | [总线与输入输出系统（中断 / DMA）](./computer-organization/CO08-精通-总线与输入输出系统.md) | 第 6-7 章 | ⭐⭐⭐⭐ |
 
 ---
 
 ## 🟩 操作系统（OS01-OS09）
 
+> 概念密集、大题集中在调度计算、银行家算法、地址变换、页面置换、磁盘调度。详见 [operating-system/INDEX.md](./operating-system/INDEX.md)。
+
 | # | 课程 | 408 考纲章节 | 难度 |
 |---|---|---|---|
-| OS01 | 操作系统概述与运行环境（内核态 / 中断 / 系统调用） | 第 1 章 | ⭐⭐⭐ |
-| OS02 | 进程与线程 | 第 2 章 | ⭐⭐⭐⭐ |
-| OS03 | CPU 调度算法 | 第 2 章 | ⭐⭐⭐ |
-| OS04 | 同步与互斥：信号量、管程与经典同步问题 | 第 2 章 | ⭐⭐⭐⭐⭐ |
-| OS05 | 死锁：预防、避免、检测与解除 | 第 2 章 | ⭐⭐⭐⭐ |
-| OS06 | 内存管理：连续分配、分页、分段与段页式 | 第 3 章 | ⭐⭐⭐⭐ |
-| OS07 | 虚拟内存：请求分页与页面置换算法 | 第 3 章 | ⭐⭐⭐⭐⭐ |
-| OS08 | 文件管理 | 第 4 章 | ⭐⭐⭐ |
-| OS09 | 磁盘与 I/O 管理 | 第 4-5 章 | ⭐⭐⭐⭐ |
+| OS01 | [操作系统概述与运行环境（内核态 / 中断 / 系统调用）](./operating-system/OS01-精通-操作系统概述与运行环境.md) | 第 1 章 | ⭐⭐⭐ |
+| OS02 | [进程与线程](./operating-system/OS02-精通-进程与线程.md) | 第 2 章 | ⭐⭐⭐⭐ |
+| OS03 | [CPU 调度算法](./operating-system/OS03-精通-CPU-调度.md) | 第 2 章 | ⭐⭐⭐ |
+| OS04 | [同步与互斥：信号量、管程与经典同步问题](./operating-system/OS04-精通-同步与互斥.md) | 第 2 章 | ⭐⭐⭐⭐⭐ |
+| OS05 | [死锁：预防、避免、检测与解除](./operating-system/OS05-精通-死锁.md) | 第 2 章 | ⭐⭐⭐⭐ |
+| OS06 | [内存管理：连续分配、分页、分段与段页式](./operating-system/OS06-精通-内存管理.md) | 第 3 章 | ⭐⭐⭐⭐ |
+| OS07 | [虚拟内存：请求分页与页面置换算法](./operating-system/OS07-精通-虚拟内存.md) | 第 3 章 | ⭐⭐⭐⭐⭐ |
+| OS08 | [文件管理](./operating-system/OS08-精通-文件管理.md) | 第 4 章 | ⭐⭐⭐ |
+| OS09 | [磁盘与 I/O 管理](./operating-system/OS09-精通-磁盘与-IO-管理.md) | 第 4-5 章 | ⭐⭐⭐⭐ |
 
 ---
 
 ## 🟦 计算机网络（CN01-CN06）
 
+> 分值最低但最好拿分：性能指标计算、CRC / 海明码、子网划分、TCP 拥塞窗口是四大计算题。详见 [computer-network/INDEX.md](./computer-network/INDEX.md)。
+
 | # | 课程 | 408 考纲章节 | 难度 |
 |---|---|---|---|
-| CN01 | 网络体系结构与性能指标 | 第 1 章 | ⭐⭐⭐ |
-| CN02 | 物理层与数据链路层 | 第 2-3 章 | ⭐⭐⭐⭐ |
-| CN03 | 局域网与介质访问控制（CSMA/CD、以太网、VLAN） | 第 3 章 | ⭐⭐⭐⭐ |
-| CN04 | 网络层：IP、子网划分、路由算法 | 第 4 章 | ⭐⭐⭐⭐⭐ |
-| CN05 | 传输层：UDP、TCP 与拥塞控制 | 第 5 章 | ⭐⭐⭐⭐⭐ |
-| CN06 | 应用层：DNS、FTP、Email、HTTP | 第 6 章 | ⭐⭐⭐ |
+| CN01 | [网络体系结构与性能指标](./computer-network/CN01-精通-网络体系结构与性能指标.md) | 第 1 章 | ⭐⭐⭐ |
+| CN02 | [物理层与数据链路层](./computer-network/CN02-精通-物理层与数据链路层.md) | 第 2-3 章 | ⭐⭐⭐⭐ |
+| CN03 | [局域网与介质访问控制（CSMA/CD、以太网、VLAN）](./computer-network/CN03-精通-局域网与介质访问控制.md) | 第 3 章 | ⭐⭐⭐⭐ |
+| CN04 | [网络层：IP、子网划分、路由算法](./computer-network/CN04-精通-网络层.md) | 第 4 章 | ⭐⭐⭐⭐⭐ |
+| CN05 | [传输层：UDP、TCP 与拥塞控制](./computer-network/CN05-精通-传输层.md) | 第 5 章 | ⭐⭐⭐⭐⭐ |
+| CN06 | [应用层：DNS、FTP、Email、HTTP](./computer-network/CN06-精通-应用层.md) | 第 6 章 | ⭐⭐⭐ |
 
 ---
 
@@ -140,11 +148,14 @@ DS01 → DS02 → DS03 → DS05 → DS07 → DS08 → DS06 → DS04
 
 ## 📋 配套资源
 
-每个子目录内含：
+> ✅ **当前进度**：31 篇正文全部完成，四科的 `INDEX / ROADMAP / QUIZ` 已配齐。
 
-- `INDEX.md` —— 该科总目录与知识点地图
-- `ROADMAP.md` —— Mermaid 依赖图与学习路线
-- `QUIZ.md` —— 选择题 + 计算题 + 答案解析
+| 科目 | 总目录 | 路线图 | 测验 |
+|---|---|---|---|
+| 数据结构 | [INDEX](./data-structure/INDEX.md) | [ROADMAP](./data-structure/ROADMAP.md) | [QUIZ](./data-structure/QUIZ.md)（40 题） |
+| 计算机组成原理 | [INDEX](./computer-organization/INDEX.md) | [ROADMAP](./computer-organization/ROADMAP.md) | [QUIZ](./computer-organization/QUIZ.md)（40 题） |
+| 操作系统 | [INDEX](./operating-system/INDEX.md) | [ROADMAP](./operating-system/ROADMAP.md) | [QUIZ](./operating-system/QUIZ.md)（45 题） |
+| 计算机网络 | [INDEX](./computer-network/INDEX.md) | [ROADMAP](./computer-network/ROADMAP.md) | [QUIZ](./computer-network/QUIZ.md)（30 题） |
 
 外部资源：
 
