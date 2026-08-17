@@ -4,7 +4,7 @@
 > 每篇含概念定义、原理推导、图示、代码实现、408 真题考点、陷阱清单与练习题
 > 数据结构每章附 **力扣（LeetCode）实战题单**，把考点直接接到编码练习上
 >
-> **📅 内容基准：2026 年 7 月**。经典理论为主，涉及现代实现处标注真实工程现状。
+> **📅 内容基准：2026 年 8 月**。经典理论为主，涉及现代实现处标注真实工程现状。
 
 ---
 
@@ -154,7 +154,7 @@ DS01 → DS02 → DS03 → DS05 → DS07 → DS08 → DS06 → DS04
 |---|---|---|---|
 | 数据结构 | [INDEX](./data-structure/INDEX.md) | [ROADMAP](./data-structure/ROADMAP.md) | [QUIZ](./data-structure/QUIZ.md)（40 题） |
 | 计算机组成原理 | [INDEX](./computer-organization/INDEX.md) | [ROADMAP](./computer-organization/ROADMAP.md) | [QUIZ](./computer-organization/QUIZ.md)（40 题） |
-| 操作系统 | [INDEX](./operating-system/INDEX.md) | [ROADMAP](./operating-system/ROADMAP.md) | [QUIZ](./operating-system/QUIZ.md)（45 题） |
+| 操作系统 | [INDEX](./operating-system/INDEX.md) | [ROADMAP](./operating-system/ROADMAP.md) | [QUIZ](./operating-system/QUIZ.md)（49 题） |
 | 计算机网络 | [INDEX](./computer-network/INDEX.md) | [ROADMAP](./computer-network/ROADMAP.md) | [QUIZ](./computer-network/QUIZ.md)（30 题） |
 
 外部资源：
